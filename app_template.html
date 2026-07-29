@@ -316,6 +316,8 @@
           <div class="grid2">
             <label class="f"><span>เลขบัตร ป.ป.ส.</span><input id="cardNoPpst"></label>
             <label class="f"><span>เลขบัตรเจ้าหน้าที่ของรัฐ</span><input id="cardNoGov"></label>
+            <label class="f"><span>วันออกบัตร</span><input id="cardIssueDate" placeholder="เช่น 1 ม.ค. 2565"></label>
+            <label class="f"><span>วันหมดอายุ</span><input id="cardExpiryDate" placeholder="เช่น 31 ธ.ค. 2569"></label>
           </div>
         </div>
         <div class="officer-block">
@@ -482,6 +484,7 @@ function buildTagMap() {
     cb_card_ppst: cbv(v('officer1CardType') === 'ppst'), cb_card_gov: cbv(v('officer1CardType') === 'gov'),
     card_no_ppst: v('officer1CardType') === 'ppst' ? v('cardNoPpst') : '',
     card_no_gov: v('officer1CardType') === 'gov' ? v('cardNoGov') : '',
+    card_issue_date: v('cardIssueDate'), card_expiry_date: v('cardExpiryDate'),
     cb_id_card: cbv(v('idDocType') === 'card'), cb_id_alien: cbv(v('idDocType') === 'alien'),
     cb_id_passport: cbv(v('idDocType') === 'passport'), cb_id_other: cbv(v('idDocType') === 'other'),
     id_other_detail: v('idOtherDetail'), id_issue_amphoe: v('idIssueAmphoe'), id_issue_province: v('idIssueProvince'),
@@ -620,7 +623,7 @@ const ALL_FIELD_IDS = ['title','firstName','lastName','nickname','alias','age','
   'charge','caseBlackNo','caseRedNo','warrantNo','courtName','arrestTime','arrestLocation',
   'docRunningNo','crimeWeapon','crimeVehicle','crimeAccomplice','crimeDetails','crimeNotes','crimeHistory',
   'idDocType','idOtherDetail','drugType','testResult','searchFound','searchDrugType','seizedAmount',
-  'treatmentConsent','officer1CardType','cardNoPpst','cardNoGov','hospitalName',
+  'treatmentConsent','officer1CardType','cardNoPpst','cardNoGov','cardIssueDate','cardExpiryDate','hospitalName',
   'otherNotes','appointmentTime','appointmentPlace',
   'phoneBrand','phoneModel','phoneColor','phoneImei1','phoneImei2','recordPlace','sim1Number','sim1Network',
   'sim2Number','sim2Network','officer1Rank','officer1Name','officer1Position','officer2Rank','officer2Name',
