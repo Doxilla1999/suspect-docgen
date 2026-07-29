@@ -239,6 +239,40 @@
       </details>
 
       <details class="panel">
+        <summary>รายงานผลการปฏิบัติ (LINE)</summary>
+        <label class="f"><span>สายการบังคับบัญชา (แก้ไขได้ บรรทัดละ 1 คน)</span>
+          <textarea id="reportCommandChain" rows="3">พ.ต.อ.พิมุข นาคขำพันธ์ ผกก.สภ.นายายอาม
+พ.ต.ท.วรรณวุฒิ แสนเสนยา รอง ผกก.สส.ฯ
+พ.ต.ท.พิพัฒน์ ที่รัก สว.สส.สภ.นายายอาม พร้อมด้วยชุดสืบสวนฯ</textarea>
+        </label>
+        <label class="f"><span>โดยกล่าวหาว่า (พิมพ์เอง หรือกดปุ่มด้านล่างเพื่อร่างจากข้อมูลหมายจับ)</span>
+          <textarea id="reportChargeText" rows="3" placeholder='เช่น "ร่วมกันลักลอบเล่นการพนัน...โดยไม่ได้รับอนุญาต"'></textarea>
+        </label>
+        <button type="button" class="btn btn-ghost btn-sm" id="draftChargeFromWarrant">ร่างจากข้อมูลหมายจับ</button>
+        <p class="field-group-label" style="margin-top:14px">ของกลาง (ถ้ามี)</p>
+        <div id="evidenceRows"></div>
+        <button type="button" class="btn btn-ghost btn-sm" id="addEvidenceRow">+ เพิ่มของกลาง</button>
+        <button class="btn btn-primary" id="genReportBtn" style="margin-top:14px">สร้างข้อความรายงาน</button>
+        <label class="f" style="margin-top:10px"><span>ข้อความที่ได้ (แก้ไขก่อนคัดลอกได้)</span>
+          <textarea id="reportOutput" rows="16" class="mono" style="font-size:12.5px"></textarea>
+        </label>
+        <button type="button" class="btn btn-ghost" id="copyReportBtn">คัดลอกข้อความ</button>
+        <p class="msg" id="reportMsg"></p>
+
+        <p class="field-group-label" style="margin-top:16px">รูปหน้าตรงสำหรับแนบรายงาน (เบลอหน้าก่อนแนบ)</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+          <input type="file" id="blurPhotoInput" accept="image/*">
+          <button type="button" class="btn btn-ghost btn-sm" id="useUploadedFrontBtn">ใช้รูปหน้าตรงที่อัปโหลดไว้แล้ว</button>
+        </div>
+        <canvas id="blurCanvas" style="max-width:100%;border:1px solid #D7D2C2;border-radius:6px;cursor:crosshair;display:block"></canvas>
+        <p class="note">คลิกลากกรอบสี่เหลี่ยมคลุมใบหน้า จะเบลอทันทีที่ปล่อยเมาส์ — เบลอซ้ำได้หลายจุด</p>
+        <div style="display:flex;gap:8px;margin-top:6px">
+          <button type="button" class="btn btn-ghost btn-sm" id="resetBlurBtn">รีเซ็ตรูป</button>
+          <button type="button" class="btn btn-primary btn-sm" id="downloadBlurBtn">ดาวน์โหลดรูปที่เบลอแล้ว</button>
+        </div>
+      </details>
+
+      <details class="panel">
         <summary>รายละเอียดคดียาเสพติด (ปยส.115 / ส่งตรวจปัสสาวะ)</summary>
         <label class="f"><span>ประเภทเอกสารแสดงตน (ผู้ต้องหา)</span>
           <select id="idDocType"><option value="card">บัตรประชาชน</option><option value="alien">บัตรคนซึ่งไม่มีสัญชาติไทย</option><option value="passport">หนังสือเดินทาง</option><option value="other">เอกสารอื่นที่ราชการออกให้</option></select>
@@ -825,7 +859,8 @@ function addSuspectRow(data) {
       <input class="sl-name" placeholder="ชื่อ-สกุล" value="">
       <input class="sl-id" placeholder="เลขบัตรประชาชน" value="">
       <input class="sl-age" placeholder="อายุ" value="">
-      <input class="sl-address" placeholder="ที่อยู่" value="">
+      <input class="sl-dob" placeholder="วันเดือนปีเกิด (ถ้ามี)" value="">
+      <input class="sl-address" placeholder="ที่อยู่" value="" style="grid-column:1/-1">
     </div>
     <div style="display:flex;gap:6px;margin:4px 0 10px">
       <button type="button" class="btn btn-ghost btn-sm sl-use-main">ใช้ข้อมูลผู้ต้องหาหลัก</button>
@@ -834,6 +869,7 @@ function addSuspectRow(data) {
   row.querySelector('.sl-name').value = data.name || '';
   row.querySelector('.sl-id').value = data.id || '';
   row.querySelector('.sl-age').value = data.age || '';
+  row.querySelector('.sl-dob').value = data.dob || '';
   row.querySelector('.sl-address').value = data.address || '';
   container.appendChild(row);
   row.querySelector('.sl-remove').addEventListener('click', () => row.remove());
@@ -841,6 +877,7 @@ function addSuspectRow(data) {
     row.querySelector('.sl-name').value = `${v('firstName')} ${v('lastName')}`.trim();
     row.querySelector('.sl-id').value = v('idNumber');
     row.querySelector('.sl-age').value = v('age');
+    row.querySelector('.sl-dob').value = thaiDate('dobDate');
     row.querySelector('.sl-address').value = composeAddress();
   });
 }
@@ -850,16 +887,186 @@ function getSuspectListEntries() {
     name: row.querySelector('.sl-name').value.trim(),
     id: row.querySelector('.sl-id').value.trim(),
     age: row.querySelector('.sl-age').value.trim(),
+    dob: row.querySelector('.sl-dob').value.trim(),
     address: row.querySelector('.sl-address').value.trim()
   })).filter(e => e.name || e.id || e.age || e.address);
   if (entries.length === 0) {
     const fallbackName = `${v('firstName')} ${v('lastName')}`.trim();
     if (fallbackName) {
-      return [{ name: fallbackName, id: v('idNumber'), age: v('age'), address: composeAddress() }];
+      return [{ name: fallbackName, id: v('idNumber'), age: v('age'), dob: thaiDate('dobDate'), address: composeAddress() }];
     }
     return [{ name: '', id: '', age: '', address: '' }];
   }
   return entries;
+}
+
+function shortThaiDate(prefix) {
+  const p = thaiDateParts(prefix);
+  if (!p.day) return '';
+  const yy = p.year ? String(p.year).slice(-2) : '';
+  return `${p.day} ${p.month} ${yy}`;
+}
+
+function addEvidenceRow(data) {
+  data = data || {};
+  const container = document.getElementById('evidenceRows');
+  const row = document.createElement('div');
+  row.className = 'evidence-row';
+  row.style.cssText = 'display:flex;gap:6px;margin-bottom:6px;align-items:center';
+  row.innerHTML = `
+    <input class="ev-desc" placeholder="รายการของกลาง เช่น ลูกเต๋า" style="flex:2">
+    <input class="ev-qty" placeholder="จำนวน เช่น 3 ลูก" style="flex:1">
+    <button type="button" class="btn-danger-outline ev-remove">ลบ</button>`;
+  row.querySelector('.ev-desc').value = data.desc || '';
+  row.querySelector('.ev-qty').value = data.qty || '';
+  container.appendChild(row);
+  row.querySelector('.ev-remove').addEventListener('click', () => row.remove());
+}
+function getEvidenceRows() {
+  return [...document.querySelectorAll('.evidence-row')].map(row => ({
+    desc: row.querySelector('.ev-desc').value.trim(),
+    qty: row.querySelector('.ev-qty').value.trim()
+  })).filter(e => e.desc);
+}
+
+function draftChargeFromWarrant() {
+  const parts = [];
+  if (v('warrantNo')) {
+    parts.push(`จับตามหมายจับ${v('courtName')} ที่ ${v('warrantNo')} ลงวันที่ ${thaiDate('warrantDate')}`);
+  }
+  if (v('caseBlackNo')) parts.push(`คดีหมายเลขดำที่ ${v('caseBlackNo')}`);
+  if (v('caseRedNo')) parts.push(`คดีหมายเลขแดงที่ ${v('caseRedNo')}`);
+  if (v('charge')) parts.push(`ต้องหาว่ากระทำความผิดฐาน "${v('charge')}"`);
+  document.getElementById('reportChargeText').value = parts.join(' ');
+}
+
+function buildOperationReport() {
+  const station = v('stationName') || 'สภ.นายายอาม';
+  const date = shortThaiDate('issueDate');
+  const chain = document.getElementById('reportCommandChain').value.split('\n').map(l => l.trim()).filter(Boolean);
+  const entries = getSuspectListEntries().filter(e => e.name);
+  const charge = document.getElementById('reportChargeText').value.trim();
+  const evidence = getEvidenceRows();
+
+  const lines = [];
+  lines.push(`🚔${station}🚔`);
+  lines.push(`                       ${date}`);
+  lines.push(`   🚨ภายใต้การอำนวยการของ 🚨`);
+  chain.forEach((l, i) => lines.push((i === 0 ? '👮' : '     ') + l));
+  lines.push('');
+  lines.push(entries.length > 1 ? '⚠️ร่วมกันจับกุม⚠️' : '⚠️จับกุม⚠️');
+  lines.push('');
+  entries.forEach((e, i) => {
+    let line = `${i + 1}.${e.name} อายุ ${e.age} ปี`;
+    if (e.dob) line += ` วันเดือนปีเกิด ${e.dob}`;
+    line += ` เลขบัตรประชาชน ${e.id}`;
+    if (e.address) line += ` ที่อยู่ ${e.address}`;
+    lines.push(line);
+  });
+  lines.push('');
+  lines.push('📍โดยกล่าวหาว่า');
+  lines.push(charge);
+  if (evidence.length) {
+    lines.push('');
+    lines.push('🎰 พร้อมด้วยของกลาง 🎰');
+    evidence.forEach((ev, i) => lines.push(`${i + 1}.${ev.desc}${ev.qty ? ' จำนวน ' + ev.qty : ''}`));
+  }
+  lines.push('');
+  lines.push(`นำตัวผู้ถูกจับ ส่ง พงส.${station}`);
+  lines.push('เพื่อดำเนินการในส่วนที่เกี่ยวข้องต่อไป');
+  lines.push('');
+  lines.push('จึงเรียนมาเพื่อโปรดทราบ');
+
+  document.getElementById('reportOutput').value = lines.join('\n');
+}
+
+// ---- ตัวเบลอรูปหน้าตรง (คลิกลากกรอบ แล้ว pixelate เฉพาะจุด) ----
+let blurOriginalImage = null;
+let blurAppliedRects = [];
+
+function loadBlurImage(file) {
+  const img = new Image();
+  const url = URL.createObjectURL(file);
+  img.onload = () => {
+    URL.revokeObjectURL(url);
+    blurOriginalImage = img;
+    blurAppliedRects = [];
+    const canvas = document.getElementById('blurCanvas');
+    const maxW = 640;
+    const scale = Math.min(1, maxW / img.naturalWidth);
+    canvas.width = Math.round(img.naturalWidth * scale);
+    canvas.height = Math.round(img.naturalHeight * scale);
+    canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+  };
+  img.src = url;
+}
+
+function pixelateRect(ctx, x, y, w, h, blockSize = 10) {
+  x = Math.max(0, Math.round(x)); y = Math.max(0, Math.round(y));
+  w = Math.round(w); h = Math.round(h);
+  if (w <= 0 || h <= 0) return;
+  const imgData = ctx.getImageData(x, y, w, h);
+  const data = imgData.data;
+  for (let by = 0; by < h; by += blockSize) {
+    for (let bx = 0; bx < w; bx += blockSize) {
+      let r = 0, g = 0, b = 0, count = 0;
+      for (let dy = 0; dy < blockSize && by + dy < h; dy++) {
+        for (let dx = 0; dx < blockSize && bx + dx < w; dx++) {
+          const idx = ((by + dy) * w + (bx + dx)) * 4;
+          r += data[idx]; g += data[idx + 1]; b += data[idx + 2]; count++;
+        }
+      }
+      r = Math.round(r / count); g = Math.round(g / count); b = Math.round(b / count);
+      for (let dy = 0; dy < blockSize && by + dy < h; dy++) {
+        for (let dx = 0; dx < blockSize && bx + dx < w; dx++) {
+          const idx = ((by + dy) * w + (bx + dx)) * 4;
+          data[idx] = r; data[idx + 1] = g; data[idx + 2] = b;
+        }
+      }
+    }
+  }
+  ctx.putImageData(imgData, x, y);
+}
+
+function redrawBlurCanvas() {
+  const canvas = document.getElementById('blurCanvas');
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(blurOriginalImage, 0, 0, canvas.width, canvas.height);
+  blurAppliedRects.forEach(r => pixelateRect(ctx, r.x, r.y, r.w, r.h));
+}
+
+function setupBlurCanvasDrag() {
+  const canvas = document.getElementById('blurCanvas');
+  let dragging = false, startX = 0, startY = 0;
+  const toCanvasXY = (e) => {
+    const rect = canvas.getBoundingClientRect();
+    return [(e.clientX - rect.left) * (canvas.width / rect.width), (e.clientY - rect.top) * (canvas.height / rect.height)];
+  };
+  canvas.addEventListener('mousedown', (e) => {
+    if (!blurOriginalImage) return;
+    dragging = true;
+    [startX, startY] = toCanvasXY(e);
+  });
+  canvas.addEventListener('mousemove', (e) => {
+    if (!dragging) return;
+    const [curX, curY] = toCanvasXY(e);
+    redrawBlurCanvas();
+    const ctx = canvas.getContext('2d');
+    ctx.strokeStyle = '#9C3B32';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(Math.min(startX, curX), Math.min(startY, curY), Math.abs(curX - startX), Math.abs(curY - startY));
+  });
+  window.addEventListener('mouseup', (e) => {
+    if (!dragging) return;
+    dragging = false;
+    const [curX, curY] = toCanvasXY(e);
+    const x = Math.min(startX, curX), y = Math.min(startY, curY);
+    const w = Math.abs(curX - startX), h = Math.abs(curY - startY);
+    if (w > 4 && h > 4) {
+      blurAppliedRects.push({ x, y, w, h });
+    }
+    redrawBlurCanvas();
+  });
 }
 function clearSuspectRows() {
   document.getElementById('suspectListRows').innerHTML = '';
@@ -988,6 +1195,43 @@ document.getElementById('arrestSaveBtn').addEventListener('click', saveArrestRec
 { const savedPin = localStorage.getItem('arrestPin'); if (savedPin) document.getElementById('arrestPin').value = savedPin; }
 document.getElementById('addSuspectRow').addEventListener('click', () => addSuspectRow());
 addSuspectRow();
+
+document.getElementById('addEvidenceRow').addEventListener('click', () => addEvidenceRow());
+addEvidenceRow();
+document.getElementById('draftChargeFromWarrant').addEventListener('click', draftChargeFromWarrant);
+document.getElementById('genReportBtn').addEventListener('click', buildOperationReport);
+document.getElementById('copyReportBtn').addEventListener('click', async () => {
+  const ta = document.getElementById('reportOutput');
+  const msg = document.getElementById('reportMsg');
+  ta.select();
+  try {
+    await navigator.clipboard.writeText(ta.value);
+    msg.textContent = 'คัดลอกแล้ว';
+  } catch (e) {
+    msg.textContent = 'คัดลอกอัตโนมัติไม่ได้ ข้อความถูกเลือกไว้แล้ว กด Ctrl+C ได้เลย';
+  }
+});
+
+setupBlurCanvasDrag();
+document.getElementById('blurPhotoInput').addEventListener('change', (e) => {
+  if (e.target.files[0]) loadBlurImage(e.target.files[0]);
+});
+document.getElementById('useUploadedFrontBtn').addEventListener('click', () => {
+  const f = document.getElementById('photoFront').files[0];
+  if (f) loadBlurImage(f);
+  else document.getElementById('reportMsg').textContent = 'ยังไม่ได้อัปโหลดรูปหน้าตรงในส่วน "ประวัติบุคคล 4 ด้าน"';
+});
+document.getElementById('resetBlurBtn').addEventListener('click', () => {
+  if (blurOriginalImage) { blurAppliedRects = []; redrawBlurCanvas(); }
+});
+document.getElementById('downloadBlurBtn').addEventListener('click', () => {
+  if (!blurOriginalImage) { document.getElementById('reportMsg').textContent = 'ยังไม่ได้เลือกรูป'; return; }
+  const canvas = document.getElementById('blurCanvas');
+  const link = document.createElement('a');
+  link.download = `เบลอหน้า_${(v('firstName') + v('lastName')) || 'case'}.jpg`;
+  link.href = canvas.toDataURL('image/jpeg', 0.9);
+  link.click();
+});
 
 function setDefaultIssueDate() {
   const now = new Date();
