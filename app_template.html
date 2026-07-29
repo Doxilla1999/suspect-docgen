@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<title>ระบบสร้างเอกสารผู้ต้องหา</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&display=swap');
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #F2F1EC; font-family: 'TH SarabunIT๙', 'TH Sarabun New', Tahoma, sans-serif; font-size: 17px; color: #201C14; }
+  .date3 { display: flex; gap: 6px; }
+  .date3 input { width: 30%; }
+  .date3 select { width: 40%; }
+  .app { max-width: 1180px; margin: 0 auto; padding: 0 0 40px; }
+  header.top { background: #14181C; color: #EFE9D8; padding: 18px 24px; display: flex; align-items: center; gap: 12px; border-bottom: 3px solid #B68D40; }
+  header.top .mark { width: 34px; height: 34px; border-radius: 6px; border: 2px solid #B68D40; display: flex; align-items: center; justify-content: center; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #B68D40; }
+  header.top h1 { font-size: 16px; margin: 0; letter-spacing: .5px; font-weight: 600; }
+  header.top p { font-size: 11px; margin: 2px 0 0; color: #9C3B32; letter-spacing: .5px; }
+  .layout { display: grid; grid-template-columns: 1fr 340px; gap: 20px; padding: 20px 24px 0; align-items: start; }
+  @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
+  .panel { background: #FFFFFF; border: 1px solid #DEDACE; border-radius: 10px; padding: 16px 18px; margin-bottom: 16px; }
+  .panel h2 { font-size: 14px; margin: 0 0 12px; color: #14181C; font-weight: 600; }
+  details.panel summary { font-size: 14px; font-weight: 600; cursor: pointer; color: #14181C; list-style: none; display: flex; align-items: center; gap: 8px; }
+  details.panel summary::before { content: "▸"; color: #B68D40; font-size: 12px; }
+  details.panel[open] summary::before { content: "▾"; }
+  details.panel summary::-webkit-details-marker { display: none; }
+  details.panel[open] summary { margin-bottom: 12px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; }
+  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px 14px; }
+  @media (max-width: 600px) { .grid2, .grid3 { grid-template-columns: 1fr; } }
+  .field-group-label { font-size: 11.5px; color: #B68D40; font-weight: 600; margin: 10px 0 6px; text-transform: uppercase; letter-spacing: .4px; }
+  label.f { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: #6B6555; margin-bottom: 2px; }
+  label.f span { font-weight: 500; }
+  input, select, textarea { font-family: inherit; font-size: 13.5px; padding: 7px 9px; border: 1px solid #D7D2C2; border-radius: 6px; background: #FBFAF6; color: #201C14; width: 100%; }
+  input:focus, select:focus, textarea:focus { outline: none; border-color: #B68D40; background: #fff; }
+  textarea { resize: vertical; min-height: 44px; }
+  .officer-block { border: 1px dashed #D7D2C2; border-radius: 8px; padding: 10px; margin-bottom: 10px; }
+  .officer-block h3 { font-size: 12px; margin: 0 0 8px; color: #6B6555; font-weight: 600; }
+  .case-types { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+  .case-types label { display: flex; align-items: center; gap: 8px; font-size: 13.5px; padding: 6px 4px; border-radius: 6px; }
+  .case-types label:hover { background: #F5F2E8; }
+  .hint-inline { font-size: 11px; font-weight: 400; color: #8a8474; text-transform: none; letter-spacing: 0; }
+  .doc-checklist { display: flex; flex-direction: column; gap: 4px; }
+  .doc-check { display: flex; align-items: center; gap: 10px; font-size: 14px; padding: 9px 10px; border-radius: 6px; border: 1px solid transparent; cursor: pointer; }
+  .doc-check:hover { background: #F5F2E8; border-color: #EEE9DA; }
+  .doc-check input:checked ~ span { font-weight: 600; color: #14181C; }
+  .doc-check:has(input:checked) { background: #FBF3E2; border-color: #E8D6AC; }
+  .suspect-row-detail { border: 1px dashed #D7D2C2; border-radius: 8px; padding: 10px; margin-bottom: 10px; }
+  .m80-row { display: flex; align-items: center; gap: 8px; padding-top: 10px; border-top: 1px solid #EEE9DA; font-size: 13.5px; }
+  #m80hint { font-size: 11.5px; color: #9C3B32; margin: 6px 0 0; min-height: 14px; }
+  .sticky { position: sticky; top: 16px; }
+  .checklist-item { display: flex; align-items: center; gap: 8px; background: #EFF6EF; color: #1F5C33; border-radius: 6px; padding: 8px 10px; font-size: 13px; margin-bottom: 6px; }
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; border-radius: 6px; border: 1px solid transparent; font-size: 13.5px; font-weight: 500; padding: 10px 14px; cursor: pointer; width: 100%; }
+  .btn-primary { background: #B68D40; color: #201808; }
+  .btn-primary:hover { filter: brightness(1.06); }
+  .btn-ghost { background: #F5F2E8; color: #201C14; border-color: #D7D2C2; margin-top: 8px; }
+  .btn-danger-outline { background: none; color: #9C3B32; border: none; font-size: 11.5px; padding: 2px 4px; cursor: pointer; }
+  .case-row { display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 8px 6px; border-radius: 6px; font-size: 12.5px; }
+  .case-row:hover { background: #F5F2E8; }
+  .case-row button.load { background: none; border: none; text-align: left; flex: 1; cursor: pointer; font-size: 12.5px; color: #201C14; padding: 2px; }
+  .note { font-size: 11.5px; color: #6B6555; line-height: 1.5; margin-top: 10px; }
+  .msg { font-size: 12.5px; color: #9C3B32; margin: 6px 0 0; min-height: 16px; }
+  .mono { font-family: 'IBM Plex Mono', monospace; }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="mark">NYA</div>
+    <div>
+      <h1>ระบบสร้างเอกสารผู้ต้องหา · สภ.นายายอาม</h1>
+      <p>กรอกครั้งเดียว ออกเอกสารได้หลายฉบับ</p>
+    </div>
+  </header>
+
+  <div class="layout">
+    <div class="col-main">
+
+      <div class="panel" style="background:#FFFBF0;border-color:#E8D6AC">
+        <h2>วางข้อมูลเพื่อกรอกอัตโนมัติ</h2>
+        <textarea id="quickFillText" rows="3" placeholder="วางข้อมูลผู้ต้องหาตรงนี้ เช่น &quot;นายพันณกร บุญเพ็ง เลขบัตรประชาชน 1220900010581 อายุ 25 ที่อยู่ บ้านเลขที่ 65 ม.8 ต.สนามไชย อ.นายายอาม จ.จันทบุรี&quot;"></textarea>
+        <button type="button" class="btn btn-primary btn-sm" id="quickFillBtn" style="margin-top:8px">แยกข้อมูลกรอกฟอร์มให้อัตโนมัติ</button>
+        <p class="note" id="quickFillMsg" style="margin-top:6px">ระบบจะพยายามจับ ชื่อ-สกุล/เลขบัตรประชาชน/อายุ/ที่อยู่/เบอร์โทร/อาชีพ จากข้อความที่วาง กรอกได้ไม่ครบทุกครั้ง ควรตรวจสอบซ้ำก่อนสร้างเอกสารเสมอ</p>
+      </div>
+
+      <details class="panel" open>
+        <summary>ข้อมูลผู้ต้องหา</summary>
+        <div class="grid3">
+          <label class="f"><span>คำนำหน้า</span>
+            <select id="title"><option>นาย</option><option>นาง</option><option>นางสาว</option></select>
+          </label>
+          <label class="f"><span>ชื่อ</span><input id="firstName" placeholder="ชื่อ"></label>
+          <label class="f"><span>นามสกุล</span><input id="lastName" placeholder="นามสกุล"></label>
+          <label class="f"><span>ชื่อเล่น</span><input id="nickname"></label>
+          <label class="f"><span>นามแฝง</span><input id="alias"></label>
+          <label class="f"><span>อายุ</span><input id="age" type="number" placeholder="อายุ (ปี)"></label>
+          <label class="f"><span>วันเกิด (พ.ศ.)</span>
+            <div class="date3"><input id="dobDate_day" type="number" min="1" max="31" placeholder="วัน"><select id="dobDate_month"></select><input id="dobDate_year" type="number" placeholder="พ.ศ."></div>
+          </label>
+          <label class="f"><span>สัญชาติ</span><input id="nationality" value="ไทย"></label>
+          <label class="f"><span>เชื้อชาติ</span><input id="ethnicity" value="ไทย"></label>
+          <label class="f"><span>ศาสนา</span>
+            <select id="religion"><option>พุทธ</option><option>อิสลาม</option><option>คริสต์</option><option>อื่นๆ</option></select>
+          </label>
+          <label class="f"><span>เลขบัตรประชาชน</span><input id="idNumber" placeholder="1-2345-00000-00-0"></label>
+          <label class="f"><span>เบอร์โทรศัพท์</span><input id="phone" placeholder="08x-xxx-xxxx"></label>
+          <label class="f"><span>อาชีพ</span><input id="occupation"></label>
+          <label class="f"><span>รายได้โดยประมาณ</span><input id="income" placeholder="เช่น 500 บาท/วัน"></label>
+          <label class="f"><span>การศึกษา</span><input id="education"></label>
+          <label class="f"><span>บัตรประชาชนออกที่ อำเภอ</span><input id="idIssueAmphoe"></label>
+          <label class="f"><span>บัตรประชาชนออกที่ จังหวัด</span>
+            <select id="idIssueProvince"></select>
+          </label>
+        </div>
+        <p class="field-group-label">ภูมิลำเนาตามทะเบียนบ้าน</p>
+        <div class="grid3">
+          <label class="f"><span>บ้านเลขที่</span><input id="addrHouseNo"></label>
+          <label class="f"><span>หมู่ที่</span><input id="addrMoo"></label>
+          <label class="f"><span>ถนน/ซอย</span><input id="addrRoad"></label>
+          <label class="f"><span>ตำบล</span><input id="addrTambon"></label>
+          <label class="f"><span>อำเภอ</span><input id="addrAmphoe"></label>
+          <label class="f"><span>จังหวัด</span>
+            <select id="addrProvince"></select>
+          </label>
+        </div>
+        <label class="f"><span>ที่อยู่ปัจจุบัน (ถ้าต่างจากทะเบียนบ้าน)</span><textarea id="currentAddress"></textarea></label>
+        <div class="grid2">
+          <label class="f"><span>บิดา มารดา</span><input id="parents"></label>
+          <label class="f"><span>สามี/ภรรยา</span><input id="spouse"></label>
+          <label class="f"><span>ที่อยู่สามี/ภรรยา</span><input id="spouseAddress"></label>
+          <label class="f"><span>เพื่อนสนิท/ผู้ให้พักอาศัย</span><input id="friends"></label>
+          <label class="f"><span>สถานที่ชอบไปเที่ยวเตร่</span><input id="hangouts"></label>
+          <label class="f"><span>ตำรวจหรือบุคคลผู้รู้จักตัว</span><input id="knownBy"></label>
+        </div>
+      </details>
+
+      <details class="panel">
+        <summary>รูปพรรณ</summary>
+        <div class="grid3">
+          <label class="f"><span>ความสูง (ซม.)</span><input id="height"></label>
+          <label class="f"><span>น้ำหนัก (กก.)</span><input id="weight"></label>
+          <label class="f"><span>สีผิว</span><input id="skin" list="skinList" placeholder="เลือกหรือพิมพ์เอง"></label>
+          <label class="f"><span>ศีรษะ</span><input id="head" list="headList" placeholder="เลือกหรือพิมพ์เอง"></label>
+          <label class="f"><span>ผม</span><input id="hair" list="hairList" placeholder="เลือกหรือพิมพ์เอง"></label>
+          <label class="f"><span>รูปหน้า</span><input id="face" list="faceList" placeholder="เลือกหรือพิมพ์เอง"></label>
+          <label class="f"><span>คิ้ว,ตา</span><input id="eyes" list="eyesList" placeholder="เลือกหรือพิมพ์เอง"></label>
+          <label class="f"><span>จมูก</span><input id="nose" list="noseList" placeholder="เลือกหรือพิมพ์เอง"></label>
+          <label class="f"><span>ใบหู</span><input id="ears" list="earsList" placeholder="เลือกหรือพิมพ์เอง"></label>
+          <label class="f"><span>หนวดเครา</span><input id="beard"></label>
+          <label class="f"><span>ตำหนิ/รอยสัก</span><input id="marks"></label>
+          <label class="f"><span>สำเนียง</span><input id="accent" list="accentList" placeholder="เลือกหรือพิมพ์เอง"></label>
+        </div>
+        <datalist id="skinList"><option value="ขาว"></option><option value="ขาวเหลือง"></option><option value="เหลือง"></option><option value="ดำแดง"></option><option value="ดำ"></option><option value="คล้ำ"></option></datalist>
+        <datalist id="headList"><option value="กลม"></option><option value="รี"></option><option value="แหลม"></option><option value="ปกติ"></option></datalist>
+        <datalist id="hairList"><option value="สั้น"></option><option value="ยาว"></option><option value="หยิก"></option><option value="ตรง"></option><option value="โกนศีรษะ"></option><option value="ล้าน"></option></datalist>
+        <datalist id="faceList"><option value="กลม"></option><option value="รี"></option><option value="เหลี่ยม"></option><option value="ยาว"></option></datalist>
+        <datalist id="accentList"><option value="ภาคกลาง"></option><option value="ภาคเหนือ"></option><option value="ภาคอีสาน"></option><option value="ภาคใต้"></option><option value="ภาคตะวันออก"></option><option value="ต่างประเทศ"></option></datalist>
+        <datalist id="eyesList"><option value="โล่ง"></option><option value="ตาชั้นเดียว"></option><option value="ตาสองชั้น"></option><option value="ตาโต"></option><option value="ตาเล็ก"></option><option value="คิ้วหนา"></option><option value="คิ้วบาง"></option></datalist>
+        <datalist id="noseList"><option value="โด่ง"></option><option value="แบน"></option><option value="สันตรง"></option><option value="โต"></option><option value="เล็ก"></option></datalist>
+        <datalist id="earsList"><option value="กาง"></option><option value="แนบ"></option><option value="เล็ก"></option><option value="ใหญ่"></option></datalist>
+      </details>
+
+      <div class="panel">
+        <h2>ประเภทคดี <span class="hint-inline">(ติ๊กเพื่อช่วยเลือกเอกสารด้านล่างให้อัตโนมัติ)</span></h2>
+        <div class="case-types">
+          <label><input type="checkbox" class="case-type" value="drug_use"> ยาเสพติด (ผู้เสพ)</label>
+          <label><input type="checkbox" class="case-type" value="drug_sell"> ยาเสพติด (ผู้จำหน่าย)</label>
+          <label><input type="checkbox" class="case-type" value="warrant"> หมายจับ</label>
+          <label><input type="checkbox" class="case-type" value="gamble"> การพนัน</label>
+          <label><input type="checkbox" class="case-type" value="gamble_online"> พนันออนไลน์</label>
+        </div>
+        <p id="m80hint"></p>
+      </div>
+
+      <div class="panel">
+        <h2>เอกสารที่ต้องการสร้าง <span class="hint-inline">(ติ๊กเลือกเองได้ทีละฉบับ)</span></h2>
+        <div class="doc-checklist">
+          <label class="doc-check"><input type="checkbox" class="doc-select" value="drug_test_115"><span>ปยส.115 (บันทึกตรวจสารเสพติด)</span></label>
+          <label class="doc-check"><input type="checkbox" class="doc-select" value="urine_referral"><span>ส่งตรวจปัสสาวะ</span></label>
+          <label class="doc-check"><input type="checkbox" id="photoAttach" class="doc-select" value="profile_and_photos"><span>ประวัติบุคคล 4 ด้าน + ภาพประกอบ (2 หน้า)</span></label>
+          <label class="doc-check"><input type="checkbox" class="doc-select" value="court_referral"><span>ใบปะหน้าส่งศาล</span></label>
+          <label class="doc-check"><input type="checkbox" class="doc-select" value="phone_consent_m80"><span>บันทึกยินยอมตรวจโทรศัพท์ ม.80</span></label>
+        </div>
+        <div id="photoInputs" style="display:none;margin-top:10px">
+          <div class="grid2">
+            <label class="f"><span>หน้าตรง</span><input type="file" id="photoFront" accept="image/*"></label>
+            <label class="f"><span>หลัง</span><input type="file" id="photoBack" accept="image/*"></label>
+            <label class="f"><span>ด้านซ้าย</span><input type="file" id="photoLeft" accept="image/*"></label>
+            <label class="f"><span>ด้านขวา</span><input type="file" id="photoRight" accept="image/*"></label>
+          </div>
+          <p class="note" style="margin-top:6px">ต้องอัปโหลดครบทั้ง 4 รูปจึงจะสร้างเอกสารนี้ได้ รูปจะไม่ถูกบันทึกไว้ในระบบ ต้องเลือกใหม่ทุกครั้งที่สร้างเอกสาร</p>
+        </div>
+      </div>
+      </div>
+
+      <details class="panel" open>
+        <summary>ข้อมูลคดี / หมายจับ</summary>
+        <label class="f"><span>ประเภทบุคคล (เลือกเพื่อช่วยร่างข้อหา)</span>
+          <select id="chargePreset"><option value="">— เลือกเพื่อร่างให้ —</option></select>
+        </label>
+        <label class="f"><span>ข้อหา</span><textarea id="charge" placeholder="เช่น เสพและครอบครองยาเสพติดให้โทษประเภท 1 (เมทแอมเฟตามีน) โดยผิดกฎหมาย"></textarea></label>
+        <div class="grid3">
+          <label class="f"><span>คดีหมายเลขดำ</span><input id="caseBlackNo"></label>
+          <label class="f"><span>คดีหมายเลขแดง</span><input id="caseRedNo"></label>
+          <label class="f"><span>หมายจับเลขที่</span><input id="warrantNo"></label>
+          <label class="f"><span>ลงวันที่หมายจับ (พ.ศ.)</span>
+            <div class="date3"><input id="warrantDate_day" type="number" min="1" max="31" placeholder="วัน"><select id="warrantDate_month"></select><input id="warrantDate_year" type="number" placeholder="พ.ศ."></div>
+          </label>
+          <label class="f"><span>ศาล</span><input id="courtName" placeholder="ศาลจังหวัดจันทบุรี"></label>
+          <label class="f"><span>วันที่จับกุม (พ.ศ.)</span>
+            <div class="date3"><input id="arrestDate_day" type="number" min="1" max="31" placeholder="วัน"><select id="arrestDate_month"></select><input id="arrestDate_year" type="number" placeholder="พ.ศ."></div>
+          </label>
+          <label class="f"><span>เวลาจับกุม</span><input id="arrestTime" placeholder="เช่น 14.30"></label>
+          <label class="f"><span>สถานที่จับกุม</span><input id="arrestLocation"></label>
+          <label class="f"><span>วันที่ออกเอกสาร / บันทึก (พ.ศ.)</span>
+            <div class="date3"><input id="issueDate_day" type="number" min="1" max="31" placeholder="วัน"><select id="issueDate_month"></select><input id="issueDate_year" type="number" placeholder="พ.ศ."></div>
+          </label>
+          <label class="f"><span>เลขที่หนังสือ (เลขที่ออก)</span><input id="docRunningNo" placeholder="เช่น 45"></label>
+        </div>
+        <div class="grid2">
+          <label class="f"><span>อาวุธที่ใช้ในการกระทำผิด</span><input id="crimeWeapon"></label>
+          <label class="f"><span>ยานพาหนะที่ใช้</span><input id="crimeVehicle"></label>
+          <label class="f"><span>ผู้ร่วมกระทำผิด</span><input id="crimeAccomplice"></label>
+        </div>
+        <label class="f"><span>รายละเอียดวิธีกระทำความผิด</span><textarea id="crimeDetails"></textarea></label>
+        <label class="f"><span>พฤติการณ์ที่น่าสนใจ</span><textarea id="crimeNotes"></textarea></label>
+        <label class="f"><span>ประวัติการกระทำผิด</span><textarea id="crimeHistory"></textarea></label>
+      </details>
+
+      <details class="panel">
+        <summary>รายละเอียดคดียาเสพติด (ปยส.115 / ส่งตรวจปัสสาวะ)</summary>
+        <label class="f"><span>ประเภทเอกสารแสดงตน (ผู้ต้องหา)</span>
+          <select id="idDocType"><option value="card">บัตรประชาชน</option><option value="alien">บัตรคนซึ่งไม่มีสัญชาติไทย</option><option value="passport">หนังสือเดินทาง</option><option value="other">เอกสารอื่นที่ราชการออกให้</option></select>
+        </label>
+        <label class="f" id="idOtherWrap" style="display:none"><span>ระบุเอกสารอื่น</span><input id="idOtherDetail"></label>
+        <div class="grid3">
+          <label class="f"><span>ผลการตรวจเบื้องต้น</span>
+            <select id="testResult"><option value="">— เลือก —</option><option value="pos">ผลบวก</option><option value="neg">ผลลบ</option></select>
+          </label>
+          <label class="f" id="drugTypeWrap"><span>ชนิดยาเสพติดที่ตรวจพบ</span>
+            <input id="drugType" list="drugList" placeholder="เลือกหรือพิมพ์เอง">
+          </label>
+          <label class="f"><span>ความสมัครใจบำบัด</span>
+            <select id="treatmentConsent"><option value="">— เลือก —</option><option value="yes">สมัครใจเข้ารับการบำบัดรักษา</option><option value="no">ไม่สมัครใจเข้ารับการบำบัดรักษา</option></select>
+          </label>
+        </div>
+        <datalist id="drugList">
+          <option value="เมทแอมเฟตามีน"></option><option value="ไอซ์ (เมทแอมเฟตามีนชนิดใส)"></option>
+          <option value="คีตามีน"></option><option value="กัญชา"></option><option value="เฮโรอีน"></option>
+          <option value="ยาอี/เอ็คซ์ตาซี"></option><option value="ฝิ่น"></option>
+        </datalist>
+        <div class="grid3">
+          <label class="f"><span>ผลการตรวจหรือค้น</span>
+            <select id="searchFound"><option value="none">ไม่พบยาเสพติด</option><option value="found">พบและยึดยาเสพติด</option></select>
+          </label>
+          <label class="f" id="searchDrugWrap" style="display:none"><span>ประเภท/ชนิดที่ยึด</span><input id="searchDrugType" list="drugList"></label>
+          <label class="f" id="searchAmountWrap" style="display:none"><span>ปริมาณที่ยึด</span><input id="seizedAmount"></label>
+        </div>
+        <div class="grid2">
+          <label class="f"><span>โรงพยาบาลที่ส่งตรวจ</span><input id="hospitalName" placeholder="นายายอาม จันทบุรี"></label>
+          <label class="f"><span>วันที่นัดตรวจปัสสาวะ (พ.ศ.)</span>
+            <div class="date3"><input id="testDate_day" type="number" min="1" max="31" placeholder="วัน"><select id="testDate_month"></select><input id="testDate_year" type="number" placeholder="พ.ศ."></div>
+          </label>
+        </div>
+        <p class="field-group-label">รายชื่อผู้ถูกส่งตรวจปัสสาวะ (ส่งพร้อมกันได้หลายคน — เว้นว่างไว้จะใช้ชื่อผู้ต้องหาหลักโดยอัตโนมัติ)</p>
+        <div id="suspectListRows"></div>
+        <button type="button" class="btn btn-ghost btn-sm" id="addSuspectRow">+ เพิ่มรายชื่อ</button>
+        <div class="panel" style="background:#F9F7F0;border-style:dashed;margin:10px 0">
+          <p style="font-size:12.5px;font-weight:600;margin:0 0 8px">2.1 พฤติการณ์ต้องห้ามตามมาตรา 115 (ติ๊กได้มากกว่า 1 ข้อ)</p>
+          <label style="display:flex;gap:8px;font-size:13px;padding:4px 0"><input type="checkbox" class="pb-check" id="pb1">อยู่ระหว่างตกเป็นผู้ต้องหาหรืออยู่ในระหว่างถูกดำเนินคดีในความผิดอื่นซึ่งเป็นความผิดที่มีโทษจำคุก</label>
+          <label style="display:flex;gap:8px;font-size:13px;padding:4px 0"><input type="checkbox" class="pb-check" id="pb2">อยู่ในระหว่างรับโทษจำคุกตามคำพิพากษาของศาล</label>
+          <label style="display:flex;gap:8px;font-size:13px;padding:4px 0"><input type="checkbox" class="pb-check" id="pb3">มีพฤติกรรมที่อาจก่อให้เกิดอันตรายแก่ผู้อื่นหรือสังคม (รวมถึงกรณีทางจิต/หลบหนี/ก่อความรุนแรง)</label>
+          <label style="display:flex;gap:8px;font-size:13px;padding:4px 0"><input type="checkbox" id="pb4">ไม่พบพฤติการณ์ต้องห้ามตามกฎหมาย</label>
+        </div>
+        <label class="f"><span>พฤติการณ์อื่นที่เกี่ยวข้องกับยาเสพติด</span><textarea id="otherNotes"></textarea></label>
+        <div class="grid3">
+          <label class="f"><span>วันนัดคัดกรอง (พ.ศ., ถ้ามี)</span>
+            <div class="date3"><input id="appointmentDate_day" type="number" min="1" max="31" placeholder="วัน"><select id="appointmentDate_month"></select><input id="appointmentDate_year" type="number" placeholder="พ.ศ."></div>
+          </label>
+          <label class="f"><span>เวลานัด</span><input id="appointmentTime"></label>
+          <label class="f"><span>สถานที่นัด</span><input id="appointmentPlace"></label>
+        </div>
+      </details>
+
+      <details class="panel">
+        <summary>ข้อมูลโทรศัพท์ (ม.80)</summary>
+        <div class="grid3">
+          <label class="f"><span>ยี่ห้อ</span><input id="phoneBrand"></label>
+          <label class="f"><span>รุ่น</span><input id="phoneModel"></label>
+          <label class="f"><span>สี</span><input id="phoneColor"></label>
+          <label class="f"><span>เลขอีมี่ (1)</span><input id="phoneImei1"></label>
+          <label class="f"><span>เลขอีมี่ (2)</span><input id="phoneImei2"></label>
+          <label class="f"><span>สถานที่บันทึกยินยอม</span><input id="recordPlace" placeholder="สภ.นายายอาม"></label>
+          <label class="f"><span>ซิม (1) หมายเลข</span><input id="sim1Number"></label>
+          <label class="f"><span>ซิม (1) เครือข่าย</span><input id="sim1Network"></label>
+          <label class="f"><span>ซิม (2) หมายเลข</span><input id="sim2Number"></label>
+          <label class="f"><span>ซิม (2) เครือข่าย</span><input id="sim2Network"></label>
+        </div>
+      </details>
+
+      <details class="panel" open>
+        <summary>เจ้าหน้าที่ผู้จับกุม (3 นาย)</summary>
+        <div class="officer-block">
+          <h3>เจ้าหน้าที่คนที่ 1 (ผู้บันทึก ปยส.115)</h3>
+          <label class="f"><span>เลือกจากรายชื่อที่บันทึกไว้</span>
+            <select id="officer1Preset"><option value="">— กรอกเอง —</option></select>
+          </label>
+          <div class="grid3">
+            <label class="f"><span>ยศ</span><input id="officer1Rank" placeholder="ร.ต.อ."></label>
+            <label class="f"><span>ชื่อ-สกุล</span><input id="officer1Name"></label>
+            <label class="f"><span>ตำแหน่ง</span><input id="officer1Position" placeholder="รอง สว.สส."></label>
+          </div>
+          <label class="f"><span>ประเภทบัตรที่ใช้แสดง</span>
+            <select id="officer1CardType"><option value="ppst">บัตรประจำตัวเจ้าพนักงาน ป.ป.ส.</option><option value="gov">บัตรประจำตัวเจ้าหน้าที่ของรัฐ</option></select>
+          </label>
+          <div class="grid2">
+            <label class="f"><span>เลขบัตร ป.ป.ส.</span><input id="cardNoPpst"></label>
+            <label class="f"><span>เลขบัตรเจ้าหน้าที่ของรัฐ</span><input id="cardNoGov"></label>
+          </div>
+        </div>
+        <div class="officer-block">
+          <h3>เจ้าหน้าที่คนที่ 2</h3>
+          <div class="grid3">
+            <label class="f"><span>ยศ</span><input id="officer2Rank"></label>
+            <label class="f"><span>ชื่อ-สกุล</span><input id="officer2Name"></label>
+            <label class="f"><span>ตำแหน่ง</span><input id="officer2Position"></label>
+          </div>
+        </div>
+        <div class="officer-block">
+          <h3>เจ้าหน้าที่คนที่ 3</h3>
+          <div class="grid3">
+            <label class="f"><span>ยศ</span><input id="officer3Rank"></label>
+            <label class="f"><span>ชื่อ-สกุล</span><input id="officer3Name"></label>
+            <label class="f"><span>ตำแหน่ง</span><input id="officer3Position"></label>
+          </div>
+        </div>
+      </details>
+
+      <details class="panel">
+        <summary>ตั้งค่าหน่วยงาน (บันทึกไว้ใช้ซ้ำ)</summary>
+        <div class="grid3">
+          <label class="f"><span>ชื่อสถานี</span><input id="stationName" value="สถานีตำรวจภูธรนายายอาม"></label>
+          <label class="f"><span>อำเภอที่ตั้งสถานี</span><input id="stationDistrict" value="นายายอาม"></label>
+          <label class="f"><span>เลขที่หนังสือ (ส่วนหน้า คงที่)</span><input id="docNumberPrefix" value="ตช 0013(จบ).3(17).32" placeholder="เช่น ตช 0013(จบ).3(17).32"></label>
+          <label class="f"><span>จังหวัด</span><input id="province" value="จันทบุรี"></label>
+          <label class="f"><span>รหัสไปรษณีย์</span><input id="postalCode" value="๒๒๑๖๐"></label>
+          <label class="f"><span>สังกัด (ในแบบ ปยส.115)</span><input id="officerAffiliation" value="ผบก.ภ.จว.จันทบุรี"></label>
+          <label class="f"><span>ผู้จัดทำประวัติ (ค่าเริ่มต้น)</span><input id="compilerName" value="ส.ต.ต.ณัฐศักดิ์ ปัสเนะ"></label>
+          <label class="f"><span>ยศ ผู้ลงนามหนังสือ</span><input id="signerRank" placeholder="พันตำรวจโท"></label>
+          <label class="f"><span>ชื่อ ผู้ลงนามหนังสือ</span><input id="signerName"></label>
+          <label class="f"><span>ตำแหน่ง ผู้ลงนามหนังสือ</span><input id="signerPosition" placeholder="รองผู้กำกับการสืบสวนปฏิบัติราชการแทนผู้กำกับการ"></label>
+        </div>
+        <p class="note">ค่าที่บันทึกในส่วนนี้จะถูกจำไว้และใช้เป็นค่าเริ่มต้นให้เคสถัดไปโดยอัตโนมัติ</p>
+      </details>
+
+      <p class="note">เอกสารทั้งหมดในระบบนี้ใช้ถ้อยคำจากแบบฟอร์มเดิมที่สถานีอัปโหลดมาโดยไม่มีการแก้ไข</p>
+    </div>
+
+    <div class="col-side sticky">
+      <div class="panel">
+        <h2>สรุปเอกสาร</h2>
+        <div id="checklistOut"></div>
+        <button class="btn btn-primary" id="genBtn" style="margin-top:10px">สร้างและดาวน์โหลดเอกสาร</button>
+        <p class="msg" id="genMsg"></p>
+      </div>
+      <div class="panel">
+        <h2>เคสที่บันทึกไว้</h2>
+        <div id="casesOut"></div>
+        <button class="btn btn-ghost" id="saveBtn">บันทึกเคสนี้</button>
+        <button class="btn btn-ghost" id="newBtn">เริ่มเคสใหม่</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const TEMPLATES = {
+  drug_test_115: "__B64_DRUG115__",
+  urine_referral: "__B64_URINE__",
+  court_referral: "__B64_COURT__",
+  phone_consent_m80: "__B64_M80__",
+  profile_and_photos: "__B64_PROFILE_PHOTOS__"
+};
+const DOC_INFO = {
+  drug_test_115: { file: 'docx', xmlPath: 'word/document.xml', label: 'ปยส.115', prefix: 'ปยส115' },
+  urine_referral: { file: 'docx', xmlPath: 'word/document.xml', label: 'ส่งตรวจปัสสาวะ', prefix: 'สงตรวจปสสาวะ' },
+  court_referral: { file: 'docx', xmlPath: 'word/document.xml', label: 'ใบปะหน้าส่งศาล', prefix: 'ใบปะหนาสงศาล' },
+  phone_consent_m80: { file: 'docx', xmlPath: 'word/document.xml', label: 'บันทึกยินยอมตรวจโทรศัพท์ ม.80', prefix: 'ม80' },
+  profile_and_photos: { file: 'docx', xmlPath: 'word/document.xml', label: 'ประวัติบุคคล 4 ด้าน + ภาพประกอบ (2 หน้า)', prefix: 'ประวติ4ดาน', hasPhotos: true }
+};
+const CASE_TYPE_DOCS = {
+  drug_use: ['drug_test_115', 'urine_referral', 'profile_and_photos'],
+  drug_sell: ['drug_test_115', 'urine_referral', 'profile_and_photos'],
+  warrant: ['court_referral', 'profile_and_photos'],
+  gamble: ['profile_and_photos'],
+  gamble_online: ['profile_and_photos']
+};
+const RECOMMEND_M80 = new Set(['drug_sell', 'gamble_online']);
+const STATION_FIELDS = ['stationName','stationDistrict','docNumberPrefix','province','postalCode','officerAffiliation','compilerName','signerRank','signerName','signerPosition'];
+const THAI_MONTHS = ["มกราคม","กุมภาพันธ์","มีนาคม","เมษายน","พฤษภาคม","มิถุนายน","กรกฎาคม","สิงหาคม","กันยายน","ตุลาคม","พฤศจิกายน","ธันวาคม"];
+const THAI_PROVINCES = ["กระบี่","กรุงเทพมหานคร","กาญจนบุรี","กาฬสินธุ์","กำแพงเพชร","ขอนแก่น","จันทบุรี","ฉะเชิงเทรา","ชลบุรี","ชัยนาท","ชัยภูมิ","ชุมพร","เชียงราย","เชียงใหม่","ตรัง","ตราด","ตาก","นครนายก","นครปฐม","นครพนม","นครราชสีมา","นครศรีธรรมราช","นครสวรรค์","นนทบุรี","นราธิวาส","น่าน","บึงกาฬ","บุรีรัมย์","ปทุมธานี","ประจวบคีรีขันธ์","ปราจีนบุรี","ปัตตานี","พระนครศรีอยุธยา","พะเยา","พังงา","พัทลุง","พิจิตร","พิษณุโลก","เพชรบุรี","เพชรบูรณ์","แพร่","ภูเก็ต","มหาสารคาม","มุกดาหาร","แม่ฮ่องสอน","ยโสธร","ยะลา","ร้อยเอ็ด","ระนอง","ระยอง","ราชบุรี","ลพบุรี","ลำปาง","ลำพูน","เลย","ศรีสะเกษ","สกลนคร","สงขลา","สตูล","สมุทรปราการ","สมุทรสงคราม","สมุทรสาคร","สระแก้ว","สระบุรี","สิงห์บุรี","สุโขทัย","สุพรรณบุรี","สุราษฎร์ธานี","สุรินทร์","หนองคาย","หนองบัวลำภู","อ่างทอง","อำนาจเจริญ","อุดรธานี","อุตรดิตถ์","อุทัยธานี","อุบลราชธานี"];
+const CHARGE_PRESETS = [
+  { label: 'เสพยาเสพติด', text: 'เสพและครอบครองยาเสพติดให้โทษในประเภท 1 (เมทแอมเฟตามีน) โดยผิดกฎหมาย' },
+  { label: 'จำหน่ายยาเสพติด', text: 'จำหน่ายโดยไม่ได้รับอนุญาตซึ่งยาเสพติดให้โทษในประเภท 1 (เมทแอมเฟตามีน) อันเป็นการกระทำเพื่อการค้าหรือก่อให้เกิดการแพร่กระจายในกลุ่มประชาชน โดยผิดกฎหมาย' },
+  { label: 'ผู้ถูกออกหมายจับ', text: 'ตามหมายจับของศาล' },
+  { label: 'เล่นการพนัน', text: 'เล่นการพนันโดยไม่ได้รับอนุญาต' },
+  { label: 'เล่นพนันออนไลน์', text: 'เล่นการพนันออนไลน์โดยไม่ได้รับอนุญาต' }
+];
+
+function v(id) { const el = document.getElementById(id); return el ? (el.value || '').trim() : ''; }
+const DATE_FIELDS = ['dobDate', 'warrantDate', 'arrestDate', 'issueDate', 'testDate', 'appointmentDate'];
+function initDateSelects() {
+  DATE_FIELDS.forEach(prefix => {
+    const sel = document.getElementById(prefix + '_month');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">เดือน</option>' + THAI_MONTHS.map((m, i) => `<option value="${i}">${m}</option>`).join('');
+  });
+}
+function thaiDateParts(prefix) {
+  const day = v(prefix + '_day');
+  const monthIdx = v(prefix + '_month');
+  const year = v(prefix + '_year');
+  return { day: day || '', month: monthIdx !== '' ? THAI_MONTHS[parseInt(monthIdx, 10)] : '', year: year || '' };
+}
+function thaiDate(prefix) {
+  const p = thaiDateParts(prefix);
+  return p.day ? `${p.day} ${p.month} พ.ศ. ${p.year}` : '';
+}
+function escapeXml(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+function escapeXmlRun(s) { return escapeXml(s).replace(/\r\n|\r|\n/g, '</w:t><w:br/><w:t xml:space="preserve">'); }
+function b64ToBytes(b64) { const bin = atob(b64); const bytes = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i); return bytes; }
+const CB_ON = '☑', CB_OFF = '☐';
+function cbv(cond) { return cond ? CB_ON : CB_OFF; }
+
+function computeChecklist() {
+  const checked = [...document.querySelectorAll('.case-type:checked')].map(c => c.value);
+  const set = new Set([...document.querySelectorAll('.doc-select:checked')].map(c => c.value));
+  return { set, checked };
+}
+function applyCaseTypeSuggestions(caseTypeValue) {
+  const docs = CASE_TYPE_DOCS[caseTypeValue] || [];
+  docs.forEach(d => {
+    const box = document.querySelector(`.doc-select[value="${d}"]`);
+    if (box) box.checked = true;
+  });
+}
+
+function renderChecklist() {
+  const { set, checked } = computeChecklist();
+  const hint = checked.some(t => RECOMMEND_M80.has(t));
+  document.getElementById('m80hint').textContent = hint ? 'แนะนำให้เลือก ม.80 สำหรับคดีประเภทนี้' : '';
+  const out = document.getElementById('checklistOut');
+  if (set.size === 0) {
+    out.innerHTML = '<p class="note" style="margin-top:0">ยังไม่ได้เลือกเอกสารเลย ติ๊กจากรายการด้านซ้ายได้เลย</p>';
+    return;
+  }
+  out.innerHTML = `<p class="note" style="margin-top:0">เลือกไว้ ${set.size} ฉบับ:</p>` +
+    [...set].map(k => `<div class="checklist-item">${DOC_INFO[k].label}</div>`).join('');
+}
+
+function buildTagMap() {
+  const title = v('title'), firstName = v('firstName'), lastName = v('lastName');
+  const fullName = `${firstName} ${lastName}`.trim();
+  const issueParts = thaiDateParts('issueDate');
+  const addrParts = [];
+  if (v('addrHouseNo')) addrParts.push(`บ้านเลขที่ ${v('addrHouseNo')}`);
+  if (v('addrMoo')) addrParts.push(`หมู่ที่ ${v('addrMoo')}`);
+  if (v('addrRoad')) addrParts.push(`ถนน/ซอย ${v('addrRoad')}`);
+  if (v('addrTambon')) addrParts.push(`ตำบล${v('addrTambon')}`);
+  if (v('addrAmphoe')) addrParts.push(`อำเภอ${v('addrAmphoe')}`);
+  if (v('addrProvince')) addrParts.push(`จังหวัด${v('addrProvince')}`);
+  const composedAddress = addrParts.join(' ');
+  const raw = {
+    doc_number: `${v('docNumberPrefix')}/${v('docRunningNo')}`, station_name: v('stationName'), station_district: v('stationDistrict'),
+    province: v('province'), postal_code: v('postalCode'),
+    doc_date: thaiDate('issueDate'), hospital_name: v('hospitalName'), drug_type: v('drugType'),
+    test_date: thaiDate('testDate'), test_count: String(getSuspectListEntries().length), suspect_full_name: fullName,
+    signer_rank: v('signerRank'), signer_name: v('signerName'), signer_position: v('signerPosition'),
+    record_day: issueParts.day, record_month: issueParts.month, record_year: issueParts.year,
+    officer1_rank: v('officer1Rank'), officer1_name: v('officer1Name'), officer1_position: v('officer1Position'),
+    officer_affiliation: v('officerAffiliation'),
+    cb_card_ppst: cbv(v('officer1CardType') === 'ppst'), cb_card_gov: cbv(v('officer1CardType') === 'gov'),
+    card_no_ppst: v('officer1CardType') === 'ppst' ? v('cardNoPpst') : '',
+    card_no_gov: v('officer1CardType') === 'gov' ? v('cardNoGov') : '',
+    cb_id_card: cbv(v('idDocType') === 'card'), cb_id_alien: cbv(v('idDocType') === 'alien'),
+    cb_id_passport: cbv(v('idDocType') === 'passport'), cb_id_other: cbv(v('idDocType') === 'other'),
+    id_other_detail: v('idOtherDetail'), id_issue_amphoe: v('idIssueAmphoe'), id_issue_province: v('idIssueProvince'),
+    suspect_nickname: v('nickname'), known_by: v('knownBy'),
+    addr_house_no: v('addrHouseNo'), addr_moo: v('addrMoo'), addr_road: v('addrRoad'),
+    addr_tambon: v('addrTambon'), addr_amphoe: v('addrAmphoe'), addr_province: v('addrProvince'),
+    suspect_title: title, suspect_age: v('age'), suspect_id_number: v('idNumber'), suspect_address: composedAddress,
+    suspect_phone: v('phone'),
+    cb_test_pos: cbv(v('testResult') === 'pos'), cb_test_neg: cbv(v('testResult') === 'neg'),
+    cb_search_none: cbv(v('searchFound') === 'none'), cb_search_found: cbv(v('searchFound') === 'found'),
+    search_drug_type: v('searchDrugType'), search_amount: v('seizedAmount'),
+    cb_pb1: cbv(document.getElementById('pb1').checked), cb_pb2: cbv(document.getElementById('pb2').checked),
+    cb_pb3: cbv(document.getElementById('pb3').checked), cb_pb4: cbv(document.getElementById('pb4').checked),
+    cb_consent_yes: cbv(v('treatmentConsent') === 'yes'), cb_consent_no: cbv(v('treatmentConsent') === 'no'),
+    suspect_occupation: v('occupation'), suspect_income: v('income'),
+    other_notes: v('otherNotes'), appointment_date: thaiDate('appointmentDate'),
+    appointment_time: v('appointmentTime'), appointment_place: v('appointmentPlace'), court_name: v('courtName'),
+    warrant_no: v('warrantNo'), case_black_no: v('caseBlackNo'), case_red_no: v('caseRedNo'),
+    warrant_date: thaiDate('warrantDate'), charge: v('charge'), arrest_date: thaiDate('arrestDate'),
+    arrest_time: v('arrestTime'), arrest_location: v('arrestLocation'), suspect_nationality: v('nationality'),
+    record_place: v('recordPlace') || v('stationName'), record_date: thaiDate('issueDate'),
+    phone_brand: v('phoneBrand'), phone_model: v('phoneModel'), phone_color: v('phoneColor'),
+    phone_imei1: v('phoneImei1'), phone_imei2: v('phoneImei2'), sim1_number: v('sim1Number'), sim1_network: v('sim1Network'),
+    sim2_number: v('sim2Number'), sim2_network: v('sim2Network'), officer2_rank: v('officer2Rank'),
+    officer2_name: v('officer2Name'), officer2_position: v('officer2Position'), officer3_rank: v('officer3Rank'),
+    officer3_name: v('officer3Name'), officer3_position: v('officer3Position'),
+    warrant_reference: v('warrantNo') ? `หมายจับ${v('courtName')} ที่ ${v('warrantNo')} ลงวันที่ ${thaiDate('warrantDate')}` : '-',
+    suspect_first_name: firstName, suspect_last_name: lastName, suspect_alias: v('alias'),
+    suspect_ethnicity: v('ethnicity'), suspect_religion: v('religion'), suspect_dob: thaiDate('dobDate'),
+    compiler_name: v('compilerName'), suspect_education: v('education'), suspect_parents: v('parents'),
+    suspect_spouse: v('spouse'), suspect_spouse_address: v('spouseAddress'), suspect_friends: v('friends'),
+    suspect_current_address: v('currentAddress') || composedAddress, suspect_hangouts: v('hangouts'),
+    crime_weapon: v('crimeWeapon'), crime_vehicle: v('crimeVehicle'), crime_accomplice: v('crimeAccomplice'),
+    crime_details: v('crimeDetails'), crime_notes: v('crimeNotes'), crime_history: v('crimeHistory'),
+    phys_height: v('height'), phys_weight: v('weight'), phys_skin: v('skin'), phys_head: v('head'), phys_hair: v('hair'),
+    phys_face: v('face'), phys_eyes: v('eyes'), phys_nose: v('nose'), phys_ears: v('ears'), phys_beard: v('beard'),
+    phys_marks: v('marks'), phys_accent: v('accent')
+  };
+  const tags = {};
+  Object.keys(raw).forEach(k => tags[k] = escapeXmlRun(raw[k]));
+  return tags;
+}
+
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+}
+
+function loadImageFile(file) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => { URL.revokeObjectURL(url); resolve(img); };
+    img.onerror = (e) => { URL.revokeObjectURL(url); reject(e); };
+    img.src = url;
+  });
+}
+async function fileToJpegBytes(file, maxDim = 1000, quality = 0.85) {
+  const img = await loadImageFile(file);
+  let width = img.naturalWidth, height = img.naturalHeight;
+  if (width > height && width > maxDim) { height = Math.round(height * (maxDim / width)); width = maxDim; }
+  else if (height >= width && height > maxDim) { width = Math.round(width * (maxDim / height)); height = maxDim; }
+  const canvas = document.createElement('canvas');
+  canvas.width = width; canvas.height = height;
+  canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+  const blob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', quality));
+  return new Uint8Array(await blob.arrayBuffer());
+}
+
+async function generateDoc(key, tags, suspectName) {
+  const info = DOC_INFO[key];
+  const bytes = b64ToBytes(TEMPLATES[key]);
+  const zip = await JSZip.loadAsync(bytes);
+  let xmlStr = await zip.file(info.xmlPath).async('string');
+  if (key === 'urine_referral') {
+    const listXml = buildSuspectListXml(getSuspectListEntries());
+    xmlStr = xmlStr.replace(/<w:p>(?:(?!<\/w:p>)[\s\S])*?\{suspect_list_block\}(?:(?!<\/w:p>)[\s\S])*?<\/w:p>/, listXml);
+  }
+  const filled = xmlStr.replace(/\{([a-zA-Z0-9_]+)\}/g, (m, tag) => (tag in tags) ? tags[tag] : '');
+  zip.file(info.xmlPath, filled);
+  if (info.hasPhotos) {
+    const slots = [
+      ['word/media/image1.jpg', document.getElementById('photoFront').files[0]],
+      ['word/media/image2.jpg', document.getElementById('photoBack').files[0]],
+      ['word/media/image3.jpg', document.getElementById('photoLeft').files[0]],
+      ['word/media/image4.jpg', document.getElementById('photoRight').files[0]]
+    ];
+    for (const [path, file] of slots) {
+      if (file) zip.file(path, await fileToJpegBytes(file));
+    }
+  }
+  const mime = info.file === 'docx'
+    ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+  const blob = await zip.generateAsync({ type: 'blob', mimeType: mime });
+  downloadBlob(blob, `${info.prefix}_${suspectName || 'case'}.${info.file}`);
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+async function onGenerateAll() {
+  const { set } = computeChecklist();
+  const msg = document.getElementById('genMsg');
+  if (set.size === 0) { msg.textContent = 'เลือกประเภทคดีอย่างน้อย 1 ข้อก่อน'; return; }
+  if (set.has('profile_and_photos')) {
+    const missing = ['photoFront', 'photoBack', 'photoLeft', 'photoRight'].some(id => !document.getElementById(id).files[0]);
+    if (missing) { msg.textContent = 'อัปโหลดภาพให้ครบ 4 ด้านก่อน หรือยกเลิกติ๊ก "ประวัติบุคคล 4 ด้าน + ภาพประกอบ"'; return; }
+  }
+  msg.textContent = 'กำลังสร้างเอกสาร...';
+  const tags = buildTagMap();
+  const suspectName = (v('firstName') + v('lastName')) || 'case';
+  let done = 0, failed = [];
+  for (const key of set) {
+    try {
+      await generateDoc(key, tags, suspectName);
+      done++;
+    } catch (e) {
+      failed.push(DOC_INFO[key].label);
+    }
+    await sleep(400);
+  }
+  msg.textContent = failed.length ? `สร้างแล้ว ${done} ฉบับ, ผิดพลาด: ${failed.join(', ')}` : `สร้างเอกสารแล้ว ${done} ฉบับ`;
+  await saveCurrentCase();
+}
+
+const DATE_PART_IDS = DATE_FIELDS.flatMap(p => [p + '_day', p + '_month', p + '_year']);
+const CHECKBOX_IDS = ['pb1', 'pb2', 'pb3', 'pb4'];
+const ALL_FIELD_IDS = ['title','firstName','lastName','nickname','alias','age','nationality','ethnicity','religion',
+  'idNumber','phone','occupation','income','education','currentAddress','parents','spouse','spouseAddress',
+  'friends','hangouts','knownBy','idIssueAmphoe','idIssueProvince',
+  'addrHouseNo','addrMoo','addrRoad','addrTambon','addrAmphoe','addrProvince',
+  'height','weight','skin','head','hair','face','eyes','nose','ears','beard','marks','accent',
+  'charge','caseBlackNo','caseRedNo','warrantNo','courtName','arrestTime','arrestLocation',
+  'docRunningNo','crimeWeapon','crimeVehicle','crimeAccomplice','crimeDetails','crimeNotes','crimeHistory',
+  'idDocType','idOtherDetail','drugType','testResult','searchFound','searchDrugType','seizedAmount',
+  'treatmentConsent','officer1CardType','cardNoPpst','cardNoGov','hospitalName',
+  'otherNotes','appointmentTime','appointmentPlace',
+  'phoneBrand','phoneModel','phoneColor','phoneImei1','phoneImei2','recordPlace','sim1Number','sim1Network',
+  'sim2Number','sim2Network','officer1Rank','officer1Name','officer1Position','officer2Rank','officer2Name',
+  'officer2Position','officer3Rank','officer3Name','officer3Position', ...DATE_PART_IDS];
+
+function collectFormSnapshot() {
+  const snap = {};
+  ALL_FIELD_IDS.forEach(id => snap[id] = v(id));
+  CHECKBOX_IDS.forEach(id => snap[id] = document.getElementById(id).checked);
+  snap.caseTypes = [...document.querySelectorAll('.case-type:checked')].map(c => c.value);
+  snap.selectedDocs = [...document.querySelectorAll('.doc-select:checked')].map(c => c.value);
+  snap.suspectListEntries = getSuspectListEntries().length && document.querySelectorAll('.suspect-row-detail').length
+    ? [...document.querySelectorAll('.suspect-row-detail')].map(row => ({
+        name: row.querySelector('.sl-name').value, id: row.querySelector('.sl-id').value,
+        age: row.querySelector('.sl-age').value, address: row.querySelector('.sl-address').value
+      }))
+    : [];
+  return snap;
+}
+function applyFormSnapshot(snap) {
+  ALL_FIELD_IDS.forEach(id => { const el = document.getElementById(id); if (el && snap[id] !== undefined) el.value = snap[id]; });
+  CHECKBOX_IDS.forEach(id => { document.getElementById(id).checked = !!snap[id]; });
+  document.querySelectorAll('.case-type').forEach(c => c.checked = (snap.caseTypes || []).includes(c.value));
+  document.querySelectorAll('.doc-select').forEach(c => c.checked = (snap.selectedDocs || []).includes(c.value));
+  clearSuspectRows();
+  (snap.suspectListEntries && snap.suspectListEntries.length ? snap.suspectListEntries : [{}]).forEach(e => addSuspectRow(e));
+  document.getElementById('photoInputs').style.display = document.getElementById('photoAttach').checked ? '' : 'none';
+  updateConditionalVisibility();
+  renderChecklist();
+}
+function clearForm() {
+  ALL_FIELD_IDS.forEach(id => { const el = document.getElementById(id); if (el && !STATION_FIELDS.includes(id)) el.value = (id === 'nationality' ? 'ไทย' : id === 'ethnicity' ? 'ไทย' : id === 'religion' ? 'พุทธ' : id === 'addrProvince' ? 'จันทบุรี' : ''); });
+  CHECKBOX_IDS.forEach(id => { document.getElementById(id).checked = false; });
+  document.querySelectorAll('.case-type').forEach(c => c.checked = false);
+  document.querySelectorAll('.doc-select').forEach(c => c.checked = false);
+  clearSuspectRows();
+  addSuspectRow();
+  document.getElementById('photoInputs').style.display = 'none';
+  ['photoFront', 'photoBack', 'photoLeft', 'photoRight'].forEach(id => { document.getElementById(id).value = ''; });
+  document.getElementById('officer1Preset').value = '';
+  setDefaultIssueDate();
+  updateConditionalVisibility();
+  renderChecklist();
+}
+
+let casesIndex = [];
+async function loadCasesIndex() {
+  try {
+    const res = await window.storage.get('suspect-cases-index', false);
+    casesIndex = res && res.value ? JSON.parse(res.value) : [];
+  } catch (e) { casesIndex = []; }
+  renderCasesList();
+}
+async function saveCasesIndex() {
+  try { await window.storage.set('suspect-cases-index', JSON.stringify(casesIndex), false); } catch (e) {}
+}
+function renderCasesList() {
+  const out = document.getElementById('casesOut');
+  if (casesIndex.length === 0) { out.innerHTML = '<p class="note" style="margin-top:0">ยังไม่มีเคสที่บันทึกไว้</p>'; return; }
+  out.innerHTML = casesIndex.map(c => `
+    <div class="case-row">
+      <button class="load" data-id="${c.id}">${c.name || 'ไม่ระบุชื่อ'}<br><span class="mono" style="color:#8a8474">${c.createdAt}</span></button>
+      <button class="btn-danger-outline" data-del="${c.id}">ลบ</button>
+    </div>`).join('');
+  out.querySelectorAll('button.load').forEach(b => b.addEventListener('click', () => loadCase(b.dataset.id)));
+  out.querySelectorAll('button[data-del]').forEach(b => b.addEventListener('click', () => deleteCase(b.dataset.del)));
+}
+async function saveCurrentCase() {
+  const snap = collectFormSnapshot();
+  const name = `${v('firstName')} ${v('lastName')}`.trim() || 'ไม่ระบุชื่อ';
+  const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  const entry = { id, name, createdAt: new Date().toLocaleDateString('th-TH') };
+  casesIndex = [entry, ...casesIndex];
+  await saveCasesIndex();
+  try { await window.storage.set(`suspect-case:${id}`, JSON.stringify(snap), false); } catch (e) {}
+  renderCasesList();
+}
+async function loadCase(id) {
+  try {
+    const res = await window.storage.get(`suspect-case:${id}`, false);
+    if (res && res.value) applyFormSnapshot(JSON.parse(res.value));
+  } catch (e) {}
+}
+async function deleteCase(id) {
+  casesIndex = casesIndex.filter(c => c.id !== id);
+  await saveCasesIndex();
+  try { await window.storage.delete(`suspect-case:${id}`, false); } catch (e) {}
+  renderCasesList();
+}
+
+async function loadStationSettings() {
+  try {
+    const res = await window.storage.get('station-settings', false);
+    if (res && res.value) {
+      const s = JSON.parse(res.value);
+      STATION_FIELDS.forEach(id => { const el = document.getElementById(id); if (el && s[id]) el.value = s[id]; });
+    }
+  } catch (e) {}
+}
+let stationSaveTimer = null;
+function scheduleStationSave() {
+  clearTimeout(stationSaveTimer);
+  stationSaveTimer = setTimeout(async () => {
+    const s = {};
+    STATION_FIELDS.forEach(id => s[id] = v(id));
+    try { await window.storage.set('station-settings', JSON.stringify(s), false); } catch (e) {}
+  }, 500);
+}
+
+function initProvinceSelects() {
+  ['addrProvince', 'idIssueProvince'].forEach(id => {
+    const sel = document.getElementById(id);
+    sel.innerHTML = '<option value="">— เลือกจังหวัด —</option>' + THAI_PROVINCES.map(p => `<option value="${p}">${p}</option>`).join('');
+  });
+  document.getElementById('addrProvince').value = 'จันทบุรี';
+}
+function initChargePresets() {
+  const sel = document.getElementById('chargePreset');
+  CHARGE_PRESETS.forEach((c, i) => {
+    const opt = document.createElement('option');
+    opt.value = String(i); opt.textContent = c.label;
+    sel.appendChild(opt);
+  });
+  sel.addEventListener('change', () => {
+    if (sel.value === '') return;
+    document.getElementById('charge').value = CHARGE_PRESETS[parseInt(sel.value, 10)].text;
+    sel.value = '';
+  });
+}
+
+function composeAddress() {
+  const parts = [];
+  if (v('addrHouseNo')) parts.push(`บ้านเลขที่ ${v('addrHouseNo')}`);
+  if (v('addrMoo')) parts.push(`หมู่ที่ ${v('addrMoo')}`);
+  if (v('addrRoad')) parts.push(`ถนน/ซอย ${v('addrRoad')}`);
+  if (v('addrTambon')) parts.push(`ตำบล${v('addrTambon')}`);
+  if (v('addrAmphoe')) parts.push(`อำเภอ${v('addrAmphoe')}`);
+  if (v('addrProvince')) parts.push(`จังหวัด${v('addrProvince')}`);
+  return parts.join(' ');
+}
+function addSuspectRow(data) {
+  data = data || {};
+  const container = document.getElementById('suspectListRows');
+  const row = document.createElement('div');
+  row.className = 'suspect-row-detail';
+  row.innerHTML = `
+    <div class="grid2">
+      <input class="sl-name" placeholder="ชื่อ-สกุล" value="">
+      <input class="sl-id" placeholder="เลขบัตรประชาชน" value="">
+      <input class="sl-age" placeholder="อายุ" value="">
+      <input class="sl-address" placeholder="ที่อยู่" value="">
+    </div>
+    <div style="display:flex;gap:6px;margin:4px 0 10px">
+      <button type="button" class="btn btn-ghost btn-sm sl-use-main">ใช้ข้อมูลผู้ต้องหาหลัก</button>
+      <button type="button" class="btn-danger-outline sl-remove">ลบรายนี้</button>
+    </div>`;
+  row.querySelector('.sl-name').value = data.name || '';
+  row.querySelector('.sl-id').value = data.id || '';
+  row.querySelector('.sl-age').value = data.age || '';
+  row.querySelector('.sl-address').value = data.address || '';
+  container.appendChild(row);
+  row.querySelector('.sl-remove').addEventListener('click', () => row.remove());
+  row.querySelector('.sl-use-main').addEventListener('click', () => {
+    row.querySelector('.sl-name').value = `${v('firstName')} ${v('lastName')}`.trim();
+    row.querySelector('.sl-id').value = v('idNumber');
+    row.querySelector('.sl-age').value = v('age');
+    row.querySelector('.sl-address').value = composeAddress();
+  });
+}
+function getSuspectListEntries() {
+  const rows = [...document.querySelectorAll('.suspect-row-detail')];
+  const entries = rows.map(row => ({
+    name: row.querySelector('.sl-name').value.trim(),
+    id: row.querySelector('.sl-id').value.trim(),
+    age: row.querySelector('.sl-age').value.trim(),
+    address: row.querySelector('.sl-address').value.trim()
+  })).filter(e => e.name || e.id || e.age || e.address);
+  if (entries.length === 0) {
+    const fallbackName = `${v('firstName')} ${v('lastName')}`.trim();
+    if (fallbackName) {
+      return [{ name: fallbackName, id: v('idNumber'), age: v('age'), address: composeAddress() }];
+    }
+    return [{ name: '', id: '', age: '', address: '' }];
+  }
+  return entries;
+}
+function clearSuspectRows() {
+  document.getElementById('suspectListRows').innerHTML = '';
+}
+const THAI_DIGITS = ['๐','๑','๒','๓','๔','๕','๖','๗','๘','๙'];
+function toThaiNumeral(n) { return String(n).split('').map(d => THAI_DIGITS[parseInt(d, 10)] ?? d).join(''); }
+function buildSuspectListXml(entries) {
+  const pPr = '<w:pPr><w:spacing w:after="40" w:lineRule="auto" w:line="240"/></w:pPr>';
+  const rPr = '<w:rPr><w:rFonts w:ascii="TH SarabunIT๙" w:hAnsi="TH SarabunIT๙" w:eastAsia="TH SarabunIT๙" w:cs="TH SarabunIT๙"/><w:b w:val="0"/><w:sz w:val="32"/></w:rPr>';
+  const list = entries.length ? entries : [{ name: '', id: '', age: '', address: '' }];
+  return list.map((e, i) => {
+    const bits = [e.name];
+    if (e.id) bits.push(`เลขบัตรประชาชน ${e.id}`);
+    if (e.age) bits.push(`อายุ ${e.age} ปี`);
+    if (e.address) bits.push(`ที่อยู่ ${e.address}`);
+    const text = escapeXml(`${toThaiNumeral(i + 1)}. ${bits.join(' ')}`);
+    return `<w:p>${pPr}<w:r>${rPr}<w:t xml:space="preserve">${text}</w:t></w:r></w:p>`;
+  }).join('');
+}
+
+const OFFICER_PRESETS = [
+  { label: 'ร.ต.อ.รัฐภูมิ พวงมาลา (รอง สว.สส.)', rank: 'ร.ต.อ.', name: 'รัฐภูมิ พวงมาลา', position: 'รอง สว.สส.สภ.นายายอาม', signerPosition: 'รองสารวัตรสืบสวน สถานีตำรวจภูธรนายายอาม', cardType: 'ppst', cardNo: '6705928' },
+  { label: 'ร.ต.อ.สมบัติ หอมสวัสดิ์ (รอง สวป.)', rank: 'ร.ต.อ.', name: 'สมบัติ หอมสวัสดิ์', position: 'รอง สวป.สภ.นายายอาม', signerPosition: 'รองสารวัตรป้องกันปราบปราม สถานีตำรวจภูธรนายายอาม', cardType: 'gov', cardNo: '0017(จบ)-67-0005' }
+];
+function initOfficerPresets() {
+  const sel = document.getElementById('officer1Preset');
+  OFFICER_PRESETS.forEach((o, i) => {
+    const opt = document.createElement('option');
+    opt.value = String(i); opt.textContent = o.label;
+    sel.appendChild(opt);
+  });
+  sel.addEventListener('change', () => {
+    if (sel.value === '') return;
+    const o = OFFICER_PRESETS[parseInt(sel.value, 10)];
+    document.getElementById('officer1Rank').value = o.rank;
+    document.getElementById('officer1Name').value = o.name;
+    document.getElementById('officer1Position').value = o.position;
+    document.getElementById('officer1CardType').value = o.cardType;
+    if (o.cardType === 'ppst') document.getElementById('cardNoPpst').value = o.cardNo;
+    else document.getElementById('cardNoGov').value = o.cardNo;
+    document.getElementById('signerRank').value = o.rank;
+    document.getElementById('signerName').value = o.name;
+    document.getElementById('signerPosition').value = o.signerPosition;
+    scheduleStationSave();
+  });
+}
+
+function updateConditionalVisibility() {
+  document.getElementById('idOtherWrap').style.display = v('idDocType') === 'other' ? '' : 'none';
+  document.getElementById('drugTypeWrap').style.display = v('testResult') === 'pos' ? '' : 'none';
+  const found = v('searchFound') === 'found';
+  document.getElementById('searchDrugWrap').style.display = found ? '' : 'none';
+  document.getElementById('searchAmountWrap').style.display = found ? '' : 'none';
+}
+function initConditionalFields() {
+  document.getElementById('idDocType').addEventListener('change', updateConditionalVisibility);
+  document.getElementById('testResult').addEventListener('change', updateConditionalVisibility);
+  document.getElementById('searchFound').addEventListener('change', updateConditionalVisibility);
+  updateConditionalVisibility();
+  const pb4 = document.getElementById('pb4');
+  const pb123 = ['pb1', 'pb2', 'pb3'].map(id => document.getElementById(id));
+  pb4.addEventListener('change', () => { if (pb4.checked) pb123.forEach(c => c.checked = false); });
+  pb123.forEach(c => c.addEventListener('change', () => { if (c.checked) pb4.checked = false; }));
+}
+
+function parseQuickFillText(text) {
+  const filled = {};
+  const nameMatch = text.match(/(นางสาว|นาง|นาย)\s*([ก-๙A-Za-z]+)\s+([ก-๙A-Za-z]+)/);
+  if (nameMatch) { filled.title = nameMatch[1]; filled.firstName = nameMatch[2]; filled.lastName = nameMatch[3]; }
+  const idMatch = text.match(/เลขบัตร[ก-๙]*ประชาชน\s*[:\s]*([0-9][0-9\s-]{10,17}[0-9])/) || text.match(/\b(\d{13})\b/);
+  if (idMatch) filled.idNumber = idMatch[1].trim();
+  const ageMatch = text.match(/อายุ\s*(\d+)/);
+  if (ageMatch) filled.age = ageMatch[1];
+  const houseMatch = text.match(/บ้านเลขที่\s*([0-9\/]+)/);
+  if (houseMatch) filled.addrHouseNo = houseMatch[1];
+  const mooMatch = text.match(/(?:หมู่ที่|ม\.)\s*(\d+)/);
+  if (mooMatch) filled.addrMoo = mooMatch[1];
+  const roadMatch = text.match(/(?:ถนน|ซอย)\s*([ก-๙0-9]+)/);
+  if (roadMatch) filled.addrRoad = roadMatch[1];
+  const tambonMatch = text.match(/(?:ตำบล|ต\.)\s*([ก-๙]+)/);
+  if (tambonMatch) filled.addrTambon = tambonMatch[1];
+  const amphoeMatch = text.match(/(?:อำเภอ|อ\.)\s*([ก-๙]+)/);
+  if (amphoeMatch) filled.addrAmphoe = amphoeMatch[1];
+  const provinceMatch = text.match(/(?:จังหวัด|จ\.)\s*([ก-๙]+)/);
+  if (provinceMatch) filled.addrProvince = provinceMatch[1];
+  const phoneMatch = text.match(/(?:เบอร์โทร(?:ศัพท์)?|โทร(?:ศัพท์)?)\s*[:\s]*([0-9][0-9-]{7,11}[0-9])/);
+  if (phoneMatch) filled.phone = phoneMatch[1];
+  const occMatch = text.match(/อาชีพ\s*([ก-๙]+)/);
+  if (occMatch) filled.occupation = occMatch[1];
+  const aliasMatch = text.match(/(?:นามแฝง|ชื่อเล่น)\s*([ก-๙A-Za-z]+)/);
+  if (aliasMatch) filled.alias = aliasMatch[1];
+  return filled;
+}
+function applyQuickFill(filled) {
+  Object.keys(filled).forEach(key => { const el = document.getElementById(key); if (el) el.value = filled[key]; });
+}
+document.getElementById('quickFillBtn').addEventListener('click', () => {
+  const text = document.getElementById('quickFillText').value;
+  const filled = parseQuickFillText(text);
+  applyQuickFill(filled);
+  const count = Object.keys(filled).length;
+  const msg = document.getElementById('quickFillMsg');
+  msg.textContent = count > 0
+    ? `กรอกให้แล้ว ${count} ช่อง (${Object.keys(filled).join(', ')}) กรุณาเลื่อนขึ้นไปตรวจสอบความถูกต้องอีกครั้งก่อนใช้งาน`
+    : 'ไม่พบข้อมูลที่จดจำได้จากข้อความนี้ ลองใส่คำนำหน้าแบบ "เลขบัตรประชาชน", "อายุ", "บ้านเลขที่" ให้ชัดเจน หรือกรอกเองในฟอร์มด้านล่าง';
+});
+
+document.querySelectorAll('.case-type').forEach(c => c.addEventListener('change', () => {
+  if (c.checked) applyCaseTypeSuggestions(c.value);
+  renderChecklist();
+}));
+document.querySelectorAll('.doc-select').forEach(c => c.addEventListener('change', renderChecklist));
+document.getElementById('photoAttach').addEventListener('change', () => {
+  document.getElementById('photoInputs').style.display = document.getElementById('photoAttach').checked ? '' : 'none';
+});
+document.getElementById('genBtn').addEventListener('click', onGenerateAll);
+document.getElementById('saveBtn').addEventListener('click', saveCurrentCase);
+document.getElementById('newBtn').addEventListener('click', clearForm);
+STATION_FIELDS.forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener('input', scheduleStationSave); });
+initOfficerPresets();
+initConditionalFields();
+initProvinceSelects();
+initChargePresets();
+document.getElementById('addSuspectRow').addEventListener('click', () => addSuspectRow());
+addSuspectRow();
+
+function setDefaultIssueDate() {
+  const now = new Date();
+  document.getElementById('issueDate_day').value = now.getDate();
+  document.getElementById('issueDate_month').value = String(now.getMonth());
+  document.getElementById('issueDate_year').value = now.getFullYear() + 543;
+}
+
+initDateSelects();
+setDefaultIssueDate();
+renderChecklist();
+loadStationSettings();
+loadCasesIndex();
+</script>
+</body>
+</html>
