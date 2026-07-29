@@ -270,6 +270,11 @@
           <button type="button" class="btn btn-ghost btn-sm" id="resetBlurBtn">รีเซ็ตรูป</button>
           <button type="button" class="btn btn-primary btn-sm" id="downloadBlurBtn">ดาวน์โหลดรูปที่เบลอแล้ว</button>
         </div>
+
+        <p class="field-group-label" style="margin-top:16px">เว็บราชการ (DOPA)</p>
+        <button type="button" class="btn btn-ghost btn-sm" id="copyDopaBtn">คัดลอกข้อมูลสำหรับ DOPA</button>
+        <p class="note">คัดลอกแล้วไปกดปุ่ม bookmarklet ตอนอยู่หน้าเว็บ arrest.dopa.go.th (ดูวิธีตั้งค่าใน dopa_bookmarklet/README.md) — กรอกให้แค่ขั้นตอนที่ 1 "แจ้งการควบคุมตัว" เท่านั้น ยังไม่รองรับหน้าเพิ่มผู้ถูกควบคุมตัว</p>
+        <p class="msg" id="dopaMsg"></p>
       </details>
 
       <details class="panel">
@@ -907,6 +912,22 @@ function shortThaiDate(prefix) {
   return `${p.day} ${p.month} ${yy}`;
 }
 
+function isoDateTimeFromThai(dayId, monthId, yearId, timeStr) {
+  const day = document.getElementById(dayId).value;
+  const month = document.getElementById(monthId).value;
+  const yearBE = document.getElementById(yearId).value;
+  if (!day || month === '' || !yearBE) return '';
+  const yearCE = parseInt(yearBE, 10) - 543;
+  const mm = String(parseInt(month, 10) + 1).padStart(2, '0');
+  const dd = String(parseInt(day, 10)).padStart(2, '0');
+  let hh = '00', min = '00';
+  if (timeStr) {
+    const m = timeStr.match(/(\d{1,2})[.:](\d{2})/);
+    if (m) { hh = m[1].padStart(2, '0'); min = m[2]; }
+  }
+  return `${yearCE}-${mm}-${dd}T${hh}:${min}`;
+}
+
 function addEvidenceRow(data) {
   data = data || {};
   const container = document.getElementById('evidenceRows');
@@ -1231,6 +1252,25 @@ document.getElementById('downloadBlurBtn').addEventListener('click', () => {
   link.download = `เบลอหน้า_${(v('firstName') + v('lastName')) || 'case'}.jpg`;
   link.href = canvas.toDataURL('image/jpeg', 0.9);
   link.click();
+});
+
+document.getElementById('copyDopaBtn').addEventListener('click', async () => {
+  const msg = document.getElementById('dopaMsg');
+  const payload = {
+    source: 'suspect-docgen-dopa-step1',
+    place_name: v('arrestLocation') || v('stationName'),
+    place_date: isoDateTimeFromThai('arrestDate_day', 'arrestDate_month', 'arrestDate_year', v('arrestTime')),
+    province_code: '22',
+    province_name: 'จันทบุรี',
+    amphoe_name: 'นายายอาม',
+    tambon_name: v('arrestTambon')
+  };
+  try {
+    await navigator.clipboard.writeText(JSON.stringify(payload));
+    msg.textContent = 'คัดลอกแล้ว ไปกดปุ่ม bookmarklet ที่หน้าเว็บ DOPA ได้เลย';
+  } catch (e) {
+    msg.textContent = 'คัดลอกไม่สำเร็จ: ' + e.message;
+  }
 });
 
 function setDefaultIssueDate() {
