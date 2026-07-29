@@ -375,6 +375,16 @@
         <p class="msg" id="genMsg"></p>
       </div>
       <div class="panel">
+        <h2>บันทึกประวัติการจับกุม (Google Sheet)</h2>
+        <label class="f"><span>ตำบลที่จับ</span>
+          <select id="arrestTambon"><option value="">— เลือกตำบล —</option></select>
+        </label>
+        <label class="f" style="margin-top:8px"><span>รหัสผ่านทีม</span><input id="arrestPin" type="password"></label>
+        <button class="btn btn-ghost" id="arrestSaveBtn" style="margin-top:8px">บันทึกลง Google Sheet</button>
+        <p class="msg" id="arrestSaveMsg"></p>
+        <p class="note">ใช้ชื่อ-นามสกุล-เลขบัตรประชาชนจากช่อง "ข้อมูลผู้ต้องหา" ด้านบน ต้องตั้งค่า Google Apps Script ก่อนใช้งาน (ดู google_apps_script/README.md)</p>
+      </div>
+      <div class="panel">
         <h2>เคสที่บันทึกไว้</h2>
         <div id="casesOut"></div>
         <button class="btn btn-ghost" id="saveBtn">บันทึกเคสนี้</button>
@@ -742,6 +752,38 @@ function scheduleStationSave() {
   }, 500);
 }
 
+const ARREST_TAMBONS = ["นายายอาม", "วังโตนด", "กระแจะ", "สนามไชย", "ช้างข้าม", "วังใหม่"];
+const GAS_WEBAPP_URL = '';
+function initArrestTambonSelect() {
+  const sel = document.getElementById('arrestTambon');
+  sel.innerHTML = '<option value="">— เลือกตำบล —</option>' + ARREST_TAMBONS.map(t => `<option value="${t}">${t}</option>`).join('');
+}
+async function saveArrestRecord() {
+  const msg = document.getElementById('arrestSaveMsg');
+  if (!GAS_WEBAPP_URL) { msg.textContent = 'ยังไม่ได้ตั้งค่า GAS_WEBAPP_URL (ดู google_apps_script/README.md)'; return; }
+  const tambon = document.getElementById('arrestTambon').value;
+  const pin = document.getElementById('arrestPin').value;
+  if (!v('firstName') && !v('lastName')) { msg.textContent = 'กรอกชื่อ-นามสกุลผู้ต้องหาก่อน'; return; }
+  if (!tambon) { msg.textContent = 'เลือกตำบลก่อน'; return; }
+  if (!pin) { msg.textContent = 'กรอกรหัสผ่านทีมก่อน'; return; }
+  msg.textContent = 'กำลังบันทึก...';
+  try {
+    const resp = await fetch(GAS_WEBAPP_URL, {
+      method: 'POST',
+      body: JSON.stringify({ pin, tambon, firstName: v('firstName'), lastName: v('lastName'), idNumber: v('idNumber') })
+    });
+    const json = await resp.json();
+    if (json.ok) {
+      msg.textContent = 'บันทึกลง Google Sheet แล้ว';
+      localStorage.setItem('arrestPin', pin);
+    } else {
+      msg.textContent = 'บันทึกไม่สำเร็จ: ' + (json.error || '');
+    }
+  } catch (e) {
+    msg.textContent = 'เชื่อมต่อไม่ได้: ' + e.message;
+  }
+}
+
 function initProvinceSelects() {
   ['addrProvince', 'idIssueProvince'].forEach(id => {
     const sel = document.getElementById(id);
@@ -940,7 +982,10 @@ STATION_FIELDS.forEach(id => { const el = document.getElementById(id); if (el) e
 initOfficerPresets();
 initConditionalFields();
 initProvinceSelects();
+initArrestTambonSelect();
 initChargePresets();
+document.getElementById('arrestSaveBtn').addEventListener('click', saveArrestRecord);
+{ const savedPin = localStorage.getItem('arrestPin'); if (savedPin) document.getElementById('arrestPin').value = savedPin; }
 document.getElementById('addSuspectRow').addEventListener('click', () => addSuspectRow());
 addSuspectRow();
 
