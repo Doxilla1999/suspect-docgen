@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <title>ระบบสร้างเอกสารผู้ต้องหา</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&display=swap');
   * { box-sizing: border-box; }
@@ -72,16 +74,35 @@
   }
   .app { position: relative; z-index: 1; }
   .credit { text-align: center; font-size: 11px; color: #9C8F72; padding: 18px 0 6px; letter-spacing: .3px; }
+  #loginScreen { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #14181C; }
+  #loginScreen .box { background: #FFFFFF; border-radius: 12px; padding: 32px 28px; width: 100%; max-width: 340px; box-shadow: 0 10px 40px rgba(0,0,0,.4); }
+  #loginScreen h1 { font-size: 16px; margin: 0 0 4px; color: #14181C; }
+  #loginScreen p.sub { font-size: 12px; color: #6B6555; margin: 0 0 20px; }
+  #loginScreen label.f { margin-bottom: 12px; }
+  #loginScreen .msg { min-height: 16px; }
+  .header-logout { margin-left: auto; background: none; border: 1px solid #B68D40; color: #EFE9D8; border-radius: 6px; padding: 6px 12px; font-size: 12px; cursor: pointer; }
+  .header-logout:hover { background: rgba(182,141,64,.15); }
 </style>
 </head>
 <body>
-<div class="app">
+<div id="loginScreen">
+  <div class="box">
+    <h1>ระบบสร้างเอกสารผู้ต้องหา</h1>
+    <p class="sub">สภ.นายายอาม — เข้าสู่ระบบก่อนใช้งาน</p>
+    <label class="f"><span>ชื่อผู้ใช้</span><input id="loginUsername" autocomplete="username"></label>
+    <label class="f"><span>รหัสผ่าน</span><input id="loginPassword" type="password" autocomplete="current-password"></label>
+    <button class="btn btn-primary" id="loginBtn" style="margin-top:4px">เข้าสู่ระบบ</button>
+    <p class="msg" id="loginMsg"></p>
+  </div>
+</div>
+<div class="app" id="appRoot" style="display:none">
   <header class="top">
     <div class="mark">NYA</div>
     <div>
       <h1>ระบบสร้างเอกสารผู้ต้องหา · สภ.นายายอาม</h1>
       <p>กรอกครั้งเดียว ออกเอกสารได้หลายฉบับ</p>
     </div>
+    <button type="button" class="header-logout" id="logoutBtn">ออกจากระบบ</button>
   </header>
 
   <div class="layout">
@@ -435,6 +456,58 @@
 </div>
 
 <script>
+// ---- ระบบ login (Firebase Auth) ----
+// ใส่ค่า config จาก Firebase Console: Project settings > Your apps > Web app
+// ตอนสร้าง user ในหน้า Authentication ให้ใส่ Email เป็น "ชื่อผู้ใช้@nayaiam.local"
+const firebaseConfig = {
+  apiKey: '',
+  authDomain: '',
+  projectId: ''
+};
+const LOGIN_EMAIL_DOMAIN = '@nayaiam.local';
+
+let firebaseReady = false;
+if (firebaseConfig.apiKey) {
+  firebase.initializeApp(firebaseConfig);
+  firebaseReady = true;
+}
+
+function showApp() {
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('appRoot').style.display = '';
+}
+function showLogin() {
+  document.getElementById('loginScreen').style.display = '';
+  document.getElementById('appRoot').style.display = 'none';
+}
+
+async function doLogin() {
+  const msg = document.getElementById('loginMsg');
+  const username = document.getElementById('loginUsername').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  if (!username || !password) { msg.textContent = 'กรอกชื่อผู้ใช้และรหัสผ่านให้ครบ'; return; }
+  msg.textContent = 'กำลังเข้าสู่ระบบ...';
+  try {
+    await firebase.auth().signInWithEmailAndPassword(username + LOGIN_EMAIL_DOMAIN, password);
+  } catch (e) {
+    const known = {
+      'auth/invalid-credential': 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง',
+      'auth/user-not-found': 'ไม่พบชื่อผู้ใช้นี้ในระบบ',
+      'auth/wrong-password': 'รหัสผ่านไม่ถูกต้อง',
+      'auth/too-many-requests': 'ลองผิดหลายครั้งเกินไป กรุณารอสักครู่แล้วลองใหม่'
+    };
+    msg.textContent = known[e.code] || ('เข้าสู่ระบบไม่สำเร็จ: ' + e.message);
+  }
+}
+
+if (firebaseReady) {
+  firebase.auth().onAuthStateChanged(user => { user ? showApp() : showLogin(); });
+} else {
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('loginMsg').textContent = 'ยังไม่ได้ตั้งค่า Firebase (firebaseConfig ว่างอยู่) — ติดต่อผู้ดูแลระบบ';
+  });
+}
+
 const TEMPLATES = {
   drug_test_115: "__B64_DRUG115__",
   urine_referral: "__B64_URINE__",
@@ -1207,6 +1280,10 @@ document.getElementById('genBtn').addEventListener('click', onGenerateAll);
 document.getElementById('saveBtn').addEventListener('click', saveCurrentCase);
 document.getElementById('newBtn').addEventListener('click', clearForm);
 STATION_FIELDS.forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener('input', scheduleStationSave); });
+document.getElementById('loginBtn').addEventListener('click', doLogin);
+document.getElementById('loginPassword').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+document.getElementById('logoutBtn').addEventListener('click', () => { if (firebaseReady) firebase.auth().signOut(); });
+
 initOfficerPresets();
 initConditionalFields();
 initProvinceSelects();
