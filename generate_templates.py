@@ -172,17 +172,13 @@ p_card1 = add_p(doc, f"{cb('cb_card_ppst')} บัตรประจำตัว
 p_card1.paragraph_format.tab_stops.add_tab_stop(Cm(10.3), WD_TAB_ALIGNMENT.LEFT)
 p_card2 = add_p(doc, f"{cb('cb_card_gov')} บัตรประจำตัวเจ้าหน้าที่ของรัฐ\tเลขที่ {{card_no_gov}}")
 p_card2.paragraph_format.tab_stops.add_tab_stop(Cm(10.3), WD_TAB_ALIGNMENT.LEFT)
-field_line(doc, "วันออกบัตร", "{card_issue_date}", trailing="  วันหมดอายุ {card_expiry_date}")
 add_p(doc, "โดยอาศัยอำนาจตามมาตรา 115 แห่งประมวลกฎหมายยาเสพติด")
-add_p(doc, "ได้สอบถาม นาย/นาง/นางสาว {suspect_full_name} อายุ {suspect_age} ปี")
+add_p(doc, "ได้สอบถาม {suspect_title}{suspect_full_name} อายุ {suspect_age} ปี")
 add_p(doc, f"{cb('cb_id_card')} บัตรประชาชน  {cb('cb_id_alien')} บัตรคนซึ่งไม่มีสัญชาติไทย  {cb('cb_id_passport')} หนังสือเดินทาง  {cb('cb_id_other')} เอกสารอื่นที่ราชการออกให้ ระบุ {{id_other_detail}}")
 field_line(doc, "เลขที่", "{suspect_id_number}")
 field_line(doc, "ที่อยู่", "{suspect_address}")
 field_line(doc, "ที่อยู่ปัจจุบัน", "{suspect_current_address}  หมายเลขโทรศัพท์ {suspect_phone}")
-add_mixed(doc, [
-    ("ส่วนที่ 1 การตรวจหรือทดสอบสารเสพติดในร่างกาย ", True),
-    ("โดยใช้อำนาจเจ้าพนักงาน ป.ป.ส. ตามประมวลกฎหมายยาเสพติด มาตรา ๑๑๕ เพื่อตรวจ/ทดสอบสารเสพติดในร่างกาย โดยใช้ชุดตรวจสารเสพติดในปัสสาวะ", False),
-])
+p = doc.add_paragraph(); r = p.add_run("ส่วนที่ 1 การตรวจหรือทดสอบสารเสพติดในร่างกาย"); set_font(r, bold=True)
 add_p(doc, f"ผลการตรวจ  {cb('cb_test_pos')} ผลบวก หมายถึง ทดสอบเบื้องต้นพบว่าอาจมีสารเสพติดอยู่ในร่างกาย คือ {{drug_type}}")
 add_p(doc, f"{cb('cb_test_neg')} ผลลบ หมายถึง ทดสอบเบื้องต้นไม่พบว่ามีสารเสพติดอยู่ในร่างกาย")
 p = doc.add_paragraph(); r = p.add_run("ผลการตรวจหรือค้น"); set_font(r, bold=True)
