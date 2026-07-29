@@ -1255,6 +1255,15 @@ function parseQuickFillText(text) {
   if (occMatch) filled.occupation = occMatch[1];
   const aliasMatch = text.match(/(?:นามแฝง|ชื่อเล่น)\s*([ก-๙A-Za-z]+)/);
   if (aliasMatch) filled.alias = aliasMatch[1];
+  const dobMatch = text.match(/วัน\s*เดือน\s*ปี\s*เกิด\s*(\d{1,2})\s+([ก-๙]+)\s+(\d{4})/);
+  if (dobMatch) {
+    const monthIdx = THAI_MONTHS.indexOf(dobMatch[2]);
+    if (monthIdx >= 0) {
+      filled.dobDate_day = dobMatch[1];
+      filled.dobDate_month = String(monthIdx);
+      filled.dobDate_year = dobMatch[3];
+    }
+  }
   return filled;
 }
 function applyQuickFill(filled) {

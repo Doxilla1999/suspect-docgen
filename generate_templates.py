@@ -326,8 +326,8 @@ tabline(doc, ["ที่อยู่ {suspect_spouse_address}"], TABS4)
 tabline(doc, [""], TABS4, space_after=1)
 tabline(doc, ["เบอร์โทร (ผู้ต้องหา) {suspect_phone}", "", "ตำหนิรูปพรรณ"], [Cm(10.3)] + [Cm(10.3), Cm(12.3)])
 field_pair(doc, "๗) เพื่อนสนิท หรือผู้ให้พักอาศัย", "{suspect_friends}")
-field_pair(doc, "๘) ที่อยู่ปัจจุบัน", "{suspect_current_address}", "ความสูง", "{phys_height}")
-field_pair(doc, "๙) สถานที่ชอบไปเที่ยวเตร่", "{suspect_hangouts}", "น้ำหนัก", "{phys_weight}")
+field_pair(doc, "๘) ที่อยู่ปัจจุบัน", "{suspect_current_address}", "ความสูง", "{phys_height} ซม.")
+field_pair(doc, "๙) สถานที่ชอบไปเที่ยวเตร่", "{suspect_hangouts}", "น้ำหนัก", "{phys_weight} กก.")
 field_pair(doc, "๑๐) อาวุธที่ใช้ในการกระทำผิด", "{crime_weapon}", "สีผิว", "{phys_skin}")
 field_pair(doc, "๑๑) ยานพาหนะที่ใช้", "{crime_vehicle}", "ศีรษะ", "{phys_head}")
 field_pair(doc, "๑๒) ผู้ร่วมกระทำผิด", "{crime_accomplice}", "ผม", "{phys_hair}")
@@ -359,8 +359,8 @@ for (label, path), tcell in zip(photo_order, cells_flat):
     run = para.add_run()
     run.add_picture(path, width=CmSize(7.6), height=CmSize(9.2))
 add_p(doc, "")
-add_p(doc, "{suspect_title}{suspect_full_name} หรือ {suspect_alias} อายุ {suspect_age} ปี เลขบัตรประจำตัวประชาชน {suspect_id_number} "
-          "อยู่บ้านเลขที่ {suspect_address} {charge}", align=WD_ALIGN_PARAGRAPH.JUSTIFY)
+add_p(doc, "{suspect_title}{suspect_full_name} หรือ {suspect_alias} \"{charge}\" อายุ {suspect_age} ปี เลขบัตรประจำตัวประชาชน {suspect_id_number} "
+          "อยู่บ้านเลขที่ {suspect_address}", align=WD_ALIGN_PARAGRAPH.JUSTIFY)
 add_p(doc, "")
 p3 = doc.add_paragraph(); p3.alignment = WD_ALIGN_PARAGRAPH.CENTER
 r = p3.add_run("( ............................................ )"); set_font(r)
