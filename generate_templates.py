@@ -359,13 +359,13 @@ for (label, path), tcell in zip(photo_order, cells_flat):
     run = para.add_run()
     run.add_picture(path, width=CmSize(7.6), height=CmSize(9.2))
 add_p(doc, "")
-add_p(doc, "{suspect_title}{suspect_full_name} หรือ {suspect_alias} \"{charge}\" อายุ {suspect_age} ปี เลขบัตรประจำตัวประชาชน {suspect_id_number} "
-          "อยู่บ้านเลขที่ {suspect_address}", align=WD_ALIGN_PARAGRAPH.JUSTIFY)
+add_p(doc, "{suspect_title}{suspect_name_with_nick} อายุ {suspect_age} ปี เลขบัตรประจำตัวประชาชน {suspect_id_number} "
+          "อยู่บ้านเลขที่ {suspect_address} ข้อหา \"{charge}\"", align=WD_ALIGN_PARAGRAPH.JUSTIFY)
 add_p(doc, "")
 p3 = doc.add_paragraph(); p3.alignment = WD_ALIGN_PARAGRAPH.CENTER
 r = p3.add_run("( ............................................ )"); set_font(r)
 p4 = doc.add_paragraph(); p4.alignment = WD_ALIGN_PARAGRAPH.CENTER
-r = p4.add_run("{suspect_full_name}"); set_font(r)
+r = p4.add_run("{suspect_name_with_nick}"); set_font(r)
 doc.save(OUT + "profile_and_photos_template.docx")
 
 # ---------- 3. court referral ----------

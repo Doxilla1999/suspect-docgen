@@ -598,6 +598,8 @@ function renderChecklist() {
 function buildTagMap() {
   const title = v('title'), firstName = v('firstName'), lastName = v('lastName');
   const fullName = `${firstName} ${lastName}`.trim();
+  const nickname = v('nickname');
+  const nameWithNick = `${firstName}${nickname ? 'หรือ' + nickname : ''} ${lastName}`.trim();
   const issueParts = thaiDateParts('issueDate');
   const addrParts = [];
   if (v('addrHouseNo')) addrParts.push(`บ้านเลขที่ ${v('addrHouseNo')}`);
@@ -612,6 +614,7 @@ function buildTagMap() {
     province: v('province'), postal_code: v('postalCode'),
     doc_date: thaiDate('issueDate'), hospital_name: v('hospitalName'), drug_type: v('drugType'),
     test_date: thaiDate('testDate'), test_count: String(getSuspectListEntries().length), suspect_full_name: fullName,
+    suspect_name_with_nick: nameWithNick,
     signer_rank: v('signerRank'), signer_name: v('signerName'), signer_position: v('signerPosition'),
     record_day: issueParts.day, record_month: issueParts.month, record_year: issueParts.year,
     officer1_rank: v('officer1Rank'), officer1_name: v('officer1Name'), officer1_position: v('officer1Position'),
@@ -1037,6 +1040,24 @@ function draftChargeFromWarrant() {
   document.getElementById('reportChargeText').value = parts.join(' ');
 }
 
+function evidenceEmoji(desc) {
+  const d = desc || '';
+  const rules = [
+    [/ไอซ์/, '🧊'],
+    [/กัญชา/, '🌿'],
+    [/ยาบ้า|เมทแอมเฟตามีน|คีตามีน|เฮโรอีน|ยาเสพติด|ยาอี|เอ็คซ์ตาซี|ฝิ่น/, '💊'],
+    [/ลูกเต๋า/, '🎲'],
+    [/ไพ่/, '🃏'],
+    [/มีด/, '🔪'],
+    [/ปืน/, '🔫'],
+    [/เงินสด|เงิน/, '💵'],
+    [/โทรศัพท์|มือถือ/, '📱'],
+    [/รถจักรยานยนต์|รถยนต์|รถ/, '🚗']
+  ];
+  for (const [re, emoji] of rules) { if (re.test(d)) return emoji; }
+  return '🔸';
+}
+
 function buildOperationReport() {
   const station = v('stationName') || 'สภ.นายายอาม';
   const date = shortThaiDate('issueDate');
@@ -1065,8 +1086,8 @@ function buildOperationReport() {
   lines.push(charge);
   if (evidence.length) {
     lines.push('');
-    lines.push('🎰 พร้อมด้วยของกลาง 🎰');
-    evidence.forEach((ev, i) => lines.push(`${i + 1}.${ev.desc}${ev.qty ? ' จำนวน ' + ev.qty : ''}`));
+    lines.push('📦 พร้อมด้วยของกลาง 📦');
+    evidence.forEach((ev, i) => lines.push(`${i + 1}.${evidenceEmoji(ev.desc)}${ev.desc}${ev.qty ? ' จำนวน ' + ev.qty : ''}`));
   }
   lines.push('');
   lines.push(`นำตัวผู้ถูกจับ ส่ง พงส.${station}`);
