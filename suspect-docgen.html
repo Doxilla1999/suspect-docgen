@@ -227,12 +227,6 @@
 
       <details class="panel" open>
         <summary>ข้อมูลคดี / หมายจับ</summary>
-        <div class="panel" style="background:#FFFBF0;border-color:#E8D6AC;margin-bottom:14px">
-          <h2 style="margin:0 0 8px">วางบันทึกจับกุมเพื่อกรอกอัตโนมัติ (ถ้ามี)</h2>
-          <textarea id="arrestRecordText" rows="3" placeholder="วางเนื้อหาบันทึกจับกุมทั้งก้อน ระบบจะพยายามดึงสถานที่จับกุม/วันเวลาที่จับให้"></textarea>
-          <button type="button" class="btn btn-primary btn-sm" id="arrestRecordFillBtn" style="margin-top:8px">แยกข้อมูลกรอกฟอร์มให้อัตโนมัติ</button>
-          <p class="note" id="arrestRecordMsg" style="margin-top:6px">ดึงได้แค่ สถานที่จับกุม / วันเวลาที่จับ ตอนนี้ ที่เหลือกรอกเองด้านล่าง ควรตรวจสอบซ้ำก่อนใช้งานเสมอ</p>
-        </div>
         <label class="f"><span>ประเภทบุคคล (เลือกเพื่อช่วยร่างข้อหา)</span>
           <select id="chargePreset"><option value="">— เลือกเพื่อร่างให้ —</option></select>
         </label>
@@ -1318,30 +1312,6 @@ document.getElementById('quickFillBtn').addEventListener('click', () => {
   msg.textContent = count > 0
     ? `กรอกให้แล้ว ${count} ช่อง (${Object.keys(filled).join(', ')}) กรุณาเลื่อนขึ้นไปตรวจสอบความถูกต้องอีกครั้งก่อนใช้งาน`
     : 'ไม่พบข้อมูลที่จดจำได้จากข้อความนี้ ลองใส่คำนำหน้าแบบ "เลขบัตรประชาชน", "อายุ", "บ้านเลขที่" ให้ชัดเจน หรือกรอกเองในฟอร์มด้านล่าง';
-});
-
-function parseArrestRecordText(text) {
-  const filled = {};
-  const locMatch = text.match(/สถานที่จับกุม\s+([^\n]+)/);
-  if (locMatch) filled.arrestLocation = locMatch[1].trim();
-  const dtMatch = text.match(/วัน\s*เดือน\s*ปี\s*ที่จับ\s+(\d{1,2})\/(\d{1,2})\/(\d{4})\s*เวลา\s*(\d{1,2}[.:]\d{2})/);
-  if (dtMatch) {
-    filled.arrestDate_day = dtMatch[1];
-    filled.arrestDate_month = String(parseInt(dtMatch[2], 10) - 1);
-    filled.arrestDate_year = dtMatch[3];
-    filled.arrestTime = dtMatch[4];
-  }
-  return filled;
-}
-document.getElementById('arrestRecordFillBtn').addEventListener('click', () => {
-  const text = document.getElementById('arrestRecordText').value;
-  const filled = parseArrestRecordText(text);
-  applyQuickFill(filled);
-  const count = Object.keys(filled).length;
-  const msg = document.getElementById('arrestRecordMsg');
-  msg.textContent = count > 0
-    ? `กรอกให้แล้ว ${count} ช่อง (${Object.keys(filled).join(', ')}) — ดึงได้แค่สถานที่จับกุม/วันเวลาที่จับตอนนี้ กรุณาตรวจสอบอีกครั้ง`
-    : 'ไม่พบรูปแบบ "สถานที่จับกุม" หรือ "วัน เดือน ปี ที่จับ" ในข้อความนี้ ลองกรอกเองด้านล่างแทน';
 });
 
 document.querySelectorAll('.case-type').forEach(c => c.addEventListener('change', () => {
