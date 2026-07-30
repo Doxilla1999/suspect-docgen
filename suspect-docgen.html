@@ -9,7 +9,7 @@
 <style>
   @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&display=swap');
   * { box-sizing: border-box; }
-  body { margin: 0; background: #F2F1EC; font-family: 'TH SarabunIT๙', 'TH Sarabun New', Tahoma, sans-serif; font-size: 17px; color: #201C14; }
+  body { margin: 0; background: #0B0D10; font-family: 'TH SarabunIT๙', 'TH Sarabun New', Tahoma, sans-serif; font-size: 17px; color: #E8E6E0; }
   .date3 { display: flex; gap: 6px; }
   .date3 input { width: 30%; }
   .date3 select { width: 40%; }
@@ -17,12 +17,13 @@
   header.top { background: #14181C; color: #EFE9D8; padding: 18px 24px; display: flex; align-items: center; gap: 12px; border-bottom: 3px solid #B68D40; }
   header.top .mark { width: 34px; height: 34px; border-radius: 6px; border: 2px solid #B68D40; display: flex; align-items: center; justify-content: center; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #B68D40; }
   header.top h1 { font-size: 16px; margin: 0; letter-spacing: .5px; font-weight: 600; }
-  header.top p { font-size: 11px; margin: 2px 0 0; color: #9C3B32; letter-spacing: .5px; }
+  header.top p { font-size: 11px; margin: 2px 0 0; color: #E2685D; letter-spacing: .5px; }
+  .credit-top { font-size: 22px; font-weight: 800; color: #B68D40; letter-spacing: .5px; margin-left: auto; text-shadow: 0 0 12px rgba(182,141,64,.5); }
   .layout { display: grid; grid-template-columns: 1fr 340px; gap: 20px; padding: 20px 24px 0; align-items: start; }
   @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
-  .panel { background: #FFFFFF; border: 1px solid #DEDACE; border-radius: 10px; padding: 16px 18px; margin-bottom: 16px; }
-  .panel h2 { font-size: 14px; margin: 0 0 12px; color: #14181C; font-weight: 600; }
-  details.panel summary { font-size: 14px; font-weight: 600; cursor: pointer; color: #14181C; list-style: none; display: flex; align-items: center; gap: 8px; }
+  .panel { background: #171B20; border: 1px solid #2A2F36; border-radius: 10px; padding: 16px 18px; margin-bottom: 16px; }
+  .panel h2 { font-size: 14px; margin: 0 0 12px; color: #E8E6E0; font-weight: 600; }
+  details.panel summary { font-size: 14px; font-weight: 600; cursor: pointer; color: #E8E6E0; list-style: none; display: flex; align-items: center; gap: 8px; }
   details.panel summary::before { content: "▸"; color: #B68D40; font-size: 12px; }
   details.panel[open] summary::before { content: "▾"; }
   details.panel summary::-webkit-details-marker { display: none; }
@@ -31,37 +32,37 @@
   .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px 14px; }
   @media (max-width: 600px) { .grid2, .grid3 { grid-template-columns: 1fr; } }
   .field-group-label { font-size: 11.5px; color: #B68D40; font-weight: 600; margin: 10px 0 6px; text-transform: uppercase; letter-spacing: .4px; }
-  label.f { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: #6B6555; margin-bottom: 2px; }
+  label.f { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: #9B968D; margin-bottom: 2px; }
   label.f span { font-weight: 500; }
-  input, select, textarea { font-family: inherit; font-size: 13.5px; padding: 7px 9px; border: 1px solid #D7D2C2; border-radius: 6px; background: #FBFAF6; color: #201C14; width: 100%; }
-  input:focus, select:focus, textarea:focus { outline: none; border-color: #B68D40; background: #fff; }
+  input, select, textarea { font-family: inherit; font-size: 13.5px; padding: 7px 9px; border: 1px solid #33393F; border-radius: 6px; background: #12151A; color: #E8E6E0; width: 100%; }
+  input:focus, select:focus, textarea:focus { outline: none; border-color: #B68D40; background: #1A1F26; }
   textarea { resize: vertical; min-height: 44px; }
-  .officer-block { border: 1px dashed #D7D2C2; border-radius: 8px; padding: 10px; margin-bottom: 10px; }
-  .officer-block h3 { font-size: 12px; margin: 0 0 8px; color: #6B6555; font-weight: 600; }
+  .officer-block { border: 1px dashed #33393F; border-radius: 8px; padding: 10px; margin-bottom: 10px; }
+  .officer-block h3 { font-size: 12px; margin: 0 0 8px; color: #9B968D; font-weight: 600; }
   .case-types { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
   .case-types label { display: flex; align-items: center; gap: 8px; font-size: 13.5px; padding: 6px 4px; border-radius: 6px; }
-  .case-types label:hover { background: #F5F2E8; }
-  .hint-inline { font-size: 11px; font-weight: 400; color: #8a8474; text-transform: none; letter-spacing: 0; }
+  .case-types label:hover { background: #1E232A; }
+  .hint-inline { font-size: 11px; font-weight: 400; color: #7A766E; text-transform: none; letter-spacing: 0; }
   .doc-checklist { display: flex; flex-direction: column; gap: 4px; }
   .doc-check { display: flex; align-items: center; gap: 10px; font-size: 14px; padding: 9px 10px; border-radius: 6px; border: 1px solid transparent; cursor: pointer; }
-  .doc-check:hover { background: #F5F2E8; border-color: #EEE9DA; }
-  .doc-check input:checked ~ span { font-weight: 600; color: #14181C; }
-  .doc-check:has(input:checked) { background: #FBF3E2; border-color: #E8D6AC; }
-  .suspect-row-detail { border: 1px dashed #D7D2C2; border-radius: 8px; padding: 10px; margin-bottom: 10px; }
-  .m80-row { display: flex; align-items: center; gap: 8px; padding-top: 10px; border-top: 1px solid #EEE9DA; font-size: 13.5px; }
-  #m80hint { font-size: 11.5px; color: #9C3B32; margin: 6px 0 0; min-height: 14px; }
+  .doc-check:hover { background: #1E232A; border-color: #2A2F36; }
+  .doc-check input:checked ~ span { font-weight: 600; color: #E8E6E0; }
+  .doc-check:has(input:checked) { background: rgba(182,141,64,.18); border-color: #6B5626; }
+  .suspect-row-detail { border: 1px dashed #33393F; border-radius: 8px; padding: 10px; margin-bottom: 10px; }
+  .m80-row { display: flex; align-items: center; gap: 8px; padding-top: 10px; border-top: 1px solid #2A2F36; font-size: 13.5px; }
+  #m80hint { font-size: 11.5px; color: #E2685D; margin: 6px 0 0; min-height: 14px; }
   .sticky { position: sticky; top: 16px; }
-  .checklist-item { display: flex; align-items: center; gap: 8px; background: #EFF6EF; color: #1F5C33; border-radius: 6px; padding: 8px 10px; font-size: 13px; margin-bottom: 6px; }
+  .checklist-item { display: flex; align-items: center; gap: 8px; background: rgba(46,163,89,.16); color: #6FDB93; border-radius: 6px; padding: 8px 10px; font-size: 13px; margin-bottom: 6px; }
   .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; border-radius: 6px; border: 1px solid transparent; font-size: 13.5px; font-weight: 500; padding: 10px 14px; cursor: pointer; width: 100%; }
   .btn-primary { background: #B68D40; color: #201808; }
   .btn-primary:hover { filter: brightness(1.06); }
-  .btn-ghost { background: #F5F2E8; color: #201C14; border-color: #D7D2C2; margin-top: 8px; }
-  .btn-danger-outline { background: none; color: #9C3B32; border: none; font-size: 11.5px; padding: 2px 4px; cursor: pointer; }
+  .btn-ghost { background: #1E232A; color: #E8E6E0; border-color: #33393F; margin-top: 8px; }
+  .btn-danger-outline { background: none; color: #E2685D; border: none; font-size: 11.5px; padding: 2px 4px; cursor: pointer; }
   .case-row { display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 8px 6px; border-radius: 6px; font-size: 12.5px; }
-  .case-row:hover { background: #F5F2E8; }
-  .case-row button.load { background: none; border: none; text-align: left; flex: 1; cursor: pointer; font-size: 12.5px; color: #201C14; padding: 2px; }
-  .note { font-size: 11.5px; color: #6B6555; line-height: 1.5; margin-top: 10px; }
-  .msg { font-size: 12.5px; color: #9C3B32; margin: 6px 0 0; min-height: 16px; }
+  .case-row:hover { background: #1E232A; }
+  .case-row button.load { background: none; border: none; text-align: left; flex: 1; cursor: pointer; font-size: 12.5px; color: #E8E6E0; padding: 2px; }
+  .note { font-size: 11.5px; color: #9B968D; line-height: 1.5; margin-top: 10px; }
+  .msg { font-size: 12.5px; color: #E2685D; margin: 6px 0 0; min-height: 16px; }
   .mono { font-family: 'IBM Plex Mono', monospace; }
   body::before {
     content: '';
@@ -73,11 +74,10 @@
     pointer-events: none;
   }
   .app { position: relative; z-index: 1; }
-  .credit { text-align: center; font-size: 11px; color: #9C8F72; padding: 18px 0 6px; letter-spacing: .3px; }
   #loginScreen { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #14181C; }
-  #loginScreen .box { background: #FFFFFF; border-radius: 12px; padding: 32px 28px; width: 100%; max-width: 340px; box-shadow: 0 10px 40px rgba(0,0,0,.4); }
-  #loginScreen h1 { font-size: 16px; margin: 0 0 4px; color: #14181C; }
-  #loginScreen p.sub { font-size: 12px; color: #6B6555; margin: 0 0 20px; }
+  #loginScreen .box { background: #171B20; border-radius: 12px; padding: 32px 28px; width: 100%; max-width: 340px; box-shadow: 0 10px 40px rgba(0,0,0,.4); }
+  #loginScreen h1 { font-size: 16px; margin: 0 0 4px; color: #E8E6E0; }
+  #loginScreen p.sub { font-size: 12px; color: #9B968D; margin: 0 0 20px; }
   #loginScreen label.f { margin-bottom: 12px; }
   #loginScreen .msg { min-height: 16px; }
   .header-logout { margin-left: auto; background: none; border: 1px solid #B68D40; color: #EFE9D8; border-radius: 6px; padding: 6px 12px; font-size: 12px; cursor: pointer; }
@@ -102,13 +102,14 @@
       <h1>ระบบสร้างเอกสารผู้ต้องหา · สภ.นายายอาม</h1>
       <p>กรอกครั้งเดียว ออกเอกสารได้หลายฉบับ</p>
     </div>
+    <div class="credit-top">BY บังโต KN60</div>
     <button type="button" class="header-logout" id="logoutBtn">ออกจากระบบ</button>
   </header>
 
   <div class="layout">
     <div class="col-main">
 
-      <div class="panel" style="background:#FFFBF0;border-color:#E8D6AC">
+      <div class="panel" style="background:#1E1A10;border-color:#6B5626">
         <h2>วางข้อมูลเพื่อกรอกอัตโนมัติ</h2>
         <textarea id="quickFillText" rows="3" placeholder="วางข้อมูลผู้ต้องหาตรงนี้ เช่น &quot;นายพันณกร บุญเพ็ง เลขบัตรประชาชน 1220900010581 อายุ 25 ที่อยู่ บ้านเลขที่ 65 ม.8 ต.สนามไชย อ.นายายอาม จ.จันทบุรี&quot;"></textarea>
         <button type="button" class="btn btn-primary btn-sm" id="quickFillBtn" style="margin-top:8px">แยกข้อมูลกรอกฟอร์มให้อัตโนมัติ</button>
@@ -286,7 +287,7 @@
           <input type="file" id="blurPhotoInput" accept="image/*">
           <button type="button" class="btn btn-ghost btn-sm" id="useUploadedFrontBtn">ใช้รูปหน้าตรงที่อัปโหลดไว้แล้ว</button>
         </div>
-        <canvas id="blurCanvas" style="max-width:100%;border:1px solid #D7D2C2;border-radius:6px;cursor:crosshair;display:block"></canvas>
+        <canvas id="blurCanvas" style="max-width:100%;border:1px solid #33393F;border-radius:6px;cursor:crosshair;display:block"></canvas>
         <p class="note">คลิกลากกรอบสี่เหลี่ยมคลุมใบหน้า จะเบลอทันทีที่ปล่อยเมาส์ — เบลอซ้ำได้หลายจุด</p>
         <div style="display:flex;gap:8px;margin-top:6px">
           <button type="button" class="btn btn-ghost btn-sm" id="resetBlurBtn">รีเซ็ตรูป</button>
@@ -300,7 +301,7 @@
       </details>
 
       <details class="panel">
-        <summary>รายละเอียดคดียาเสพติด (ปยส.115 / ส่งตรวจปัสสาวะ)</summary>
+        <summary>รายละเอียดคดี ปยส.115</summary>
         <label class="f"><span>ประเภทเอกสารแสดงตน (ผู้ต้องหา)</span>
           <select id="idDocType"><option value="card">บัตรประชาชน</option><option value="alien">บัตรคนซึ่งไม่มีสัญชาติไทย</option><option value="passport">หนังสือเดินทาง</option><option value="other">เอกสารอื่นที่ราชการออกให้</option></select>
         </label>
@@ -328,21 +329,7 @@
           <label class="f" id="searchDrugWrap" style="display:none"><span>ประเภท/ชนิดที่ยึด</span><input id="searchDrugType" list="drugList"></label>
           <label class="f" id="searchAmountWrap" style="display:none"><span>ปริมาณที่ยึด</span><input id="seizedAmount"></label>
         </div>
-        <div class="grid2">
-          <label class="f"><span>โรงพยาบาลที่ส่งตรวจ</span><input id="hospitalName" placeholder="นายายอาม จันทบุรี"></label>
-          <label class="f"><span>วันที่นัดตรวจปัสสาวะ (พ.ศ.)</span>
-            <div class="date3"><input id="testDate_day" type="number" min="1" max="31" placeholder="วัน"><select id="testDate_month"></select><input id="testDate_year" type="number" placeholder="พ.ศ."></div>
-          </label>
-        </div>
-        <p class="field-group-label">รายชื่อผู้ถูกส่งตรวจปัสสาวะ (ส่งพร้อมกันได้หลายคน — เว้นว่างไว้จะใช้ชื่อผู้ต้องหาหลักโดยอัตโนมัติ)</p>
-        <div class="panel" style="background:#FFFBF0;border-color:#E8D6AC;margin-bottom:10px">
-          <textarea id="multiPersonText" rows="3" placeholder="วางรายชื่อหลายคน บรรทัดละ 1 คน เช่น&#10;1.นายกมล จันสด อายุ 57 ปี เลขบัตรประชาชน 3420300343605 วันเดือนปีเกิด 16 ก.ย. 2511 บ้านเลขที่ 43/1 หมู่2 ต.เขาแก้ว อ.เชียงคาน จ.เลย&#10;2.นายรังสี ศรีสมศักดิ์ อายุ 46 ปี ..."></textarea>
-          <button type="button" class="btn btn-primary btn-sm" id="multiPersonFillBtn" style="margin-top:8px">แยกรายชื่อกรอกให้อัตโนมัติ (แทนที่รายชื่อเดิม)</button>
-          <p class="note" id="multiPersonMsg" style="margin-top:6px">วางบรรทัดละ 1 คน ระบบจะแยกชื่อ/อายุ/เลขบัตร/วันเกิด/ที่อยู่ให้ กรุณาตรวจสอบซ้ำก่อนใช้งาน</p>
-        </div>
-        <div id="suspectListRows"></div>
-        <button type="button" class="btn btn-ghost btn-sm" id="addSuspectRow">+ เพิ่มรายชื่อ</button>
-        <div class="panel" style="background:#F9F7F0;border-style:dashed;margin:10px 0">
+        <div class="panel" style="background:#1B1F24;border-style:dashed;margin:10px 0">
           <p style="font-size:12.5px;font-weight:600;margin:0 0 8px">2.1 พฤติการณ์ต้องห้ามตามมาตรา 115 (ติ๊กได้มากกว่า 1 ข้อ)</p>
           <label style="display:flex;gap:8px;font-size:13px;padding:4px 0"><input type="checkbox" class="pb-check" id="pb1">อยู่ระหว่างตกเป็นผู้ต้องหาหรืออยู่ในระหว่างถูกดำเนินคดีในความผิดอื่นซึ่งเป็นความผิดที่มีโทษจำคุก</label>
           <label style="display:flex;gap:8px;font-size:13px;padding:4px 0"><input type="checkbox" class="pb-check" id="pb2">อยู่ในระหว่างรับโทษจำคุกตามคำพิพากษาของศาล</label>
@@ -357,6 +344,24 @@
           <label class="f"><span>เวลานัด</span><input id="appointmentTime"></label>
           <label class="f"><span>สถานที่นัด</span><input id="appointmentPlace"></label>
         </div>
+      </details>
+
+      <details class="panel">
+        <summary>รายละเอียดส่งตรวจปัสสาวะ</summary>
+        <div class="grid2">
+          <label class="f"><span>โรงพยาบาลที่ส่งตรวจ</span><input id="hospitalName" placeholder="นายายอาม จันทบุรี"></label>
+          <label class="f"><span>วันที่นัดตรวจปัสสาวะ (พ.ศ.)</span>
+            <div class="date3"><input id="testDate_day" type="number" min="1" max="31" placeholder="วัน"><select id="testDate_month"></select><input id="testDate_year" type="number" placeholder="พ.ศ."></div>
+          </label>
+        </div>
+        <p class="field-group-label">รายชื่อผู้ถูกส่งตรวจปัสสาวะ (ส่งพร้อมกันได้หลายคน — เว้นว่างไว้จะใช้ชื่อผู้ต้องหาหลักโดยอัตโนมัติ)</p>
+        <div class="panel" style="background:#1E1A10;border-color:#6B5626;margin-bottom:10px">
+          <textarea id="multiPersonText" rows="3" placeholder="วางรายชื่อหลายคน บรรทัดละ 1 คน เช่น&#10;1.นายกมล จันสด อายุ 57 ปี เลขบัตรประชาชน 3420300343605 วันเดือนปีเกิด 16 ก.ย. 2511 บ้านเลขที่ 43/1 หมู่2 ต.เขาแก้ว อ.เชียงคาน จ.เลย&#10;2.นายรังสี ศรีสมศักดิ์ อายุ 46 ปี ..."></textarea>
+          <button type="button" class="btn btn-primary btn-sm" id="multiPersonFillBtn" style="margin-top:8px">แยกรายชื่อกรอกให้อัตโนมัติ (แทนที่รายชื่อเดิม)</button>
+          <p class="note" id="multiPersonMsg" style="margin-top:6px">วางบรรทัดละ 1 คน ระบบจะแยกชื่อ/อายุ/เลขบัตร/วันเกิด/ที่อยู่ให้ กรุณาตรวจสอบซ้ำก่อนใช้งาน</p>
+        </div>
+        <div id="suspectListRows"></div>
+        <button type="button" class="btn btn-ghost btn-sm" id="addSuspectRow">+ เพิ่มรายชื่อ</button>
       </details>
 
       <details class="panel">
@@ -458,7 +463,6 @@
       </div>
     </div>
   </div>
-  <div class="credit">พัฒนาโดย บังโต เขาน้อย 60</div>
 </div>
 
 <script>
@@ -828,7 +832,7 @@ function renderCasesList() {
   if (casesIndex.length === 0) { out.innerHTML = '<p class="note" style="margin-top:0">ยังไม่มีเคสที่บันทึกไว้</p>'; return; }
   out.innerHTML = casesIndex.map(c => `
     <div class="case-row">
-      <button class="load" data-id="${c.id}">${c.name || 'ไม่ระบุชื่อ'}<br><span class="mono" style="color:#8a8474">${c.createdAt}</span></button>
+      <button class="load" data-id="${c.id}">${c.name || 'ไม่ระบุชื่อ'}<br><span class="mono" style="color:#7A766E">${c.createdAt}</span></button>
       <button class="btn-danger-outline" data-del="${c.id}">ลบ</button>
     </div>`).join('');
   out.querySelectorAll('button.load').forEach(b => b.addEventListener('click', () => loadCase(b.dataset.id)));
@@ -1176,7 +1180,7 @@ function setupBlurCanvasDrag() {
     const [curX, curY] = toCanvasXY(e);
     redrawBlurCanvas();
     const ctx = canvas.getContext('2d');
-    ctx.strokeStyle = '#9C3B32';
+    ctx.strokeStyle = '#E2685D';
     ctx.lineWidth = 2;
     ctx.strokeRect(Math.min(startX, curX), Math.min(startY, curY), Math.abs(curX - startX), Math.abs(curY - startY));
   });
