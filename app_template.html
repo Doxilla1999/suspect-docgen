@@ -335,6 +335,11 @@
           </label>
         </div>
         <p class="field-group-label">รายชื่อผู้ถูกส่งตรวจปัสสาวะ (ส่งพร้อมกันได้หลายคน — เว้นว่างไว้จะใช้ชื่อผู้ต้องหาหลักโดยอัตโนมัติ)</p>
+        <div class="panel" style="background:#FFFBF0;border-color:#E8D6AC;margin-bottom:10px">
+          <textarea id="multiPersonText" rows="3" placeholder="วางรายชื่อหลายคน บรรทัดละ 1 คน เช่น&#10;1.นายกมล จันสด อายุ 57 ปี เลขบัตรประชาชน 3420300343605 วันเดือนปีเกิด 16 ก.ย. 2511 บ้านเลขที่ 43/1 หมู่2 ต.เขาแก้ว อ.เชียงคาน จ.เลย&#10;2.นายรังสี ศรีสมศักดิ์ อายุ 46 ปี ..."></textarea>
+          <button type="button" class="btn btn-primary btn-sm" id="multiPersonFillBtn" style="margin-top:8px">แยกรายชื่อกรอกให้อัตโนมัติ (แทนที่รายชื่อเดิม)</button>
+          <p class="note" id="multiPersonMsg" style="margin-top:6px">วางบรรทัดละ 1 คน ระบบจะแยกชื่อ/อายุ/เลขบัตร/วันเกิด/ที่อยู่ให้ กรุณาตรวจสอบซ้ำก่อนใช้งาน</p>
+        </div>
         <div id="suspectListRows"></div>
         <button type="button" class="btn btn-ghost btn-sm" id="addSuspectRow">+ เพิ่มรายชื่อ</button>
         <div class="panel" style="background:#F9F7F0;border-style:dashed;margin:10px 0">
@@ -1344,6 +1349,35 @@ document.getElementById('arrestSaveBtn').addEventListener('click', saveArrestRec
 { const savedPin = localStorage.getItem('arrestPin'); if (savedPin) document.getElementById('arrestPin').value = savedPin; }
 document.getElementById('addSuspectRow').addEventListener('click', () => addSuspectRow());
 addSuspectRow();
+
+function parseMultiPersonText(text) {
+  return text.split('\n').map(l => l.trim()).filter(Boolean).map(line => {
+    const entry = { name: '', id: '', age: '', dob: '', address: '' };
+    const nameMatch = line.match(/(นางสาว|นาง|นาย)\s*([ก-๙A-Za-z]+)\s+([ก-๙A-Za-z]+)/);
+    if (nameMatch) entry.name = `${nameMatch[1]}${nameMatch[2]} ${nameMatch[3]}`;
+    const ageMatch = line.match(/อายุ\s*(\d+)/);
+    if (ageMatch) entry.age = ageMatch[1];
+    const idMatch = line.match(/เลขบัตร[ก-๙]*ประชาชน\s*[:\s]*([0-9][0-9\s-]{10,17}[0-9])/) || line.match(/\b(\d{13})\b/);
+    if (idMatch) entry.id = idMatch[1].trim();
+    const dobMatch = line.match(/วัน\s*เดือน\s*ปี\s*เกิด\s*(\d{1,2}\s*[ก-๙.]+\s*\d{4})/);
+    if (dobMatch) entry.dob = dobMatch[1].replace(/\s+/g, ' ').trim();
+    const addrMatch = line.match(/บ้านเลขที่[\s\S]*$/);
+    if (addrMatch) entry.address = addrMatch[0].trim();
+    return entry;
+  }).filter(e => e.name);
+}
+document.getElementById('multiPersonFillBtn').addEventListener('click', () => {
+  const text = document.getElementById('multiPersonText').value;
+  const entries = parseMultiPersonText(text);
+  const msg = document.getElementById('multiPersonMsg');
+  if (entries.length === 0) {
+    msg.textContent = 'ไม่พบชื่อคนในข้อความนี้ ต้องมีคำนำหน้า (นาย/นาง/นางสาว) แล้วตามด้วยชื่อ-สกุล ลองใหม่อีกครั้ง';
+    return;
+  }
+  clearSuspectRows();
+  entries.forEach(e => addSuspectRow(e));
+  msg.textContent = `แยกได้ ${entries.length} คน แทนที่รายชื่อเดิมแล้ว กรุณาเลื่อนขึ้นไปตรวจสอบความถูกต้องอีกครั้งก่อนใช้งาน`;
+});
 
 document.getElementById('addEvidenceRow').addEventListener('click', () => addEvidenceRow());
 addEvidenceRow();
