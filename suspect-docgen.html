@@ -293,11 +293,6 @@
           <button type="button" class="btn btn-ghost btn-sm" id="resetBlurBtn">รีเซ็ตรูป</button>
           <button type="button" class="btn btn-primary btn-sm" id="downloadBlurBtn">ดาวน์โหลดรูปที่เบลอแล้ว</button>
         </div>
-
-        <p class="field-group-label" style="margin-top:16px">เว็บราชการ (DOPA)</p>
-        <button type="button" class="btn btn-ghost btn-sm" id="copyDopaBtn">คัดลอกข้อมูลสำหรับ DOPA</button>
-        <p class="note">คัดลอกแล้วไปกดปุ่มลอย "📋 กรอกจาก suspect-docgen" ตอนอยู่หน้าเว็บ arrest.dopa.go.th (ต้องติดตั้ง Tampermonkey ก่อน ดูวิธีตั้งค่าใน tampermonkey/README.md) — กรอกให้แค่ขั้นตอนที่ 1 "แจ้งการควบคุมตัว" เท่านั้น ยังไม่รองรับหน้าเพิ่มผู้ถูกควบคุมตัว</p>
-        <p class="msg" id="dopaMsg"></p>
       </details>
 
       <details class="panel">
@@ -450,13 +445,22 @@
       </div>
       <div class="panel">
         <h2>บันทึกประวัติการจับกุม (Google Sheet)</h2>
-        <label class="f"><span>ตำบลที่จับ</span>
-          <select id="arrestTambon"><option value="">— เลือกตำบล —</option></select>
-        </label>
+        <p class="note" style="margin-top:0">ตำบลที่จับอยู่ในพาแนล "ข้อมูลสำหรับรายงานอำเภอ/อัยการ" ด้านล่างนี้</p>
         <label class="f" style="margin-top:8px"><span>รหัสผ่านทีม</span><input id="arrestPin" type="password"></label>
         <button class="btn btn-ghost" id="arrestSaveBtn" style="margin-top:8px">บันทึกลง Google Sheet</button>
         <p class="msg" id="arrestSaveMsg"></p>
         <p class="note">ใช้ชื่อ-นามสกุล-เลขบัตรประชาชนจากช่อง "ข้อมูลผู้ต้องหา" ด้านบน ต้องตั้งค่า Google Apps Script ก่อนใช้งาน (ดู google_apps_script/README.md)</p>
+      </div>
+      <div class="panel">
+        <h2>ข้อมูลสำหรับรายงานอำเภอ/อัยการ</h2>
+        <p class="note" style="margin-top:0">สถานที่จับกุม/วันที่จับกุม/เวลาจับกุม ใช้ค่าจากพาแนล "ข้อมูลคดี / หมายจับ" ด้านซ้าย — ไม่ต้องกรอกซ้ำที่นี่</p>
+        <label class="f"><span>ตำบลที่จับ</span>
+          <select id="arrestTambon"><option value="">— เลือกตำบล —</option></select>
+        </label>
+        <button type="button" class="btn btn-ghost btn-sm" id="copyDopaBtn" style="margin-top:8px">คัดลอกข้อมูลสำหรับ DOPA</button>
+        <p class="note">คัดลอกแล้วไปกดปุ่มลอย "📋 กรอกจาก suspect-docgen" ตอนอยู่หน้าเว็บ arrest.dopa.go.th (ต้องติดตั้ง Tampermonkey ก่อน ดูวิธีตั้งค่าใน tampermonkey/README.md) — กรอกให้แค่ขั้นตอนที่ 1 "แจ้งการควบคุมตัว" เท่านั้น ยังไม่รองรับหน้าเพิ่มผู้ถูกควบคุมตัว</p>
+        <p class="msg" id="dopaMsg"></p>
+        <p class="note">รายงานอัยการ (ptd.ago.go.th): ยังไม่เริ่มทำ รอโครงสร้างหน้าเว็บก่อน</p>
       </div>
       <div class="panel">
         <h2>เคสที่บันทึกไว้</h2>
