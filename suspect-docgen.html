@@ -1463,7 +1463,14 @@ function parseArrestRecordText(text) {
   const idMatch = text.match(/หมายเลขประจำตัวประชาชน\s*([0-9][0-9\s-]{10,17}[0-9])/) || text.match(/\b(\d{13})\b/);
   if (idMatch) filled.dopaIdNumber = idMatch[1].replace(/\s+/g, '');
   const locMatch = text.match(/สถานที่จับกุม\s+([^\n]+)/);
-  if (locMatch) filled.dopaLocation = locMatch[1].trim();
+  if (locMatch) {
+    filled.dopaLocation = locMatch[1].trim();
+    const tMatch = filled.dopaLocation.match(/(?:ตำบล|ต\.)\s*([ก-๙]+)/);
+    if (tMatch) {
+      const found = ARREST_TAMBONS.find(t => tMatch[1].startsWith(t) || t.startsWith(tMatch[1]));
+      if (found) filled.arrestTambon = found;
+    }
+  }
   const dtMatch = text.match(/ที่จับ\s+(\d{1,2})\s+([ก-๙]+)\s+(\d{4})\s*เวลา\s*(\d{1,2}[.:]\d{2})/);
   if (dtMatch) {
     const monthIdx = THAI_MONTHS.indexOf(dtMatch[2]);
