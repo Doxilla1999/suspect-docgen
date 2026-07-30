@@ -453,14 +453,34 @@
       </div>
       <div class="panel">
         <h2>ข้อมูลสำหรับรายงานอำเภอ/อัยการ</h2>
-        <p class="note" style="margin-top:0">สถานที่จับกุม/วันที่จับกุม/เวลาจับกุม ใช้ค่าจากพาแนล "ข้อมูลคดี / หมายจับ" ด้านซ้าย — ไม่ต้องกรอกซ้ำที่นี่</p>
-        <label class="f"><span>ตำบลที่จับ</span>
-          <select id="arrestTambon"><option value="">— เลือกตำบล —</option></select>
-        </label>
-        <button type="button" class="btn btn-ghost btn-sm" id="copyDopaBtn" style="margin-top:8px">คัดลอกข้อมูลสำหรับ DOPA</button>
+        <p class="note" style="margin-top:0">ข้อมูลในพาแนลนี้แยกต่างหากจากฟิลด์เอกสารทั้ง 5 แบบด้านซ้ายทั้งหมด — มาจากบันทึกจับกุมโดยเฉพาะ ไม่เกี่ยวกัน</p>
+
+        <textarea id="arrestRecordText" rows="3" placeholder="วางเนื้อหาบันทึกจับกุมทั้งก้อน ระบบจะพยายามดึงชื่อ/เลขบัตร/สถานที่/วันเวลาที่จับ/ข้อหาให้"></textarea>
+        <button type="button" class="btn btn-primary btn-sm" id="arrestRecordFillBtn" style="margin-top:8px">แยกข้อมูลกรอกให้อัตโนมัติ</button>
+        <p class="note" id="arrestRecordMsg" style="margin-top:6px">วางบันทึกจับกุมทั้งก้อน ระบบจะดึงเท่าที่ทำได้ ควรตรวจสอบซ้ำก่อนใช้งานเสมอ</p>
+
+        <div class="grid2" style="margin-top:10px">
+          <label class="f"><span>ชื่อผู้ถูกจับ</span><input id="dopaFirstName"></label>
+          <label class="f"><span>นามสกุล</span><input id="dopaLastName"></label>
+          <label class="f"><span>เลขบัตรประชาชน</span><input id="dopaIdNumber"></label>
+          <label class="f"><span>สถานที่จับกุม</span><input id="dopaLocation"></label>
+          <label class="f"><span>ตำบลที่จับ</span>
+            <select id="arrestTambon"><option value="">— เลือกตำบล —</option></select>
+          </label>
+          <label class="f"><span>วันที่จับกุม (พ.ศ.)</span>
+            <div class="date3"><input id="dopaDate_day" type="number" min="1" max="31" placeholder="วัน"><select id="dopaDate_month"></select><input id="dopaDate_year" type="number" placeholder="พ.ศ."></div>
+          </label>
+          <label class="f"><span>เวลาจับกุม</span><input id="dopaTime" placeholder="เช่น 14.30"></label>
+        </div>
+        <label class="f"><span>ข้อหา/รายละเอียดหมายจับ</span><textarea id="dopaCharge"></textarea></label>
+
+        <p class="field-group-label" style="margin-top:16px">รายงานอำเภอ (DOPA)</p>
+        <button type="button" class="btn btn-ghost btn-sm" id="copyDopaBtn">คัดลอกข้อมูลสำหรับ DOPA</button>
         <p class="note">คัดลอกแล้วไปกดปุ่มลอย "📋 กรอกจาก suspect-docgen" ตอนอยู่หน้าเว็บ arrest.dopa.go.th (ต้องติดตั้ง Tampermonkey ก่อน ดูวิธีตั้งค่าใน tampermonkey/README.md) — กรอกให้แค่ขั้นตอนที่ 1 "แจ้งการควบคุมตัว" เท่านั้น ยังไม่รองรับหน้าเพิ่มผู้ถูกควบคุมตัว</p>
         <p class="msg" id="dopaMsg"></p>
-        <p class="note">รายงานอัยการ (ptd.ago.go.th): ยังไม่เริ่มทำ รอโครงสร้างหน้าเว็บก่อน</p>
+
+        <p class="field-group-label" style="margin-top:16px">รายงานอัยการ</p>
+        <p class="note" style="margin-top:0">ยังไม่เริ่มทำ (ptd.ago.go.th) รอโครงสร้างหน้าเว็บก่อน</p>
       </div>
       <div class="panel">
         <h2>เคสที่บันทึกไว้</h2>
@@ -562,7 +582,7 @@ const CHARGE_PRESETS = [
 ];
 
 function v(id) { const el = document.getElementById(id); return el ? (el.value || '').trim() : ''; }
-const DATE_FIELDS = ['dobDate', 'warrantDate', 'arrestDate', 'issueDate', 'testDate', 'appointmentDate'];
+const DATE_FIELDS = ['dobDate', 'warrantDate', 'arrestDate', 'issueDate', 'testDate', 'appointmentDate', 'dopaDate'];
 function initDateSelects() {
   DATE_FIELDS.forEach(prefix => {
     const sel = document.getElementById(prefix + '_month');
@@ -781,7 +801,8 @@ const ALL_FIELD_IDS = ['title','firstName','lastName','nickname','alias','age','
   'otherNotes','appointmentTime','appointmentPlace',
   'phoneBrand','phoneModel','phoneColor','phoneImei1','phoneImei2','recordPlace','sim1Number','sim1Network',
   'sim2Number','sim2Network','officer1Rank','officer1Name','officer1Position','officer2Rank','officer2Name',
-  'officer2Position','officer3Rank','officer3Name','officer3Position', ...DATE_PART_IDS];
+  'officer2Position','officer3Rank','officer3Name','officer3Position',
+  'arrestTambon','dopaFirstName','dopaLastName','dopaIdNumber','dopaLocation','dopaTime','dopaCharge', ...DATE_PART_IDS];
 
 function collectFormSnapshot() {
   const snap = {};
@@ -1435,16 +1456,53 @@ document.getElementById('downloadBlurBtn').addEventListener('click', () => {
   link.click();
 });
 
+function parseArrestRecordText(text) {
+  const filled = {};
+  const nameMatch = text.match(/จับกุมตัว\s*(นางสาว|นาง|นาย)\s*([ก-๙A-Za-z]+)\s+([ก-๙A-Za-z]+)/);
+  if (nameMatch) { filled.dopaFirstName = nameMatch[2]; filled.dopaLastName = nameMatch[3]; }
+  const idMatch = text.match(/หมายเลขประจำตัวประชาชน\s*([0-9][0-9\s-]{10,17}[0-9])/) || text.match(/\b(\d{13})\b/);
+  if (idMatch) filled.dopaIdNumber = idMatch[1].replace(/\s+/g, '');
+  const locMatch = text.match(/สถานที่จับกุม\s+([^\n]+)/);
+  if (locMatch) filled.dopaLocation = locMatch[1].trim();
+  const dtMatch = text.match(/ที่จับ\s+(\d{1,2})\s+([ก-๙]+)\s+(\d{4})\s*เวลา\s*(\d{1,2}[.:]\d{2})/);
+  if (dtMatch) {
+    const monthIdx = THAI_MONTHS.indexOf(dtMatch[2]);
+    if (monthIdx >= 0) {
+      filled.dopaDate_day = dtMatch[1];
+      filled.dopaDate_month = String(monthIdx);
+      filled.dopaDate_year = dtMatch[3];
+      filled.dopaTime = dtMatch[4];
+    }
+  }
+  const chargeMatch = text.match(/โดยกล่าวหาว่า\s+([\s\S]+?)(?=\n\s*\n|\n\s*พฤติการณ์|$)/);
+  if (chargeMatch) filled.dopaCharge = chargeMatch[1].trim();
+  return filled;
+}
+document.getElementById('arrestRecordFillBtn').addEventListener('click', () => {
+  const text = document.getElementById('arrestRecordText').value;
+  const filled = parseArrestRecordText(text);
+  applyQuickFill(filled);
+  const count = Object.keys(filled).length;
+  const msg = document.getElementById('arrestRecordMsg');
+  msg.textContent = count > 0
+    ? `กรอกให้แล้ว ${count} ช่อง (${Object.keys(filled).join(', ')}) — กรุณาตรวจสอบและเลือกตำบลเองด้วย`
+    : 'ไม่พบรูปแบบที่จดจำได้ในข้อความนี้ กรอกเองในช่องด้านล่างแทนได้';
+});
+
 document.getElementById('copyDopaBtn').addEventListener('click', async () => {
   const msg = document.getElementById('dopaMsg');
   const payload = {
     source: 'suspect-docgen-dopa-step1',
-    place_name: v('arrestLocation') || v('stationName'),
-    place_date: isoDateTimeFromThai('arrestDate_day', 'arrestDate_month', 'arrestDate_year', v('arrestTime')),
+    place_name: v('dopaLocation') || v('stationName'),
+    place_date: isoDateTimeFromThai('dopaDate_day', 'dopaDate_month', 'dopaDate_year', v('dopaTime')),
     province_code: '22',
     province_name: 'จันทบุรี',
     amphoe_name: 'นายายอาม',
-    tambon_name: v('arrestTambon')
+    tambon_name: v('arrestTambon'),
+    suspect_first_name: v('dopaFirstName'),
+    suspect_last_name: v('dopaLastName'),
+    suspect_id_number: v('dopaIdNumber'),
+    charge: v('dopaCharge')
   };
   try {
     await navigator.clipboard.writeText(JSON.stringify(payload));
