@@ -1464,12 +1464,14 @@ function parseArrestRecordText(text) {
   if (idMatch) filled.dopaIdNumber = idMatch[1].replace(/\s+/g, '');
   const locMatch = text.match(/สถานที่จับกุม\s+([^\n]+)/);
   if (locMatch) {
-    filled.dopaLocation = locMatch[1].trim();
-    const tMatch = filled.dopaLocation.match(/(?:ตำบล|ต\.)\s*([ก-๙]+)/);
+    const fullLoc = locMatch[1].trim();
+    const tMatch = fullLoc.match(/(?:ตำบล|ต\.)\s*([ก-๙]+)/);
     if (tMatch) {
       const found = ARREST_TAMBONS.find(t => tMatch[1].startsWith(t) || t.startsWith(tMatch[1]));
       if (found) filled.arrestTambon = found;
     }
+    // ตัดส่วน ตำบล/อำเภอ/จังหวัด (รวมตัวย่อ ต./อ./จ.) ออก เหลือแค่ที่อยู่/บริเวณ+หมู่ เพราะ ต./อ./จ. กรอกผ่าน dropdown แยกอยู่แล้ว
+    filled.dopaLocation = fullLoc.replace(/\s*(?:ตำบล|ต\.).*$/, '').trim();
   }
   const dtMatch = text.match(/ที่จับ\s+(\d{1,2})\s+([ก-๙]+)\s+(\d{4})\s*เวลา\s*(\d{1,2}[.:]\d{2})/);
   if (dtMatch) {

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         suspect-docgen auto-fill (DOPA)
 // @namespace    suspect-docgen
-// @version      1.0
+// @version      1.1
 // @description  กรอกข้อมูลอัตโนมัติจากเว็บแอป suspect-docgen ลงเว็บ arrest.dopa.go.th (ไม่กดบันทึก/ส่งให้)
 // @match        https://arrest.dopa.go.th/*
 // @grant        none
@@ -13,9 +13,14 @@
   function setVal(id, val) {
     const el = document.getElementById(id);
     if (!el || !val) return false;
-    el.value = val;
+    // ใช้ native setter ตรงๆ (ไม่ผ่าน el.value ปกติ) เพราะบางฟิลด์ของเว็บนี้ (เช่น place_date)
+    // ถูกควบคุมด้วย framework ฝั่งหน้าเว็บ ซึ่งจะเซ็ตค่าทับกลับถ้าไม่ทำแบบนี้
+    const proto = el.tagName === 'TEXTAREA' ? window.HTMLTextAreaElement.prototype : window.HTMLInputElement.prototype;
+    const nativeSetter = Object.getOwnPropertyDescriptor(proto, 'value') && Object.getOwnPropertyDescriptor(proto, 'value').set;
+    if (nativeSetter) nativeSetter.call(el, val); else el.value = val;
     el.dispatchEvent(new Event('input', { bubbles: true }));
     el.dispatchEvent(new Event('change', { bubbles: true }));
+    el.dispatchEvent(new Event('blur', { bubbles: true }));
     return true;
   }
 
