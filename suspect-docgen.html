@@ -1042,7 +1042,7 @@ function isoDateTimeFromThai(dayId, monthId, yearId, timeStr) {
     const m = timeStr.match(/(\d{1,2})[.:](\d{2})/);
     if (m) { hh = m[1].padStart(2, '0'); min = m[2]; }
   }
-  return `${yearCE}-${mm}-${dd}T${hh}:${min}`;
+  return `${yearCE}-${mm}-${dd}T${hh}:${min}:00`;
 }
 
 function addEvidenceRow(data) {
