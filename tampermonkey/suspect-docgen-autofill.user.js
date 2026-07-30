@@ -72,6 +72,32 @@
       }
     }
 
+    // 1.2 เจ้าหน้าที่ของรัฐผู้รับผิดชอบ (ม.22) — คนเดิมทุกครั้ง (ไม่ใช่คนเดียวกับข้อ 1.1)
+    const RESPONSIBLE_OFFICER = {
+      pid: '3560300569254',
+      title: 'ร.ต.อ.',
+      fname: 'รัฐภูมิ',
+      lname: 'พวงมาลา',
+      position: 'รอง สว.สส.',
+      org: 'สภ.นายายอาม',
+      tel: '0861801202'
+    };
+    const otherRadio = document.getElementById('other');
+    if (otherRadio) {
+      otherRadio.checked = true;
+      otherRadio.dispatchEvent(new Event('change', { bubbles: true }));
+      if (typeof check1_1 === 'function') check1_1(otherRadio);
+      setVal('com_pid', RESPONSIBLE_OFFICER.pid);
+      setVal('com_title', RESPONSIBLE_OFFICER.title);
+      setVal('com_fname', RESPONSIBLE_OFFICER.fname);
+      setVal('com_lname', RESPONSIBLE_OFFICER.lname);
+      setVal('com_position', RESPONSIBLE_OFFICER.position);
+      setVal('com_org', RESPONSIBLE_OFFICER.org);
+      setVal('com_tel', RESPONSIBLE_OFFICER.tel);
+    } else {
+      notes.push('กรอก "1.2 เจ้าหน้าที่ของรัฐผู้รับผิดชอบ (ม.22)" เองด้วยนะครับ (หาปุ่มตัวเลือกไม่เจอ)');
+    }
+
     let msg = 'กรอกข้อมูลที่ทำได้อัตโนมัติแล้ว — ตรวจสอบทุกช่องก่อนกด "เพิ่มสถานที่" เสมอ';
     if (notes.length) msg += '\n\n' + notes.join('\n');
     alert(msg);
