@@ -227,6 +227,7 @@
 
       <details class="panel" open>
         <summary>ข้อมูลคดี / หมายจับ</summary>
+        <p class="note" style="margin-top:0">ช่องด้านล่างนี้ใช้ร่วมกันทั้งฟอร์ม — ถ้าจับมาหลายคนและ<b>ข้อหาไม่เหมือนกัน</b> (เช่น บางคนเสพ บางคนครอบครอง บางคนตามหมายจับ) ให้กรอกและสร้างเอกสารทีละคน/ทีละกลุ่มที่ข้อหาเดียวกัน แล้วค่อยเปลี่ยนข้อมูลตรงนี้ก่อนสร้างเอกสารของกลุ่มถัดไป</p>
         <label class="f"><span>ประเภทบุคคล (เลือกเพื่อช่วยร่างข้อหา)</span>
           <select id="chargePreset"><option value="">— เลือกเพื่อร่างให้ —</option></select>
         </label>
@@ -1296,6 +1297,10 @@ function parseQuickFillText(text) {
       filled.warrantDate_year = warrantMatch[5];
     }
   }
+  const blackNoMatch = text.match(/คดีหมายเลขดำที่\s*([ก-๙0-9\/]+)/);
+  if (blackNoMatch) filled.caseBlackNo = blackNoMatch[1];
+  const redNoMatch = text.match(/คดีหมายเลขแดงที่\s*([ก-๙0-9\/]+)/);
+  if (redNoMatch) filled.caseRedNo = redNoMatch[1];
   const chargeMatch = text.match(/ความผิดฐาน\s+([\s\S]+?)\s*$/);
   if (chargeMatch) filled.charge = chargeMatch[1].trim();
   return filled;
