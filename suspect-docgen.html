@@ -349,6 +349,9 @@
       <details class="panel">
         <summary>รายละเอียดส่งตรวจปัสสาวะ</summary>
         <div class="grid2">
+          <label class="f"><span>ชนิดยาเสพติดที่ขอตรวจยืนยัน</span>
+            <input id="drugTypeUrine" list="drugList" placeholder="เลือกหรือพิมพ์เอง">
+          </label>
           <label class="f"><span>โรงพยาบาลที่ส่งตรวจ</span><input id="hospitalName" placeholder="นายายอาม จันทบุรี"></label>
           <label class="f"><span>วันที่นัดตรวจปัสสาวะ (พ.ศ.)</span>
             <div class="date3"><input id="testDate_day" type="number" min="1" max="31" placeholder="วัน"><select id="testDate_month"></select><input id="testDate_year" type="number" placeholder="พ.ศ."></div>
@@ -769,7 +772,7 @@ const ALL_FIELD_IDS = ['title','firstName','lastName','nickname','alias','age','
   'height','weight','skin','head','hair','face','eyes','nose','ears','beard','marks','accent',
   'charge','caseBlackNo','caseRedNo','warrantNo','courtName','arrestTime','arrestLocation',
   'docRunningNo','crimeWeapon','crimeVehicle','crimeAccomplice','crimeDetails','crimeNotes','crimeHistory',
-  'idDocType','idOtherDetail','drugType','testResult','searchFound','searchDrugType','seizedAmount',
+  'idDocType','idOtherDetail','drugType','drugTypeUrine','testResult','searchFound','searchDrugType','seizedAmount',
   'treatmentConsent','officer1CardType','cardNoPpst','cardNoGov','hospitalName',
   'otherNotes','appointmentTime','appointmentPlace',
   'phoneBrand','phoneModel','phoneColor','phoneImei1','phoneImei2','recordPlace','sim1Number','sim1Network',
@@ -1343,6 +1346,14 @@ STATION_FIELDS.forEach(id => { const el = document.getElementById(id); if (el) e
 document.getElementById('loginBtn').addEventListener('click', doLogin);
 document.getElementById('loginPassword').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
 document.getElementById('logoutBtn').addEventListener('click', () => { if (firebaseReady) firebase.auth().signOut(); });
+
+// ชนิดยาเสพติด: ใช้ค่าเดียวกันทั้ง ปยส.115 กับ ส่งตรวจปัสสาวะ แต่มีช่องกรอกให้เห็นในทั้ง 2 พาแนล
+(function syncDrugTypeFields() {
+  const a = document.getElementById('drugType');
+  const b = document.getElementById('drugTypeUrine');
+  a.addEventListener('input', () => { b.value = a.value; });
+  b.addEventListener('input', () => { a.value = b.value; });
+})();
 
 initOfficerPresets();
 initConditionalFields();
