@@ -64,6 +64,16 @@
   .note { font-size: 13.5px; color: #9B968D; line-height: 1.5; margin-top: 10px; }
   .msg { font-size: 15px; color: #E2685D; margin: 6px 0 0; min-height: 16px; }
   .mono { font-family: 'IBM Plex Mono', monospace; }
+  .doc-check { position: relative; }
+  .doc-edit-btn { margin-left: auto; background: none; border: 1px solid #33393F; color: #B68D40; border-radius: 6px; padding: 4px 10px; font-size: 12.5px; cursor: pointer; white-space: nowrap; }
+  .doc-edit-btn:hover { background: rgba(182,141,64,.15); }
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.65); z-index: 1000; align-items: flex-start; justify-content: center; padding: 30px 16px; overflow-y: auto; }
+  .modal-overlay.show { display: flex; }
+  .modal-box { background: #171B20; border: 1px solid #2A2F36; border-radius: 12px; padding: 20px; max-width: 640px; width: 100%; position: relative; margin-bottom: 30px; }
+  .modal-box h2 { font-size: 17px; margin: 0 0 14px; padding-right: 30px; }
+  .modal-close { position: absolute; top: 14px; right: 14px; background: none; border: none; color: #9B968D; font-size: 22px; line-height: 1; cursor: pointer; padding: 4px; }
+  .modal-close:hover { color: #E8E6E0; }
+  .modal-done { margin-top: 16px; }
   body::before {
     content: '';
     position: fixed;
@@ -208,11 +218,11 @@
       <div class="panel">
         <h2>เอกสารที่ต้องการสร้าง <span class="hint-inline">(ติ๊กเลือกเองได้ทีละฉบับ)</span></h2>
         <div class="doc-checklist">
-          <label class="doc-check"><input type="checkbox" class="doc-select" value="drug_test_115"><span>ปยส.115 (บันทึกตรวจสารเสพติด)</span></label>
-          <label class="doc-check"><input type="checkbox" class="doc-select" value="urine_referral"><span>ส่งตรวจปัสสาวะ</span></label>
+          <label class="doc-check"><input type="checkbox" class="doc-select" value="drug_test_115"><span>ปยส.115 (บันทึกตรวจสารเสพติด)</span><button type="button" class="doc-edit-btn" data-modal="modalDrugTest115">รายละเอียด</button></label>
+          <label class="doc-check"><input type="checkbox" class="doc-select" value="urine_referral"><span>ส่งตรวจปัสสาวะ</span><button type="button" class="doc-edit-btn" data-modal="modalUrineReferral">รายละเอียด</button></label>
           <label class="doc-check"><input type="checkbox" id="photoAttach" class="doc-select" value="profile_and_photos"><span>ประวัติบุคคล 4 ด้าน + ภาพประกอบ (2 หน้า)</span></label>
           <label class="doc-check"><input type="checkbox" class="doc-select" value="court_referral"><span>ใบปะหน้าส่งศาล</span></label>
-          <label class="doc-check"><input type="checkbox" class="doc-select" value="phone_consent_m80"><span>บันทึกยินยอมตรวจโทรศัพท์ ม.80</span></label>
+          <label class="doc-check"><input type="checkbox" class="doc-select" value="phone_consent_m80"><span>บันทึกยินยอมตรวจโทรศัพท์ ม.80</span><button type="button" class="doc-edit-btn" data-modal="modalPhoneM80">รายละเอียด</button></label>
         </div>
         <div id="photoInputs" style="display:none;margin-top:10px">
           <div class="grid2">
@@ -223,7 +233,6 @@
           </div>
           <p class="note" style="margin-top:6px">ต้องอัปโหลดครบทั้ง 4 รูปจึงจะสร้างเอกสารนี้ได้ รูปจะไม่ถูกบันทึกไว้ในระบบ ต้องเลือกใหม่ทุกครั้งที่สร้างเอกสาร</p>
         </div>
-      </div>
       </div>
 
       <details class="panel" open>
@@ -295,8 +304,10 @@
         </div>
       </details>
 
-      <details class="panel">
-        <summary>รายละเอียดคดี ปยส.115</summary>
+      <div class="modal-overlay" id="modalDrugTest115">
+      <div class="modal-box">
+        <button type="button" class="modal-close" data-close-modal>&times;</button>
+        <h2>รายละเอียดคดี ปยส.115</h2>
         <label class="f"><span>ประเภทเอกสารแสดงตน (ผู้ต้องหา)</span>
           <select id="idDocType"><option value="card">บัตรประชาชน</option><option value="alien">บัตรคนซึ่งไม่มีสัญชาติไทย</option><option value="passport">หนังสือเดินทาง</option><option value="other">เอกสารอื่นที่ราชการออกให้</option></select>
         </label>
@@ -339,10 +350,14 @@
           <label class="f"><span>เวลานัด</span><input id="appointmentTime"></label>
           <label class="f"><span>สถานที่นัด</span><input id="appointmentPlace"></label>
         </div>
-      </details>
+        <button type="button" class="btn btn-primary modal-done" data-close-modal>เสร็จแล้ว</button>
+      </div>
+      </div>
 
-      <details class="panel">
-        <summary>รายละเอียดส่งตรวจปัสสาวะ</summary>
+      <div class="modal-overlay" id="modalUrineReferral">
+      <div class="modal-box">
+        <button type="button" class="modal-close" data-close-modal>&times;</button>
+        <h2>รายละเอียดส่งตรวจปัสสาวะ</h2>
         <div class="grid2">
           <label class="f"><span>ชนิดยาเสพติดที่ขอตรวจยืนยัน</span>
             <input id="drugTypeUrine" list="drugList" placeholder="เลือกหรือพิมพ์เอง">
@@ -360,10 +375,14 @@
         </div>
         <div id="suspectListRows"></div>
         <button type="button" class="btn btn-ghost btn-sm" id="addSuspectRow">+ เพิ่มรายชื่อ</button>
-      </details>
+        <button type="button" class="btn btn-primary modal-done" data-close-modal>เสร็จแล้ว</button>
+      </div>
+      </div>
 
-      <details class="panel">
-        <summary>ข้อมูลโทรศัพท์ (ม.80)</summary>
+      <div class="modal-overlay" id="modalPhoneM80">
+      <div class="modal-box">
+        <button type="button" class="modal-close" data-close-modal>&times;</button>
+        <h2>ข้อมูลโทรศัพท์ (ม.80)</h2>
         <div class="grid3">
           <label class="f"><span>ยี่ห้อ</span><input id="phoneBrand"></label>
           <label class="f"><span>รุ่น</span><input id="phoneModel"></label>
@@ -376,7 +395,9 @@
           <label class="f"><span>ซิม (2) หมายเลข</span><input id="sim2Number"></label>
           <label class="f"><span>ซิม (2) เครือข่าย</span><input id="sim2Network"></label>
         </div>
-      </details>
+        <button type="button" class="btn btn-primary modal-done" data-close-modal>เสร็จแล้ว</button>
+      </div>
+      </div>
 
       <details class="panel" open>
         <summary>เจ้าหน้าที่ผู้จับกุม (3 นาย)</summary>
@@ -490,6 +511,7 @@
       </div>
     </div>
   </div>
+  </div>
 </div>
 
 <script>
@@ -570,6 +592,31 @@ const CASE_TYPE_DOCS = {
   gamble_online: ['profile_and_photos']
 };
 const RECOMMEND_M80 = new Set(['drug_sell', 'gamble_online']);
+const DOC_MODALS = {
+  drug_test_115: 'modalDrugTest115',
+  urine_referral: 'modalUrineReferral',
+  phone_consent_m80: 'modalPhoneM80'
+};
+function openModal(id) {
+  const el = document.getElementById(id);
+  if (el) el.classList.add('show');
+}
+function closeModal(overlayEl) {
+  overlayEl.classList.remove('show');
+}
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', e => { if (e.target === overlay) closeModal(overlay); });
+  overlay.querySelectorAll('[data-close-modal]').forEach(btn => btn.addEventListener('click', () => closeModal(overlay)));
+});
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  document.querySelectorAll('.modal-overlay.show').forEach(closeModal);
+});
+document.querySelectorAll('.doc-edit-btn').forEach(btn => btn.addEventListener('click', e => {
+  e.preventDefault();
+  e.stopPropagation();
+  openModal(btn.dataset.modal);
+}));
 const STATION_FIELDS = ['stationName','stationDistrict','docNumberPrefix','province','postalCode','officerAffiliation','compilerName','signerRank','signerName','signerPosition'];
 const THAI_MONTHS = ["มกราคม","กุมภาพันธ์","มีนาคม","เมษายน","พฤษภาคม","มิถุนายน","กรกฎาคม","สิงหาคม","กันยายน","ตุลาคม","พฤศจิกายน","ธันวาคม"];
 const THAI_PROVINCES = ["กระบี่","กรุงเทพมหานคร","กาญจนบุรี","กาฬสินธุ์","กำแพงเพชร","ขอนแก่น","จันทบุรี","ฉะเชิงเทรา","ชลบุรี","ชัยนาท","ชัยภูมิ","ชุมพร","เชียงราย","เชียงใหม่","ตรัง","ตราด","ตาก","นครนายก","นครปฐม","นครพนม","นครราชสีมา","นครศรีธรรมราช","นครสวรรค์","นนทบุรี","นราธิวาส","น่าน","บึงกาฬ","บุรีรัมย์","ปทุมธานี","ประจวบคีรีขันธ์","ปราจีนบุรี","ปัตตานี","พระนครศรีอยุธยา","พะเยา","พังงา","พัทลุง","พิจิตร","พิษณุโลก","เพชรบุรี","เพชรบูรณ์","แพร่","ภูเก็ต","มหาสารคาม","มุกดาหาร","แม่ฮ่องสอน","ยโสธร","ยะลา","ร้อยเอ็ด","ระนอง","ระยอง","ราชบุรี","ลพบุรี","ลำปาง","ลำพูน","เลย","ศรีสะเกษ","สกลนคร","สงขลา","สตูล","สมุทรปราการ","สมุทรสงคราม","สมุทรสาคร","สระแก้ว","สระบุรี","สิงห์บุรี","สุโขทัย","สุพรรณบุรี","สุราษฎร์ธานี","สุรินทร์","หนองคาย","หนองบัวลำภู","อ่างทอง","อำนาจเจริญ","อุดรธานี","อุตรดิตถ์","อุทัยธานี","อุบลราชธานี"];
@@ -1360,7 +1407,11 @@ document.querySelectorAll('.case-type').forEach(c => c.addEventListener('change'
   if (c.checked) applyCaseTypeSuggestions(c.value);
   renderChecklist();
 }));
-document.querySelectorAll('.doc-select').forEach(c => c.addEventListener('change', renderChecklist));
+document.querySelectorAll('.doc-select').forEach(c => c.addEventListener('change', () => {
+  renderChecklist();
+  const modalId = DOC_MODALS[c.value];
+  if (modalId && c.checked) openModal(modalId);
+}));
 document.getElementById('photoAttach').addEventListener('change', () => {
   document.getElementById('photoInputs').style.display = document.getElementById('photoAttach').checked ? '' : 'none';
 });
