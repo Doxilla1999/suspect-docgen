@@ -465,6 +465,14 @@
         <p class="msg" id="genMsg"></p>
       </div>
       <div class="panel">
+        <h2>คิวสร้างเอกสาร (จับหลายคน)</h2>
+        <p class="note" style="margin-top:0">จับมาหลายคน? กรอกข้อมูลคนแรกด้านซ้าย ติ๊กเอกสารที่ต้องการ แล้วกด "เพิ่มเข้าคิว" — ฟอร์มจะล้างให้กรอกคนถัดไปทันที ทำจนครบทุกคนแล้วค่อยกด "สร้างเอกสารทั้งหมดในคิว" ทีเดียว ไฟล์แต่ละคนจะมีชื่อต่อท้ายแยกกันอยู่แล้ว</p>
+        <div id="queueOut"></div>
+        <button type="button" class="btn btn-ghost" id="addToQueueBtn" style="margin-top:8px">+ เพิ่มคนนี้เข้าคิว</button>
+        <button type="button" class="btn btn-primary" id="genQueueBtn" style="margin-top:8px">สร้างเอกสารทั้งหมดในคิว</button>
+        <p class="msg" id="queueMsg"></p>
+      </div>
+      <div class="panel">
         <h2>บันทึกประวัติการจับกุม (Google Sheet)</h2>
         <p class="note" style="margin-top:0">ตำบลที่จับอยู่ในพาแนล "ข้อมูลสำหรับรายงานอำเภอ/อัยการ" ด้านล่างนี้</p>
         <label class="f" style="margin-top:8px"><span>รหัสผ่านทีม</span><input id="arrestPin" type="password"></label>
@@ -833,6 +841,78 @@ async function onGenerateAll() {
   msg.textContent = failed.length ? `สร้างแล้ว ${done} ฉบับ, ผิดพลาด: ${failed.join(', ')}` : `สร้างเอกสารแล้ว ${done} ฉบับ`;
   await saveCurrentCase();
 }
+
+let docQueue = [];
+function renderQueue() {
+  const out = document.getElementById('queueOut');
+  if (docQueue.length === 0) { out.innerHTML = '<p class="note" style="margin-top:0">คิวว่าง ยังไม่มีใครถูกเพิ่ม</p>'; return; }
+  out.innerHTML = docQueue.map((q, i) => `
+    <div class="case-row">
+      <div style="flex:1">
+        <div>${escapeXml(q.name)}</div>
+        <p class="note" style="margin:2px 0 0">${escapeXml(q.docLabels.join(', '))}</p>
+      </div>
+      <button type="button" class="btn-danger-outline" data-qdel="${i}">ลบ</button>
+    </div>`).join('');
+  out.querySelectorAll('[data-qdel]').forEach(b => b.addEventListener('click', () => {
+    docQueue.splice(parseInt(b.dataset.qdel, 10), 1);
+    renderQueue();
+  }));
+}
+function setFileInput(id, file) {
+  const input = document.getElementById(id);
+  const dt = new DataTransfer();
+  if (file) dt.items.add(file);
+  input.files = dt.files;
+}
+document.getElementById('addToQueueBtn').addEventListener('click', () => {
+  const msg = document.getElementById('queueMsg');
+  const { set } = computeChecklist();
+  if (set.size === 0) { msg.textContent = 'ติ๊กเอกสารที่ต้องการก่อนเพิ่มเข้าคิว'; return; }
+  const name = `${v('firstName')} ${v('lastName')}`.trim();
+  if (!name) { msg.textContent = 'กรอกชื่อ-นามสกุลก่อนเพิ่มเข้าคิว'; return; }
+  let photos = null;
+  if (set.has('profile_and_photos')) {
+    const files = ['photoFront', 'photoBack', 'photoLeft', 'photoRight'].map(id => document.getElementById(id).files[0]);
+    if (files.some(f => !f)) { msg.textContent = 'อัปโหลดภาพให้ครบ 4 ด้านก่อนเพิ่มเข้าคิว หรือยกเลิกติ๊ก "ประวัติบุคคล 4 ด้าน"'; return; }
+    photos = files;
+  }
+  docQueue.push({
+    name,
+    snapshot: collectFormSnapshot(),
+    docLabels: [...set].map(k => DOC_INFO[k].label),
+    photos
+  });
+  clearForm();
+  msg.textContent = `เพิ่ม "${name}" เข้าคิวแล้ว (${docQueue.length} คนในคิว) — กรอกคนถัดไปได้เลย`;
+  renderQueue();
+});
+document.getElementById('genQueueBtn').addEventListener('click', async () => {
+  const msg = document.getElementById('queueMsg');
+  if (docQueue.length === 0) { msg.textContent = 'คิวว่าง ยังไม่มีใครให้สร้างเอกสาร'; return; }
+  let doneCount = 0;
+  for (const entry of docQueue) {
+    msg.textContent = `กำลังสร้างเอกสารให้ ${entry.name} (${doneCount + 1}/${docQueue.length})...`;
+    applyFormSnapshot(entry.snapshot);
+    if (entry.photos) {
+      setFileInput('photoFront', entry.photos[0]);
+      setFileInput('photoBack', entry.photos[1]);
+      setFileInput('photoLeft', entry.photos[2]);
+      setFileInput('photoRight', entry.photos[3]);
+    }
+    const tags = buildTagMap();
+    const suspectName = (v('firstName') + v('lastName')) || 'case';
+    for (const key of entry.snapshot.selectedDocs) {
+      try { await generateDoc(key, tags, suspectName); } catch (e) {}
+      await sleep(400);
+    }
+    doneCount++;
+  }
+  docQueue = [];
+  renderQueue();
+  clearForm();
+  msg.textContent = `สร้างเอกสารให้ครบ ${doneCount} คนแล้ว`;
+});
 
 const DATE_PART_IDS = DATE_FIELDS.flatMap(p => [p + '_day', p + '_month', p + '_year']);
 const CHECKBOX_IDS = ['pb1', 'pb2', 'pb3', 'pb4'];
@@ -1582,6 +1662,7 @@ function setDefaultIssueDate() {
 initDateSelects();
 setDefaultIssueDate();
 renderChecklist();
+renderQueue();
 loadStationSettings();
 loadCasesIndex();
 </script>
