@@ -962,6 +962,18 @@ const ALL_FIELD_IDS = ['title','firstName','lastName','nickname','alias','age','
   'sim2Number','sim2Network','officer1Rank','officer1Name','officer1Position','officer2Rank','officer2Name',
   'officer2Position','officer3Rank','officer3Name','officer3Position',
   'arrestTambon','dopaFirstName','dopaLastName','dopaIdNumber','dopaLocation','dopaTime','dopaCharge', ...DATE_PART_IDS];
+const PERSON_ONLY_FIELD_IDS = ['title', 'firstName', 'lastName', 'nickname', 'alias', 'age', 'nationality', 'ethnicity', 'religion',
+  'idNumber', 'phone', 'occupation', 'income', 'education', 'idIssueAmphoe', 'idIssueProvince',
+  'currentAddress', 'parents', 'spouse', 'spouseAddress', 'friends', 'hangouts', 'knownBy',
+  'addrHouseNo', 'addrMoo', 'addrRoad', 'addrTambon', 'addrAmphoe', 'addrProvince',
+  'dobDate_day', 'dobDate_month', 'dobDate_year'];
+function clearPersonOnlyFields() {
+  PERSON_ONLY_FIELD_IDS.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.value = (id === 'nationality' ? 'ไทย' : id === 'ethnicity' ? 'ไทย' : id === 'religion' ? 'พุทธ' : id === 'addrProvince' ? 'จันทบุรี' : '');
+  });
+}
 
 function collectFormSnapshot() {
   const snap = {};
@@ -1502,12 +1514,45 @@ function parseQuickFillText(text) {
 function applyQuickFill(filled) {
   Object.keys(filled).forEach(key => { const el = document.getElementById(key); if (el) el.value = filled[key]; });
 }
+const PERSON_LINE_RE = /(นางสาว|นาง|นาย)\s*[ก-๙A-Za-z]+\s+[ก-๙A-Za-z]+/;
 document.getElementById('quickFillBtn').addEventListener('click', () => {
   const text = document.getElementById('quickFillText').value;
+  const msg = document.getElementById('quickFillMsg');
+  const personLines = text.split('\n').map(l => l.trim()).filter(l => PERSON_LINE_RE.test(l));
+
+  if (personLines.length >= 2) {
+    const { set } = computeChecklist();
+    if (set.size === 0) {
+      msg.textContent = `พบข้อมูล ${personLines.length} คนในข้อความนี้ — ติ๊กเอกสารที่ต้องการในช่อง "เอกสารที่ต้องการสร้าง" ก่อน (จะใช้ชุดเดียวกันทุกคน) แล้วกดปุ่มนี้อีกครั้งเพื่อเพิ่มเข้าคิวอัตโนมัติ`;
+      return;
+    }
+    const wantsPhotos = set.has('profile_and_photos');
+    const docs = [...set].filter(k => k !== 'profile_and_photos');
+    let added = 0;
+    personLines.forEach(line => {
+      const filled = parseQuickFillText(line);
+      if (!filled.firstName) return;
+      clearPersonOnlyFields();
+      applyQuickFill(filled);
+      const name = `${v('firstName')} ${v('lastName')}`.trim();
+      if (!name || docs.length === 0) return;
+      const snap = collectFormSnapshot();
+      snap.selectedDocs = docs;
+      docQueue.push({ name, snapshot: snap, docLabels: docs.map(k => DOC_INFO[k].label), photos: null });
+      added++;
+    });
+    clearPersonOnlyFields();
+    document.getElementById('quickFillText').value = '';
+    renderQueue();
+    msg.textContent = `เพิ่มเข้าคิวแล้ว ${added} คน จาก ${personLines.length} คนที่พบ` +
+      (wantsPhotos ? ' — ข้าม "ประวัติบุคคล 4 ด้าน" ไว้ เพราะต้องอัปโหลดรูปเอง ไปกดปุ่ม "รายละเอียด" แก้ไขทีละคนในคิวด้านขวาได้' : '') +
+      ' ตรวจสอบข้อมูลในคิวอีกครั้งก่อนกด "สร้างเอกสารทั้งหมดในคิว"';
+    return;
+  }
+
   const filled = parseQuickFillText(text);
   applyQuickFill(filled);
   const count = Object.keys(filled).length;
-  const msg = document.getElementById('quickFillMsg');
   msg.textContent = count > 0
     ? `กรอกให้แล้ว ${count} ช่อง (${Object.keys(filled).join(', ')}) กรุณาเลื่อนขึ้นไปตรวจสอบความถูกต้องอีกครั้งก่อนใช้งาน`
     : 'ไม่พบข้อมูลที่จดจำได้จากข้อความนี้ ลองใส่คำนำหน้าแบบ "เลขบัตรประชาชน", "อายุ", "บ้านเลขที่" ให้ชัดเจน หรือกรอกเองในฟอร์มด้านล่าง';
