@@ -92,6 +92,16 @@
     z-index: 0;
     pointer-events: none;
   }
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MjAiIGhlaWdodD0iMTgwIj4KICA8dGV4dCB4PSIyMTAiIHk9IjkwIiBmb250LWZhbWlseT0iVGFob21hLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjIyIiBmb250LXdlaWdodD0iNzAwIiBmaWxsPSIjQjY4RDQwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiB0cmFuc2Zvcm09InJvdGF0ZSgtMjUgMjEwIDkwKSI+4LiqLuC4lS7guJUu4LiT4Lix4LiQ4Lio4Lix4LiB4LiU4Li04LmMIOC4m+C4seC4quC5gOC4quC4meC4sDwvdGV4dD4KPC9zdmc+");
+    background-repeat: repeat;
+    opacity: .1;
+    z-index: 0;
+    pointer-events: none;
+  }
   .app { position: relative; z-index: 1; }
   #loginScreen { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #14181C; }
   #loginScreen .box { background: #171B20; border-radius: 12px; padding: 32px 28px; width: 100%; max-width: 340px; box-shadow: 0 10px 40px rgba(0,0,0,.4); }
