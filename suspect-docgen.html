@@ -83,6 +83,10 @@
   .module-body { flex: 1; min-width: 0; padding-left: 20px; }
   [data-module].module-hidden, .col-side.module-hidden, .col-main.module-hidden { display: none !important; }
   .shell .layout { padding: 0; }
+  .queue-status-bar { display: none; position: fixed; top: 0; left: 0; right: 0; z-index: 2000; background: #B68D40; color: #201808; font-weight: 600; font-size: 13.5px; padding: 8px 16px; gap: 18px; align-items: center; flex-wrap: wrap; box-shadow: 0 2px 10px rgba(0,0,0,.3); }
+  .queue-status-bar.show { display: flex; }
+  .queue-status-bar .qs-list { font-weight: 400; opacity: .85; }
+  body.has-status-bar { padding-top: 40px; }
   body::before {
     content: '';
     position: fixed;
@@ -123,6 +127,10 @@
     <button class="btn btn-primary" id="loginBtn" style="margin-top:4px">เข้าสู่ระบบ</button>
     <p class="msg" id="loginMsg"></p>
   </div>
+</div>
+<div id="queueStatusBar" class="queue-status-bar">
+  <span>🖊️ กำลังกรอก: <b id="qsCurrentName">—</b></span>
+  <span class="qs-list" id="qsQueueList"></span>
 </div>
 <div class="app" id="appRoot" style="display:none">
   <header class="top">
@@ -877,19 +885,38 @@ async function onGenerateAll() {
 let docQueue = [];
 function renderQueue() {
   const out = document.getElementById('queueOut');
-  if (docQueue.length === 0) { out.innerHTML = '<p class="note" style="margin-top:0">คิวว่าง ยังไม่มีใครถูกเพิ่ม</p>'; return; }
-  out.innerHTML = docQueue.map((q, i) => `
-    <div class="case-row">
-      <div style="flex:1">
-        <div>${escapeXml(q.name)}</div>
-        <p class="note" style="margin:2px 0 0">${escapeXml(q.docLabels.join(', '))}</p>
-      </div>
-      <button type="button" class="btn-danger-outline" data-qdel="${i}">ลบ</button>
-    </div>`).join('');
-  out.querySelectorAll('[data-qdel]').forEach(b => b.addEventListener('click', () => {
-    docQueue.splice(parseInt(b.dataset.qdel, 10), 1);
-    renderQueue();
-  }));
+  if (docQueue.length === 0) {
+    out.innerHTML = '<p class="note" style="margin-top:0">คิวว่าง ยังไม่มีใครถูกเพิ่ม</p>';
+  } else {
+    out.innerHTML = docQueue.map((q, i) => `
+      <div class="case-row">
+        <div style="flex:1">
+          <div>${escapeXml(q.name)}</div>
+          <p class="note" style="margin:2px 0 0">${escapeXml(q.docLabels.join(', '))}</p>
+        </div>
+        <button type="button" class="btn-danger-outline" data-qdel="${i}">ลบ</button>
+      </div>`).join('');
+    out.querySelectorAll('[data-qdel]').forEach(b => b.addEventListener('click', () => {
+      docQueue.splice(parseInt(b.dataset.qdel, 10), 1);
+      renderQueue();
+    }));
+  }
+  updateQueueStatusBar();
+}
+function updateQueueStatusBar() {
+  const bar = document.getElementById('queueStatusBar');
+  const activeNav = document.querySelector('.nav-btn.active');
+  const isDocgen = !!activeNav && activeNav.dataset.nav === 'docgen';
+  const name = `${v('firstName')} ${v('lastName')}`.trim();
+  const hasQueue = docQueue.length > 0;
+  const shouldShow = isDocgen && (!!name || hasQueue);
+  bar.classList.toggle('show', shouldShow);
+  document.body.classList.toggle('has-status-bar', shouldShow);
+  if (!shouldShow) return;
+  document.getElementById('qsCurrentName').textContent = name || 'ยังไม่กรอกชื่อ';
+  document.getElementById('qsQueueList').textContent = hasQueue
+    ? `| ในคิวแล้ว ${docQueue.length} คน: ${docQueue.map(q => q.name).join(', ')}`
+    : '| คิวว่าง';
 }
 function setFileInput(id, file) {
   const input = document.getElementById(id);
@@ -1556,6 +1583,7 @@ document.getElementById('quickFillBtn').addEventListener('click', () => {
   msg.textContent = count > 0
     ? `กรอกให้แล้ว ${count} ช่อง (${Object.keys(filled).join(', ')}) กรุณาเลื่อนขึ้นไปตรวจสอบความถูกต้องอีกครั้งก่อนใช้งาน`
     : 'ไม่พบข้อมูลที่จดจำได้จากข้อความนี้ ลองใส่คำนำหน้าแบบ "เลขบัตรประชาชน", "อายุ", "บ้านเลขที่" ให้ชัดเจน หรือกรอกเองในฟอร์มด้านล่าง';
+  updateQueueStatusBar();
 });
 
 document.querySelectorAll('.case-type').forEach(c => c.addEventListener('change', () => {
@@ -1742,8 +1770,11 @@ function switchModule(name) {
   colMain.classList.toggle('module-hidden', !mainHasContent);
   const layout = document.querySelector('.layout');
   layout.style.gridTemplateColumns = (mainHasContent && sideHasContent) ? '1fr 340px' : '1fr';
+  updateQueueStatusBar();
 }
 document.querySelectorAll('.nav-btn').forEach(b => b.addEventListener('click', () => switchModule(b.dataset.nav)));
+document.getElementById('firstName').addEventListener('input', updateQueueStatusBar);
+document.getElementById('lastName').addEventListener('input', updateQueueStatusBar);
 
 initDateSelects();
 setDefaultIssueDate();
