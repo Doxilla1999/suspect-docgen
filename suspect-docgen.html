@@ -9,60 +9,60 @@
 <style>
   @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&display=swap');
   * { box-sizing: border-box; }
-  body { margin: 0; background: #0B0D10; font-family: 'TH SarabunIT๙', 'TH Sarabun New', Tahoma, sans-serif; font-size: 17px; color: #E8E6E0; }
+  body { margin: 0; background: #0B0D10; font-family: 'TH SarabunIT๙', 'TH Sarabun New', Tahoma, sans-serif; font-size: 20px; color: #E8E6E0; }
   .date3 { display: flex; gap: 6px; }
   .date3 input { width: 30%; }
   .date3 select { width: 40%; }
   .app { max-width: 1180px; margin: 0 auto; padding: 0 0 40px; }
   header.top { background: #14181C; color: #EFE9D8; padding: 18px 24px; display: flex; align-items: center; gap: 12px; border-bottom: 3px solid #B68D40; }
-  header.top .mark { width: 34px; height: 34px; border-radius: 6px; border: 2px solid #B68D40; display: flex; align-items: center; justify-content: center; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #B68D40; }
-  header.top h1 { font-size: 16px; margin: 0; letter-spacing: .5px; font-weight: 600; }
-  header.top p { font-size: 11px; margin: 2px 0 0; color: #E2685D; letter-spacing: .5px; }
-  .credit-top { font-size: 22px; font-weight: 800; color: #B68D40; letter-spacing: .5px; margin-left: auto; text-shadow: 0 0 12px rgba(182,141,64,.5); }
+  header.top .mark { width: 34px; height: 34px; border-radius: 6px; border: 2px solid #B68D40; display: flex; align-items: center; justify-content: center; font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: #B68D40; }
+  header.top h1 { font-size: 19px; margin: 0; letter-spacing: .5px; font-weight: 600; }
+  header.top p { font-size: 13px; margin: 2px 0 0; color: #E2685D; letter-spacing: .5px; }
+  .credit-top { font-size: 26px; font-weight: 800; color: #B68D40; letter-spacing: .5px; margin-left: auto; text-shadow: 0 0 12px rgba(182,141,64,.5); }
   .layout { display: grid; grid-template-columns: 1fr 340px; gap: 20px; padding: 20px 24px 0; align-items: start; }
   @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
   .panel { background: #171B20; border: 1px solid #2A2F36; border-radius: 10px; padding: 16px 18px; margin-bottom: 16px; }
-  .panel h2 { font-size: 14px; margin: 0 0 12px; color: #E8E6E0; font-weight: 600; }
-  details.panel summary { font-size: 14px; font-weight: 600; cursor: pointer; color: #E8E6E0; list-style: none; display: flex; align-items: center; gap: 8px; }
-  details.panel summary::before { content: "▸"; color: #B68D40; font-size: 12px; }
+  .panel h2 { font-size: 16.5px; margin: 0 0 12px; color: #E8E6E0; font-weight: 600; }
+  details.panel summary { font-size: 16.5px; font-weight: 600; cursor: pointer; color: #E8E6E0; list-style: none; display: flex; align-items: center; gap: 8px; }
+  details.panel summary::before { content: "▸"; color: #B68D40; font-size: 14px; }
   details.panel[open] summary::before { content: "▾"; }
   details.panel summary::-webkit-details-marker { display: none; }
   details.panel[open] summary { margin-bottom: 12px; }
   .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; }
   .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px 14px; }
   @media (max-width: 600px) { .grid2, .grid3 { grid-template-columns: 1fr; } }
-  .field-group-label { font-size: 11.5px; color: #B68D40; font-weight: 600; margin: 10px 0 6px; text-transform: uppercase; letter-spacing: .4px; }
-  label.f { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: #9B968D; margin-bottom: 2px; }
+  .field-group-label { font-size: 13.5px; color: #B68D40; font-weight: 600; margin: 10px 0 6px; text-transform: uppercase; letter-spacing: .4px; }
+  label.f { display: flex; flex-direction: column; gap: 4px; font-size: 14px; color: #9B968D; margin-bottom: 2px; }
   label.f span { font-weight: 500; }
-  input, select, textarea { font-family: inherit; font-size: 13.5px; padding: 7px 9px; border: 1px solid #33393F; border-radius: 6px; background: #12151A; color: #E8E6E0; width: 100%; }
+  input, select, textarea { font-family: inherit; font-size: 16px; padding: 7px 9px; border: 1px solid #33393F; border-radius: 6px; background: #12151A; color: #E8E6E0; width: 100%; }
   input:focus, select:focus, textarea:focus { outline: none; border-color: #B68D40; background: #1A1F26; }
   textarea { resize: vertical; min-height: 44px; }
   .officer-block { border: 1px dashed #33393F; border-radius: 8px; padding: 10px; margin-bottom: 10px; }
-  .officer-block h3 { font-size: 12px; margin: 0 0 8px; color: #9B968D; font-weight: 600; }
+  .officer-block h3 { font-size: 14px; margin: 0 0 8px; color: #9B968D; font-weight: 600; }
   .case-types { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
-  .case-types label { display: flex; align-items: center; gap: 8px; font-size: 13.5px; padding: 6px 4px; border-radius: 6px; }
+  .case-types label { display: flex; align-items: center; gap: 8px; font-size: 16px; padding: 6px 4px; border-radius: 6px; }
   .case-types label:hover { background: #1E232A; }
-  .hint-inline { font-size: 11px; font-weight: 400; color: #7A766E; text-transform: none; letter-spacing: 0; }
+  .hint-inline { font-size: 13px; font-weight: 400; color: #7A766E; text-transform: none; letter-spacing: 0; }
   .doc-checklist { display: flex; flex-direction: column; gap: 4px; }
-  .doc-check { display: flex; align-items: center; gap: 10px; font-size: 14px; padding: 9px 10px; border-radius: 6px; border: 1px solid transparent; cursor: pointer; }
+  .doc-check { display: flex; align-items: center; gap: 10px; font-size: 16.5px; padding: 9px 10px; border-radius: 6px; border: 1px solid transparent; cursor: pointer; }
   .doc-check:hover { background: #1E232A; border-color: #2A2F36; }
   .doc-check input:checked ~ span { font-weight: 600; color: #E8E6E0; }
   .doc-check:has(input:checked) { background: rgba(182,141,64,.18); border-color: #6B5626; }
   .suspect-row-detail { border: 1px dashed #33393F; border-radius: 8px; padding: 10px; margin-bottom: 10px; }
-  .m80-row { display: flex; align-items: center; gap: 8px; padding-top: 10px; border-top: 1px solid #2A2F36; font-size: 13.5px; }
-  #m80hint { font-size: 11.5px; color: #E2685D; margin: 6px 0 0; min-height: 14px; }
+  .m80-row { display: flex; align-items: center; gap: 8px; padding-top: 10px; border-top: 1px solid #2A2F36; font-size: 16px; }
+  #m80hint { font-size: 13.5px; color: #E2685D; margin: 6px 0 0; min-height: 14px; }
   .sticky { position: sticky; top: 16px; }
-  .checklist-item { display: flex; align-items: center; gap: 8px; background: rgba(46,163,89,.16); color: #6FDB93; border-radius: 6px; padding: 8px 10px; font-size: 13px; margin-bottom: 6px; }
-  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; border-radius: 6px; border: 1px solid transparent; font-size: 13.5px; font-weight: 500; padding: 10px 14px; cursor: pointer; width: 100%; }
+  .checklist-item { display: flex; align-items: center; gap: 8px; background: rgba(46,163,89,.16); color: #6FDB93; border-radius: 6px; padding: 8px 10px; font-size: 15.5px; margin-bottom: 6px; }
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; border-radius: 6px; border: 1px solid transparent; font-size: 16px; font-weight: 500; padding: 10px 14px; cursor: pointer; width: 100%; }
   .btn-primary { background: #B68D40; color: #201808; }
   .btn-primary:hover { filter: brightness(1.06); }
   .btn-ghost { background: #1E232A; color: #E8E6E0; border-color: #33393F; margin-top: 8px; }
-  .btn-danger-outline { background: none; color: #E2685D; border: none; font-size: 11.5px; padding: 2px 4px; cursor: pointer; }
-  .case-row { display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 8px 6px; border-radius: 6px; font-size: 12.5px; }
+  .btn-danger-outline { background: none; color: #E2685D; border: none; font-size: 13.5px; padding: 2px 4px; cursor: pointer; }
+  .case-row { display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 8px 6px; border-radius: 6px; font-size: 15px; }
   .case-row:hover { background: #1E232A; }
-  .case-row button.load { background: none; border: none; text-align: left; flex: 1; cursor: pointer; font-size: 12.5px; color: #E8E6E0; padding: 2px; }
-  .note { font-size: 11.5px; color: #9B968D; line-height: 1.5; margin-top: 10px; }
-  .msg { font-size: 12.5px; color: #E2685D; margin: 6px 0 0; min-height: 16px; }
+  .case-row button.load { background: none; border: none; text-align: left; flex: 1; cursor: pointer; font-size: 15px; color: #E8E6E0; padding: 2px; }
+  .note { font-size: 13.5px; color: #9B968D; line-height: 1.5; margin-top: 10px; }
+  .msg { font-size: 15px; color: #E2685D; margin: 6px 0 0; min-height: 16px; }
   .mono { font-family: 'IBM Plex Mono', monospace; }
   body::before {
     content: '';
@@ -76,11 +76,11 @@
   .app { position: relative; z-index: 1; }
   #loginScreen { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #14181C; }
   #loginScreen .box { background: #171B20; border-radius: 12px; padding: 32px 28px; width: 100%; max-width: 340px; box-shadow: 0 10px 40px rgba(0,0,0,.4); }
-  #loginScreen h1 { font-size: 16px; margin: 0 0 4px; color: #E8E6E0; }
-  #loginScreen p.sub { font-size: 12px; color: #9B968D; margin: 0 0 20px; }
+  #loginScreen h1 { font-size: 19px; margin: 0 0 4px; color: #E8E6E0; }
+  #loginScreen p.sub { font-size: 14px; color: #9B968D; margin: 0 0 20px; }
   #loginScreen label.f { margin-bottom: 12px; }
   #loginScreen .msg { min-height: 16px; }
-  .header-logout { margin-left: auto; background: none; border: 1px solid #B68D40; color: #EFE9D8; border-radius: 6px; padding: 6px 12px; font-size: 12px; cursor: pointer; }
+  .header-logout { margin-left: auto; background: none; border: 1px solid #B68D40; color: #EFE9D8; border-radius: 6px; padding: 6px 12px; font-size: 14px; cursor: pointer; }
   .header-logout:hover { background: rgba(182,141,64,.15); }
 </style>
 </head>
@@ -277,7 +277,7 @@
         <button type="button" class="btn btn-ghost btn-sm" id="addEvidenceRow">+ เพิ่มของกลาง</button>
         <button class="btn btn-primary" id="genReportBtn" style="margin-top:14px">สร้างข้อความรายงาน</button>
         <label class="f" style="margin-top:10px"><span>ข้อความที่ได้ (แก้ไขก่อนคัดลอกได้)</span>
-          <textarea id="reportOutput" rows="16" class="mono" style="font-size:12.5px"></textarea>
+          <textarea id="reportOutput" rows="16" class="mono" style="font-size:15px"></textarea>
         </label>
         <button type="button" class="btn btn-ghost" id="copyReportBtn">คัดลอกข้อความ</button>
         <p class="msg" id="reportMsg"></p>
@@ -325,11 +325,11 @@
           <label class="f" id="searchAmountWrap" style="display:none"><span>ปริมาณที่ยึด</span><input id="seizedAmount"></label>
         </div>
         <div class="panel" style="background:#1B1F24;border-style:dashed;margin:10px 0">
-          <p style="font-size:12.5px;font-weight:600;margin:0 0 8px">2.1 พฤติการณ์ต้องห้ามตามมาตรา 115 (ติ๊กได้มากกว่า 1 ข้อ)</p>
-          <label style="display:flex;gap:8px;font-size:13px;padding:4px 0"><input type="checkbox" class="pb-check" id="pb1">อยู่ระหว่างตกเป็นผู้ต้องหาหรืออยู่ในระหว่างถูกดำเนินคดีในความผิดอื่นซึ่งเป็นความผิดที่มีโทษจำคุก</label>
-          <label style="display:flex;gap:8px;font-size:13px;padding:4px 0"><input type="checkbox" class="pb-check" id="pb2">อยู่ในระหว่างรับโทษจำคุกตามคำพิพากษาของศาล</label>
-          <label style="display:flex;gap:8px;font-size:13px;padding:4px 0"><input type="checkbox" class="pb-check" id="pb3">มีพฤติกรรมที่อาจก่อให้เกิดอันตรายแก่ผู้อื่นหรือสังคม (รวมถึงกรณีทางจิต/หลบหนี/ก่อความรุนแรง)</label>
-          <label style="display:flex;gap:8px;font-size:13px;padding:4px 0"><input type="checkbox" id="pb4">ไม่พบพฤติการณ์ต้องห้ามตามกฎหมาย</label>
+          <p style="font-size:15px;font-weight:600;margin:0 0 8px">2.1 พฤติการณ์ต้องห้ามตามมาตรา 115 (ติ๊กได้มากกว่า 1 ข้อ)</p>
+          <label style="display:flex;gap:8px;font-size:15.5px;padding:4px 0"><input type="checkbox" class="pb-check" id="pb1">อยู่ระหว่างตกเป็นผู้ต้องหาหรืออยู่ในระหว่างถูกดำเนินคดีในความผิดอื่นซึ่งเป็นความผิดที่มีโทษจำคุก</label>
+          <label style="display:flex;gap:8px;font-size:15.5px;padding:4px 0"><input type="checkbox" class="pb-check" id="pb2">อยู่ในระหว่างรับโทษจำคุกตามคำพิพากษาของศาล</label>
+          <label style="display:flex;gap:8px;font-size:15.5px;padding:4px 0"><input type="checkbox" class="pb-check" id="pb3">มีพฤติกรรมที่อาจก่อให้เกิดอันตรายแก่ผู้อื่นหรือสังคม (รวมถึงกรณีทางจิต/หลบหนี/ก่อความรุนแรง)</label>
+          <label style="display:flex;gap:8px;font-size:15.5px;padding:4px 0"><input type="checkbox" id="pb4">ไม่พบพฤติการณ์ต้องห้ามตามกฎหมาย</label>
         </div>
         <label class="f"><span>พฤติการณ์อื่นที่เกี่ยวข้องกับยาเสพติด</span><textarea id="otherNotes"></textarea></label>
         <div class="grid3">
