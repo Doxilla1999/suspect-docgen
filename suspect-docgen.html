@@ -71,7 +71,8 @@
   .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.65); z-index: 1000; align-items: flex-start; justify-content: center; padding: 30px 16px; overflow-y: auto; }
   .modal-overlay.show { display: flex; }
   .modal-box { background: #171B20; border: 1px solid #2A2F36; border-radius: 12px; padding: 20px; max-width: 640px; width: 100%; position: relative; margin-bottom: 30px; }
-  .modal-box h2 { font-size: 17px; margin: 0 0 14px; padding-right: 30px; }
+  .modal-box h2 { font-size: 17px; margin: 0 0 4px; padding-right: 30px; }
+  .modal-person-tag { font-size: 14px; font-weight: 700; color: #B68D40; margin: 0 0 14px; padding: 6px 10px; background: rgba(182,141,64,.12); border-radius: 6px; display: inline-block; }
   .modal-close { position: absolute; top: 14px; right: 14px; background: none; border: none; color: #9B968D; font-size: 22px; line-height: 1; cursor: pointer; padding: 4px; }
   .modal-close:hover { color: #E8E6E0; }
   .modal-done { margin-top: 16px; }
@@ -220,6 +221,7 @@
       <div class="modal-box">
         <button type="button" class="modal-close" data-close-modal>&times;</button>
         <h2>รูปพรรณ + ภาพประกอบ (ประวัติบุคคล 4 ด้าน)</h2>
+        <p class="modal-person-tag"></p>
         <div class="grid3">
           <label class="f"><span>ความสูง (ซม.)</span><input id="height"></label>
           <label class="f"><span>น้ำหนัก (กก.)</span><input id="weight"></label>
@@ -350,6 +352,7 @@
       <div class="modal-box">
         <button type="button" class="modal-close" data-close-modal>&times;</button>
         <h2>รายละเอียดคดี ปยส.115</h2>
+        <p class="modal-person-tag"></p>
         <label class="f"><span>ประเภทเอกสารแสดงตน (ผู้ต้องหา)</span>
           <select id="idDocType"><option value="card">บัตรประชาชน</option><option value="alien">บัตรคนซึ่งไม่มีสัญชาติไทย</option><option value="passport">หนังสือเดินทาง</option><option value="other">เอกสารอื่นที่ราชการออกให้</option></select>
         </label>
@@ -400,6 +403,7 @@
       <div class="modal-box">
         <button type="button" class="modal-close" data-close-modal>&times;</button>
         <h2>รายละเอียดส่งตรวจปัสสาวะ</h2>
+        <p class="modal-person-tag"></p>
         <div class="grid2">
           <label class="f"><span>ชนิดยาเสพติดที่ขอตรวจยืนยัน</span>
             <input id="drugTypeUrine" list="drugList" placeholder="เลือกหรือพิมพ์เอง">
@@ -425,6 +429,7 @@
       <div class="modal-box">
         <button type="button" class="modal-close" data-close-modal>&times;</button>
         <h2>ข้อมูลโทรศัพท์ (ม.80)</h2>
+        <p class="modal-person-tag"></p>
         <div class="grid3">
           <label class="f"><span>ยี่ห้อ</span><input id="phoneBrand"></label>
           <label class="f"><span>รุ่น</span><input id="phoneModel"></label>
@@ -651,7 +656,13 @@ const DOC_MODALS = {
 };
 function openModal(id) {
   const el = document.getElementById(id);
-  if (el) el.classList.add('show');
+  if (!el) return;
+  el.classList.add('show');
+  const tag = el.querySelector('.modal-person-tag');
+  if (tag) {
+    const name = `${v('firstName')} ${v('lastName')}`.trim();
+    tag.textContent = 'สำหรับ: ' + (name || 'ยังไม่กรอกชื่อ (กรอกชื่อก่อนเพื่อกันสับสน)');
+  }
 }
 function closeModal(overlayEl) {
   overlayEl.classList.remove('show');
