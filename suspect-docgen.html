@@ -513,9 +513,12 @@
       </div>
       <div class="panel" data-module="docgen" id="queuePanel" style="display:none">
         <h2>คิวสร้างเอกสาร (จับหลายคน)</h2>
-        <p class="note" style="margin-top:0">กรอกข้อมูลคนแรกด้านซ้าย ติ๊กเอกสารที่ต้องการ แล้วกด "เพิ่มเข้าคิว" — ฟอร์มจะล้างให้กรอกคนถัดไปทันที ทำจนครบทุกคนแล้วค่อยกด "สร้างเอกสารทั้งหมดในคิว" ทีเดียว ไฟล์แต่ละคนจะมีชื่อต่อท้ายแยกกันอยู่แล้ว</p>
+        <p class="note" style="margin-top:0">เลือก "+ คนใหม่" ด้านล่างเพื่อกรอกคนถัดไป หรือเลือกชื่อคนที่เพิ่มไว้แล้วเพื่อกลับไปแก้ไข/ติ๊กเอกสารเพิ่ม (เช่น เข้ามาเปิดกรอก ปยส.115 หรืออัปโหลดรูปให้คนนั้นภายหลัง) กรอกเสร็จกด "เพิ่ม/อัปเดตในคิว" ทำจนครบทุกคนแล้วค่อยกด "สร้างเอกสารทั้งหมดในคิว" ทีเดียว</p>
+        <label class="f"><span>กำลังกรอก/แก้ไขข้อมูลของ</span>
+          <select id="queuePersonSelect"></select>
+        </label>
         <div id="queueOut"></div>
-        <button type="button" class="btn btn-ghost" id="addToQueueBtn" style="margin-top:8px">+ เพิ่มคนนี้เข้าคิว</button>
+        <button type="button" class="btn btn-ghost" id="addToQueueBtn" style="margin-top:8px">+ เพิ่ม/อัปเดตในคิว</button>
         <button type="button" class="btn btn-primary" id="genQueueBtn" style="margin-top:8px">สร้างเอกสารทั้งหมดในคิว</button>
         <p class="msg" id="queueMsg"></p>
       </div>
@@ -898,6 +901,7 @@ async function onGenerateAll() {
 }
 
 let docQueue = [];
+let editingQueueIndex = null;
 function renderQueue() {
   const out = document.getElementById('queueOut');
   if (docQueue.length === 0) {
@@ -913,10 +917,34 @@ function renderQueue() {
       </div>`).join('');
     out.querySelectorAll('[data-qdel]').forEach(b => b.addEventListener('click', () => {
       docQueue.splice(parseInt(b.dataset.qdel, 10), 1);
+      editingQueueIndex = null;
       renderQueue();
     }));
   }
+  renderQueuePersonSelect();
 }
+function renderQueuePersonSelect() {
+  const sel = document.getElementById('queuePersonSelect');
+  const options = [`<option value="new">+ คนใหม่ (คนที่ ${docQueue.length + 1})</option>`]
+    .concat(docQueue.map((q, i) => `<option value="${i}">${escapeXml(q.name)}</option>`));
+  sel.innerHTML = options.join('');
+  sel.value = editingQueueIndex === null ? 'new' : String(editingQueueIndex);
+}
+document.getElementById('queuePersonSelect').addEventListener('change', () => {
+  const val = document.getElementById('queuePersonSelect').value;
+  if (val === 'new') {
+    editingQueueIndex = null;
+    clearPersonOnlyFields();
+    ['photoFront', 'photoBack', 'photoLeft', 'photoRight'].forEach(id => setFileInput(id, null));
+  } else {
+    editingQueueIndex = parseInt(val, 10);
+    const entry = docQueue[editingQueueIndex];
+    applyFormSnapshot(entry.snapshot);
+    const photoIds = ['photoFront', 'photoBack', 'photoLeft', 'photoRight'];
+    photoIds.forEach((id, i) => setFileInput(id, entry.photos ? entry.photos[i] : null));
+  }
+  document.getElementById('queueMsg').textContent = '';
+});
 let personMode = 'single';
 function setPersonMode(mode) {
   personMode = mode;
@@ -954,15 +982,24 @@ document.getElementById('addToQueueBtn').addEventListener('click', () => {
     if (files.some(f => !f)) { msg.textContent = 'อัปโหลดภาพให้ครบ 4 ด้านก่อนเพิ่มเข้าคิว หรือยกเลิกติ๊ก "ประวัติบุคคล 4 ด้าน"'; return; }
     photos = files;
   }
-  docQueue.push({
+  const entry = {
     name,
     snapshot: collectFormSnapshot(),
     docLabels: [...set].map(k => DOC_INFO[k].label),
     photos
-  });
+  };
+  let statusMsg;
+  if (editingQueueIndex !== null) {
+    docQueue[editingQueueIndex] = entry;
+    statusMsg = `อัปเดต "${name}" ในคิวแล้ว`;
+  } else {
+    docQueue.push(entry);
+    statusMsg = `เพิ่ม "${name}" เข้าคิวแล้ว (${docQueue.length} คนในคิว)`;
+  }
+  editingQueueIndex = null;
   clearPersonOnlyFields();
-  ['photoFront', 'photoBack', 'photoLeft', 'photoRight'].forEach(id => { document.getElementById(id).value = ''; });
-  msg.textContent = `เพิ่ม "${name}" เข้าคิวแล้ว (${docQueue.length} คนในคิว) — เอกสารที่ติ๊กไว้ยังคงติ๊กอยู่ กรอกคนถัดไปได้เลย`;
+  ['photoFront', 'photoBack', 'photoLeft', 'photoRight'].forEach(id => setFileInput(id, null));
+  msg.textContent = `${statusMsg} — เอกสารที่ติ๊กไว้ยังคงติ๊กอยู่ กรอกคนถัดไปได้เลย`;
   renderQueue();
 });
 document.getElementById('genQueueBtn').addEventListener('click', async () => {
@@ -987,6 +1024,7 @@ document.getElementById('genQueueBtn').addEventListener('click', async () => {
     doneCount++;
   }
   docQueue = [];
+  editingQueueIndex = null;
   renderQueue();
   clearForm();
   msg.textContent = `สร้างเอกสารให้ครบ ${doneCount} คนแล้ว`;
@@ -1587,6 +1625,7 @@ document.getElementById('quickFillBtn').addEventListener('click', () => {
       docQueue.push({ name, snapshot: snap, docLabels: docs.map(k => DOC_INFO[k].label), photos: null });
       added++;
     });
+    editingQueueIndex = null;
     clearPersonOnlyFields();
     document.getElementById('quickFillText').value = '';
     renderQueue();
