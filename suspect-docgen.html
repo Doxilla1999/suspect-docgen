@@ -83,10 +83,12 @@
   .module-body { flex: 1; min-width: 0; padding-left: 20px; }
   [data-module].module-hidden, .col-side.module-hidden, .col-main.module-hidden { display: none !important; }
   .shell .layout { padding: 0; }
-  .queue-status-bar { display: none; position: fixed; top: 0; left: 0; right: 0; z-index: 2000; background: #B68D40; color: #201808; font-weight: 600; font-size: 13.5px; padding: 8px 16px; gap: 18px; align-items: center; flex-wrap: wrap; box-shadow: 0 2px 10px rgba(0,0,0,.3); }
-  .queue-status-bar.show { display: flex; }
-  .queue-status-bar .qs-list { font-weight: 400; opacity: .85; }
-  body.has-status-bar { padding-top: 40px; }
+  .mode-toggle { display: flex; gap: 10px; align-items: center; margin-bottom: 16px; }
+  .mode-toggle .label { font-weight: 600; color: #9B968D; font-size: 14px; }
+  .mode-btn { background: #1E232A; color: #9B968D; border: 1px solid #33393F; border-radius: 20px; padding: 8px 18px; font-weight: 600; font-size: 14px; cursor: pointer; }
+  .mode-btn.active { background: #B68D40; color: #201808; border-color: #B68D40; }
+  .queue-panel-prominent { background: #1E1A10; border-color: #6B5626; }
+  .queue-panel-prominent h2 { font-size: 19px; }
   body::before {
     content: '';
     position: fixed;
@@ -128,10 +130,6 @@
     <p class="msg" id="loginMsg"></p>
   </div>
 </div>
-<div id="queueStatusBar" class="queue-status-bar">
-  <span>🖊️ กำลังกรอก: <b id="qsCurrentName">—</b></span>
-  <span class="qs-list" id="qsQueueList"></span>
-</div>
 <div class="app" id="appRoot" style="display:none">
   <header class="top">
     <div class="mark">NYA</div>
@@ -153,6 +151,12 @@
     <div class="module-body">
   <div class="layout">
     <div class="col-main">
+
+      <div class="mode-toggle" data-module="docgen">
+        <span class="label">โหมด:</span>
+        <button type="button" class="mode-btn active" data-mode="single">👤 คนเดียว</button>
+        <button type="button" class="mode-btn" data-mode="batch">👥 หลายคน</button>
+      </div>
 
       <div class="panel" data-module="docgen" style="background:#1E1A10;border-color:#6B5626">
         <h2>วางข้อมูลเพื่อกรอกอัตโนมัติ</h2>
@@ -496,21 +500,21 @@
     </div>
 
     <div class="col-side sticky">
-      <div class="panel" data-module="docgen">
+      <div class="panel" data-module="docgen" id="genPanel">
         <h2>สรุปเอกสาร</h2>
         <div id="checklistOut"></div>
         <button class="btn btn-primary" id="genBtn" style="margin-top:10px">สร้างและดาวน์โหลดเอกสาร</button>
         <p class="msg" id="genMsg"></p>
       </div>
-      <div class="panel" data-module="docgen">
+      <div class="panel" data-module="docgen" id="queuePanel" style="display:none">
         <h2>คิวสร้างเอกสาร (จับหลายคน)</h2>
-        <p class="note" style="margin-top:0">จับมาหลายคน? กรอกข้อมูลคนแรกด้านซ้าย ติ๊กเอกสารที่ต้องการ แล้วกด "เพิ่มเข้าคิว" — ฟอร์มจะล้างให้กรอกคนถัดไปทันที ทำจนครบทุกคนแล้วค่อยกด "สร้างเอกสารทั้งหมดในคิว" ทีเดียว ไฟล์แต่ละคนจะมีชื่อต่อท้ายแยกกันอยู่แล้ว</p>
+        <p class="note" style="margin-top:0">กรอกข้อมูลคนแรกด้านซ้าย ติ๊กเอกสารที่ต้องการ แล้วกด "เพิ่มเข้าคิว" — ฟอร์มจะล้างให้กรอกคนถัดไปทันที ทำจนครบทุกคนแล้วค่อยกด "สร้างเอกสารทั้งหมดในคิว" ทีเดียว ไฟล์แต่ละคนจะมีชื่อต่อท้ายแยกกันอยู่แล้ว</p>
         <div id="queueOut"></div>
         <button type="button" class="btn btn-ghost" id="addToQueueBtn" style="margin-top:8px">+ เพิ่มคนนี้เข้าคิว</button>
         <button type="button" class="btn btn-primary" id="genQueueBtn" style="margin-top:8px">สร้างเอกสารทั้งหมดในคิว</button>
         <p class="msg" id="queueMsg"></p>
       </div>
-      <div class="panel" data-module="dopa">
+      <div class="panel" data-module="dopa" id="arrestLogPanel">
         <h2>บันทึกประวัติการจับกุม (Google Sheet)</h2>
         <p class="note" style="margin-top:0">ตำบลที่จับอยู่ในพาแนล "ข้อมูลสำหรับรายงานอำเภอ/อัยการ" ด้านล่างนี้</p>
         <label class="f" style="margin-top:8px"><span>รหัสผ่านทีม</span><input id="arrestPin" type="password"></label>
@@ -901,22 +905,25 @@ function renderQueue() {
       renderQueue();
     }));
   }
-  updateQueueStatusBar();
 }
-function updateQueueStatusBar() {
-  const bar = document.getElementById('queueStatusBar');
-  const activeNav = document.querySelector('.nav-btn.active');
-  const isDocgen = !!activeNav && activeNav.dataset.nav === 'docgen';
-  const name = `${v('firstName')} ${v('lastName')}`.trim();
-  const hasQueue = docQueue.length > 0;
-  const shouldShow = isDocgen && (!!name || hasQueue);
-  bar.classList.toggle('show', shouldShow);
-  document.body.classList.toggle('has-status-bar', shouldShow);
-  if (!shouldShow) return;
-  document.getElementById('qsCurrentName').textContent = name || 'ยังไม่กรอกชื่อ';
-  document.getElementById('qsQueueList').textContent = hasQueue
-    ? `| ในคิวแล้ว ${docQueue.length} คน: ${docQueue.map(q => q.name).join(', ')}`
-    : '| คิวว่าง';
+let personMode = 'single';
+function setPersonMode(mode) {
+  personMode = mode;
+  document.querySelectorAll('.mode-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
+  const queuePanel = document.getElementById('queuePanel');
+  const genPanel = document.getElementById('genPanel');
+  const colSide = document.querySelector('.col-side');
+  if (mode === 'batch') {
+    document.querySelector('.mode-toggle').after(queuePanel);
+    queuePanel.style.display = '';
+    queuePanel.classList.add('queue-panel-prominent');
+    genPanel.style.display = 'none';
+  } else {
+    colSide.insertBefore(queuePanel, document.getElementById('arrestLogPanel'));
+    queuePanel.style.display = 'none';
+    queuePanel.classList.remove('queue-panel-prominent');
+    genPanel.style.display = '';
+  }
 }
 function setFileInput(id, file) {
   const input = document.getElementById(id);
@@ -942,8 +949,9 @@ document.getElementById('addToQueueBtn').addEventListener('click', () => {
     docLabels: [...set].map(k => DOC_INFO[k].label),
     photos
   });
-  clearForm();
-  msg.textContent = `เพิ่ม "${name}" เข้าคิวแล้ว (${docQueue.length} คนในคิว) — กรอกคนถัดไปได้เลย`;
+  clearPersonOnlyFields();
+  ['photoFront', 'photoBack', 'photoLeft', 'photoRight'].forEach(id => { document.getElementById(id).value = ''; });
+  msg.textContent = `เพิ่ม "${name}" เข้าคิวแล้ว (${docQueue.length} คนในคิว) — เอกสารที่ติ๊กไว้ยังคงติ๊กอยู่ กรอกคนถัดไปได้เลย`;
   renderQueue();
 });
 document.getElementById('genQueueBtn').addEventListener('click', async () => {
@@ -1571,6 +1579,7 @@ document.getElementById('quickFillBtn').addEventListener('click', () => {
     clearPersonOnlyFields();
     document.getElementById('quickFillText').value = '';
     renderQueue();
+    setPersonMode('batch');
     msg.textContent = `เพิ่มเข้าคิวแล้ว ${added} คน จาก ${personLines.length} คนที่พบ` +
       (wantsPhotos ? ' — ข้าม "ประวัติบุคคล 4 ด้าน" ไว้ เพราะต้องอัปโหลดรูปเอง ไปกดปุ่ม "รายละเอียด" แก้ไขทีละคนในคิวด้านขวาได้' : '') +
       ' ตรวจสอบข้อมูลในคิวอีกครั้งก่อนกด "สร้างเอกสารทั้งหมดในคิว"';
@@ -1583,7 +1592,6 @@ document.getElementById('quickFillBtn').addEventListener('click', () => {
   msg.textContent = count > 0
     ? `กรอกให้แล้ว ${count} ช่อง (${Object.keys(filled).join(', ')}) กรุณาเลื่อนขึ้นไปตรวจสอบความถูกต้องอีกครั้งก่อนใช้งาน`
     : 'ไม่พบข้อมูลที่จดจำได้จากข้อความนี้ ลองใส่คำนำหน้าแบบ "เลขบัตรประชาชน", "อายุ", "บ้านเลขที่" ให้ชัดเจน หรือกรอกเองในฟอร์มด้านล่าง';
-  updateQueueStatusBar();
 });
 
 document.querySelectorAll('.case-type').forEach(c => c.addEventListener('change', () => {
@@ -1770,11 +1778,9 @@ function switchModule(name) {
   colMain.classList.toggle('module-hidden', !mainHasContent);
   const layout = document.querySelector('.layout');
   layout.style.gridTemplateColumns = (mainHasContent && sideHasContent) ? '1fr 340px' : '1fr';
-  updateQueueStatusBar();
 }
 document.querySelectorAll('.nav-btn').forEach(b => b.addEventListener('click', () => switchModule(b.dataset.nav)));
-document.getElementById('firstName').addEventListener('input', updateQueueStatusBar);
-document.getElementById('lastName').addEventListener('input', updateQueueStatusBar);
+document.querySelectorAll('.mode-btn').forEach(b => b.addEventListener('click', () => setPersonMode(b.dataset.mode)));
 
 initDateSelects();
 setDefaultIssueDate();
@@ -1783,6 +1789,7 @@ renderQueue();
 loadStationSettings();
 loadCasesIndex();
 switchModule('docgen');
+setPersonMode('single');
 </script>
 </body>
 </html>
