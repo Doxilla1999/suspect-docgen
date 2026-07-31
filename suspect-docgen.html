@@ -36,6 +36,7 @@
   label.f span { font-weight: 500; }
   input, select, textarea { font-family: inherit; font-size: 16px; padding: 7px 9px; border: 1px solid #33393F; border-radius: 6px; background: #12151A; color: #E8E6E0; width: 100%; }
   input:focus, select:focus, textarea:focus { outline: none; border-color: #B68D40; background: #1A1F26; }
+  input[type="checkbox"] { width: 18px; height: 18px; flex-shrink: 0; accent-color: #B68D40; }
   textarea { resize: vertical; min-height: 44px; }
   .officer-block { border: 1px dashed #33393F; border-radius: 8px; padding: 10px; margin-bottom: 10px; }
   .officer-block h3 { font-size: 14px; margin: 0 0 8px; color: #9B968D; font-weight: 600; }
@@ -177,8 +178,10 @@
         </div>
       </details>
 
-      <details class="panel">
-        <summary>รูปพรรณ</summary>
+      <div class="modal-overlay" id="modalProfilePhotos">
+      <div class="modal-box">
+        <button type="button" class="modal-close" data-close-modal>&times;</button>
+        <h2>รูปพรรณ + ภาพประกอบ (ประวัติบุคคล 4 ด้าน)</h2>
         <div class="grid3">
           <label class="f"><span>ความสูง (ซม.)</span><input id="height"></label>
           <label class="f"><span>น้ำหนัก (กก.)</span><input id="weight"></label>
@@ -201,7 +204,17 @@
         <datalist id="eyesList"><option value="โล่ง"></option><option value="ตาชั้นเดียว"></option><option value="ตาสองชั้น"></option><option value="ตาโต"></option><option value="ตาเล็ก"></option><option value="คิ้วหนา"></option><option value="คิ้วบาง"></option></datalist>
         <datalist id="noseList"><option value="โด่ง"></option><option value="แบน"></option><option value="สันตรง"></option><option value="โต"></option><option value="เล็ก"></option></datalist>
         <datalist id="earsList"><option value="กาง"></option><option value="แนบ"></option><option value="เล็ก"></option><option value="ใหญ่"></option></datalist>
-      </details>
+        <p class="field-group-label" style="margin-top:16px">ภาพประกอบ 4 ด้าน (หน้าตรง/หลัง/ซ้าย/ขวา)</p>
+        <div class="grid2">
+          <label class="f"><span>หน้าตรง</span><input type="file" id="photoFront" accept="image/*"></label>
+          <label class="f"><span>หลัง</span><input type="file" id="photoBack" accept="image/*"></label>
+          <label class="f"><span>ด้านซ้าย</span><input type="file" id="photoLeft" accept="image/*"></label>
+          <label class="f"><span>ด้านขวา</span><input type="file" id="photoRight" accept="image/*"></label>
+        </div>
+        <p class="note" style="margin-top:6px">ต้องอัปโหลดครบทั้ง 4 รูปจึงจะสร้างเอกสารนี้ได้ รูปจะไม่ถูกบันทึกไว้ในระบบ ต้องเลือกใหม่ทุกครั้งที่สร้างเอกสาร</p>
+        <button type="button" class="btn btn-primary modal-done" data-close-modal>เสร็จแล้ว</button>
+      </div>
+      </div>
 
       <div class="panel">
         <h2>ประเภทคดี <span class="hint-inline">(ติ๊กเพื่อช่วยเลือกเอกสารด้านล่างให้อัตโนมัติ)</span></h2>
@@ -220,18 +233,9 @@
         <div class="doc-checklist">
           <label class="doc-check"><input type="checkbox" class="doc-select" value="drug_test_115"><span>ปยส.115 (บันทึกตรวจสารเสพติด)</span><button type="button" class="doc-edit-btn" data-modal="modalDrugTest115">รายละเอียด</button></label>
           <label class="doc-check"><input type="checkbox" class="doc-select" value="urine_referral"><span>ส่งตรวจปัสสาวะ</span><button type="button" class="doc-edit-btn" data-modal="modalUrineReferral">รายละเอียด</button></label>
-          <label class="doc-check"><input type="checkbox" id="photoAttach" class="doc-select" value="profile_and_photos"><span>ประวัติบุคคล 4 ด้าน + ภาพประกอบ (2 หน้า)</span></label>
+          <label class="doc-check"><input type="checkbox" id="photoAttach" class="doc-select" value="profile_and_photos"><span>ประวัติบุคคล 4 ด้าน + ภาพประกอบ (2 หน้า)</span><button type="button" class="doc-edit-btn" data-modal="modalProfilePhotos">รายละเอียด</button></label>
           <label class="doc-check"><input type="checkbox" class="doc-select" value="court_referral"><span>ใบปะหน้าส่งศาล</span></label>
           <label class="doc-check"><input type="checkbox" class="doc-select" value="phone_consent_m80"><span>บันทึกยินยอมตรวจโทรศัพท์ ม.80</span><button type="button" class="doc-edit-btn" data-modal="modalPhoneM80">รายละเอียด</button></label>
-        </div>
-        <div id="photoInputs" style="display:none;margin-top:10px">
-          <div class="grid2">
-            <label class="f"><span>หน้าตรง</span><input type="file" id="photoFront" accept="image/*"></label>
-            <label class="f"><span>หลัง</span><input type="file" id="photoBack" accept="image/*"></label>
-            <label class="f"><span>ด้านซ้าย</span><input type="file" id="photoLeft" accept="image/*"></label>
-            <label class="f"><span>ด้านขวา</span><input type="file" id="photoRight" accept="image/*"></label>
-          </div>
-          <p class="note" style="margin-top:6px">ต้องอัปโหลดครบทั้ง 4 รูปจึงจะสร้างเอกสารนี้ได้ รูปจะไม่ถูกบันทึกไว้ในระบบ ต้องเลือกใหม่ทุกครั้งที่สร้างเอกสาร</p>
         </div>
       </div>
 
@@ -603,7 +607,8 @@ const RECOMMEND_M80 = new Set(['drug_sell', 'gamble_online']);
 const DOC_MODALS = {
   drug_test_115: 'modalDrugTest115',
   urine_referral: 'modalUrineReferral',
-  phone_consent_m80: 'modalPhoneM80'
+  phone_consent_m80: 'modalPhoneM80',
+  profile_and_photos: 'modalProfilePhotos'
 };
 function openModal(id) {
   const el = document.getElementById(id);
@@ -952,7 +957,6 @@ function applyFormSnapshot(snap) {
   document.querySelectorAll('.doc-select').forEach(c => c.checked = (snap.selectedDocs || []).includes(c.value));
   clearSuspectRows();
   (snap.suspectListEntries && snap.suspectListEntries.length ? snap.suspectListEntries : [{}]).forEach(e => addSuspectRow(e));
-  document.getElementById('photoInputs').style.display = document.getElementById('photoAttach').checked ? '' : 'none';
   updateConditionalVisibility();
   renderChecklist();
 }
@@ -963,7 +967,6 @@ function clearForm() {
   document.querySelectorAll('.doc-select').forEach(c => c.checked = false);
   clearSuspectRows();
   addSuspectRow();
-  document.getElementById('photoInputs').style.display = 'none';
   ['photoFront', 'photoBack', 'photoLeft', 'photoRight'].forEach(id => { document.getElementById(id).value = ''; });
   document.getElementById('officer1Preset').value = '';
   setDefaultIssueDate();
@@ -1492,9 +1495,6 @@ document.querySelectorAll('.doc-select').forEach(c => c.addEventListener('change
   const modalId = DOC_MODALS[c.value];
   if (modalId && c.checked) openModal(modalId);
 }));
-document.getElementById('photoAttach').addEventListener('change', () => {
-  document.getElementById('photoInputs').style.display = document.getElementById('photoAttach').checked ? '' : 'none';
-});
 document.getElementById('genBtn').addEventListener('click', onGenerateAll);
 document.getElementById('saveBtn').addEventListener('click', saveCurrentCase);
 document.getElementById('newBtn').addEventListener('click', clearForm);
