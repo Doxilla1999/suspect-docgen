@@ -75,6 +75,14 @@
   .modal-close { position: absolute; top: 14px; right: 14px; background: none; border: none; color: #9B968D; font-size: 22px; line-height: 1; cursor: pointer; padding: 4px; }
   .modal-close:hover { color: #E8E6E0; }
   .modal-done { margin-top: 16px; }
+  .shell { display: flex; align-items: flex-start; gap: 0; padding: 20px 24px 0; }
+  .module-nav { width: 190px; flex-shrink: 0; display: flex; flex-direction: column; gap: 10px; position: sticky; top: 16px; }
+  .nav-btn { display: flex; align-items: center; gap: 8px; background: var(--nav-color, #2E7BFA); color: #fff; border: none; border-radius: 10px; padding: 14px 14px; font-weight: 700; font-size: 15px; text-align: left; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,.3); line-height: 1.3; }
+  .nav-btn:hover { filter: brightness(1.08); }
+  .nav-btn.active { outline: 3px solid rgba(255,255,255,.55); outline-offset: -3px; }
+  .module-body { flex: 1; min-width: 0; padding-left: 20px; }
+  [data-module].module-hidden, .col-side.module-hidden, .col-main.module-hidden { display: none !important; }
+  .shell .layout { padding: 0; }
   body::before {
     content: '';
     position: fixed;
@@ -117,17 +125,25 @@
     <button type="button" class="header-logout" id="logoutBtn">ออกจากระบบ</button>
   </header>
 
+  <div class="shell">
+    <nav class="module-nav">
+      <button type="button" class="nav-btn active" data-nav="docgen" style="--nav-color:#2E7BFA">📄 สร้างเอกสาร</button>
+      <button type="button" class="nav-btn" data-nav="linereport" style="--nav-color:#17A2B8">💬 รายงาน LINE</button>
+      <button type="button" class="nav-btn" data-nav="dopa" style="--nav-color:#8A5CF6">🏛️ รายงานอำเภอ/อัยการ</button>
+      <button type="button" class="nav-btn" data-nav="settings" style="--nav-color:#F0A93A">⚙️ ตั้งค่า</button>
+    </nav>
+    <div class="module-body">
   <div class="layout">
     <div class="col-main">
 
-      <div class="panel" style="background:#1E1A10;border-color:#6B5626">
+      <div class="panel" data-module="docgen" style="background:#1E1A10;border-color:#6B5626">
         <h2>วางข้อมูลเพื่อกรอกอัตโนมัติ</h2>
         <textarea id="quickFillText" rows="3" placeholder="วางข้อมูลผู้ต้องหาตรงนี้ เช่น &quot;นายพันณกร บุญเพ็ง เลขบัตรประชาชน 1220900010581 อายุ 25 ที่อยู่ บ้านเลขที่ 65 ม.8 ต.สนามไชย อ.นายายอาม จ.จันทบุรี&quot;"></textarea>
         <button type="button" class="btn btn-primary btn-sm" id="quickFillBtn" style="margin-top:8px">แยกข้อมูลกรอกฟอร์มให้อัตโนมัติ</button>
         <p class="note" id="quickFillMsg" style="margin-top:6px">ระบบจะพยายามจับ ชื่อ-สกุล/เลขบัตรประชาชน/อายุ/ที่อยู่/เบอร์โทร/อาชีพ จากข้อความที่วาง กรอกได้ไม่ครบทุกครั้ง ควรตรวจสอบซ้ำก่อนสร้างเอกสารเสมอ</p>
       </div>
 
-      <details class="panel" open>
+      <details class="panel" data-module="docgen" open>
         <summary>ข้อมูลผู้ต้องหา</summary>
         <div class="grid3">
           <label class="f"><span>คำนำหน้า</span>
@@ -216,7 +232,7 @@
       </div>
       </div>
 
-      <div class="panel">
+      <div class="panel" data-module="docgen">
         <h2>ประเภทคดี <span class="hint-inline">(ติ๊กเพื่อช่วยเลือกเอกสารด้านล่างให้อัตโนมัติ)</span></h2>
         <div class="case-types">
           <label><input type="checkbox" class="case-type" value="drug_use"> ยาเสพติด (ผู้เสพ)</label>
@@ -228,7 +244,7 @@
         <p id="m80hint"></p>
       </div>
 
-      <div class="panel">
+      <div class="panel" data-module="docgen">
         <h2>เอกสารที่ต้องการสร้าง <span class="hint-inline">(ติ๊กเลือกเองได้ทีละฉบับ)</span></h2>
         <div class="doc-checklist">
           <label class="doc-check"><input type="checkbox" class="doc-select" value="drug_test_115"><span>ปยส.115 (บันทึกตรวจสารเสพติด)</span><button type="button" class="doc-edit-btn" data-modal="modalDrugTest115">รายละเอียด</button></label>
@@ -239,7 +255,7 @@
         </div>
       </div>
 
-      <details class="panel" open>
+      <details class="panel" data-module="docgen" open>
         <summary>ข้อมูลคดี / หมายจับ</summary>
         <p class="note" style="margin-top:0">ช่องด้านล่างนี้ใช้ร่วมกันทั้งฟอร์ม — ถ้าจับมาหลายคนและ<b>ข้อหาไม่เหมือนกัน</b> (เช่น บางคนเสพ บางคนครอบครอง บางคนตามหมายจับ) ให้กรอกและสร้างเอกสารทีละคน/ทีละกลุ่มที่ข้อหาเดียวกัน แล้วค่อยเปลี่ยนข้อมูลตรงนี้ก่อนสร้างเอกสารของกลุ่มถัดไป</p>
         <label class="f"><span>ประเภทบุคคล (เลือกเพื่อช่วยร่างข้อหา)</span>
@@ -274,7 +290,7 @@
         <label class="f"><span>ประวัติการกระทำผิด</span><textarea id="crimeHistory"></textarea></label>
       </details>
 
-      <details class="panel">
+      <details class="panel" data-module="linereport" open>
         <summary>รายงานผลการปฏิบัติ (LINE)</summary>
         <label class="f"><span>สายการบังคับบัญชา (แก้ไขได้ บรรทัดละ 1 คน)</span>
           <textarea id="reportCommandChain" rows="3">พ.ต.อ.พิมุข นาคขำพันธ์ ผกก.สภ.นายายอาม
@@ -403,7 +419,7 @@
       </div>
       </div>
 
-      <details class="panel" open>
+      <details class="panel" data-module="docgen" open>
         <summary>เจ้าหน้าที่ผู้จับกุม (3 นาย)</summary>
         <div class="officer-block">
           <h3>เจ้าหน้าที่คนที่ 1 (ผู้บันทึก ปยส.115)</h3>
@@ -441,7 +457,7 @@
         </div>
       </details>
 
-      <details class="panel">
+      <details class="panel" data-module="settings" open>
         <summary>ตั้งค่าหน่วยงาน (บันทึกไว้ใช้ซ้ำ)</summary>
         <div class="grid3">
           <label class="f"><span>ชื่อสถานี</span><input id="stationName" value="สถานีตำรวจภูธรนายายอาม"></label>
@@ -458,17 +474,17 @@
         <p class="note">ค่าที่บันทึกในส่วนนี้จะถูกจำไว้และใช้เป็นค่าเริ่มต้นให้เคสถัดไปโดยอัตโนมัติ</p>
       </details>
 
-      <p class="note">เอกสารทั้งหมดในระบบนี้ใช้ถ้อยคำจากแบบฟอร์มเดิมที่สถานีอัปโหลดมาโดยไม่มีการแก้ไข</p>
+      <p class="note" data-module="docgen">เอกสารทั้งหมดในระบบนี้ใช้ถ้อยคำจากแบบฟอร์มเดิมที่สถานีอัปโหลดมาโดยไม่มีการแก้ไข</p>
     </div>
 
     <div class="col-side sticky">
-      <div class="panel">
+      <div class="panel" data-module="docgen">
         <h2>สรุปเอกสาร</h2>
         <div id="checklistOut"></div>
         <button class="btn btn-primary" id="genBtn" style="margin-top:10px">สร้างและดาวน์โหลดเอกสาร</button>
         <p class="msg" id="genMsg"></p>
       </div>
-      <div class="panel">
+      <div class="panel" data-module="docgen">
         <h2>คิวสร้างเอกสาร (จับหลายคน)</h2>
         <p class="note" style="margin-top:0">จับมาหลายคน? กรอกข้อมูลคนแรกด้านซ้าย ติ๊กเอกสารที่ต้องการ แล้วกด "เพิ่มเข้าคิว" — ฟอร์มจะล้างให้กรอกคนถัดไปทันที ทำจนครบทุกคนแล้วค่อยกด "สร้างเอกสารทั้งหมดในคิว" ทีเดียว ไฟล์แต่ละคนจะมีชื่อต่อท้ายแยกกันอยู่แล้ว</p>
         <div id="queueOut"></div>
@@ -476,7 +492,7 @@
         <button type="button" class="btn btn-primary" id="genQueueBtn" style="margin-top:8px">สร้างเอกสารทั้งหมดในคิว</button>
         <p class="msg" id="queueMsg"></p>
       </div>
-      <div class="panel">
+      <div class="panel" data-module="dopa">
         <h2>บันทึกประวัติการจับกุม (Google Sheet)</h2>
         <p class="note" style="margin-top:0">ตำบลที่จับอยู่ในพาแนล "ข้อมูลสำหรับรายงานอำเภอ/อัยการ" ด้านล่างนี้</p>
         <label class="f" style="margin-top:8px"><span>รหัสผ่านทีม</span><input id="arrestPin" type="password"></label>
@@ -484,7 +500,7 @@
         <p class="msg" id="arrestSaveMsg"></p>
         <p class="note">ใช้ชื่อ-นามสกุล-เลขบัตรประชาชนจากช่อง "ข้อมูลผู้ต้องหา" ด้านบน ต้องตั้งค่า Google Apps Script ก่อนใช้งาน (ดู google_apps_script/README.md)</p>
       </div>
-      <div class="panel">
+      <div class="panel" data-module="dopa">
         <h2>ข้อมูลสำหรับรายงานอำเภอ/อัยการ</h2>
         <p class="note" style="margin-top:0">ข้อมูลในพาแนลนี้แยกต่างหากจากฟิลด์เอกสารทั้ง 5 แบบด้านซ้ายทั้งหมด — มาจากบันทึกจับกุมโดยเฉพาะ ไม่เกี่ยวกัน</p>
 
@@ -515,7 +531,7 @@
         <p class="field-group-label" style="margin-top:16px">รายงานอัยการ</p>
         <p class="note" style="margin-top:0">ยังไม่เริ่มทำ (ptd.ago.go.th) รอโครงสร้างหน้าเว็บก่อน</p>
       </div>
-      <div class="panel">
+      <div class="panel" data-module="docgen">
         <h2>เคสที่บันทึกไว้</h2>
         <div id="casesOut"></div>
         <button class="btn btn-ghost" id="saveBtn">บันทึกเคสนี้</button>
@@ -524,6 +540,7 @@
     </div>
   </div>
   </div>
+</div>
 </div>
 
 <script>
@@ -1659,12 +1676,27 @@ function setDefaultIssueDate() {
   document.getElementById('issueDate_year').value = now.getFullYear() + 543;
 }
 
+function switchModule(name) {
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.toggle('active', b.dataset.nav === name));
+  document.querySelectorAll('[data-module]').forEach(el => el.classList.toggle('module-hidden', el.dataset.module !== name));
+  const colMain = document.querySelector('.col-main');
+  const colSide = document.querySelector('.col-side');
+  const mainHasContent = !!colMain.querySelector(`[data-module="${name}"]`);
+  const sideHasContent = !!colSide.querySelector(`[data-module="${name}"]`);
+  colSide.classList.toggle('module-hidden', !sideHasContent);
+  colMain.classList.toggle('module-hidden', !mainHasContent);
+  const layout = document.querySelector('.layout');
+  layout.style.gridTemplateColumns = (mainHasContent && sideHasContent) ? '1fr 340px' : '1fr';
+}
+document.querySelectorAll('.nav-btn').forEach(b => b.addEventListener('click', () => switchModule(b.dataset.nav)));
+
 initDateSelects();
 setDefaultIssueDate();
 renderChecklist();
 renderQueue();
 loadStationSettings();
 loadCasesIndex();
+switchModule('docgen');
 </script>
 </body>
 </html>
