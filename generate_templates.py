@@ -221,12 +221,12 @@ add_p(doc, size=Pt(13), text="ข้าพเจ้ายินยอมให�
           "ให้ถือเป็นหลักฐานในการให้ความยินยอมของข้าพเจ้าเช่นเดียวกัน")
 add_p(doc, "ข้าพเจ้าได้อ่าน/เจ้าพนักงานได้อ่านบันทึกนี้ให้ฟังแล้ว รับรองว่าถูกต้องจึงลงลายมือชื่อไว้เป็นหลักฐาน")
 add_p(doc, "")
-def sig_line(text, name_tag):
-    add_p(doc, "(ลงชื่อ) ............................................ " + text)
+def sig_line(text, name_tag, prefix=""):
+    add_p(doc, f"(ลงชื่อ) {prefix}............................................ " + text)
     p = doc.add_paragraph(); p.alignment = WD_ALIGN_PARAGRAPH.CENTER
     r = p.add_run("( " + name_tag + " )"); set_font(r)
 sig_line("ผู้เข้ารับการตรวจค้น/ตรวจหรือทดสอบฯ/ผู้ยินยอมฯ", "{suspect_full_name}")
-sig_line("เจ้าพนักงาน ป.ป.ส. ผู้ตรวจหรือทดสอบฯ", "{officer1_rank}{officer1_name}")
+sig_line("เจ้าพนักงาน ป.ป.ส. ผู้ตรวจหรือทดสอบฯ", "{officer1_name}", prefix="{officer1_rank} ")
 sig_line("ผู้สมัครใจ/ไม่สมัครใจเข้ารับการบำบัดรักษา", "{suspect_full_name}")
 sig_line("ผู้ช่วยเจ้าพนักงาน ป.ป.ส. (ถ้ามี)", "{officer2_rank}{officer2_name}")
 sig_line("พยาน", "{officer3_rank}{officer3_name}")
