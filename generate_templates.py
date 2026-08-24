@@ -226,7 +226,7 @@ def sig_line(text, name_tag):
     p = doc.add_paragraph(); p.alignment = WD_ALIGN_PARAGRAPH.CENTER
     r = p.add_run("( " + name_tag + " )"); set_font(r)
 sig_line("ผู้เข้ารับการตรวจค้น/ตรวจหรือทดสอบฯ/ผู้ยินยอมฯ", "{suspect_full_name}")
-sig_line("{officer1_rank} เจ้าพนักงาน ป.ป.ส. ผู้ตรวจหรือทดสอบฯ", "{officer1_name}")
+sig_line("เจ้าพนักงาน ป.ป.ส. ผู้ตรวจหรือทดสอบฯ", "{officer1_rank}{officer1_name}")
 sig_line("ผู้สมัครใจ/ไม่สมัครใจเข้ารับการบำบัดรักษา", "{suspect_full_name}")
 sig_line("ผู้ช่วยเจ้าพนักงาน ป.ป.ส. (ถ้ามี)", "{officer2_rank}{officer2_name}")
 sig_line("พยาน", "{officer3_rank}{officer3_name}")
