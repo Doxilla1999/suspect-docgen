@@ -1543,8 +1543,13 @@ function initConditionalFields() {
 
 function parseQuickFillText(text) {
   const filled = {};
-  const nameMatch = text.match(/(นางสาว|นาง|นาย)\s*([ก-๙A-Za-z]+)\s+([ก-๙A-Za-z]+)/);
-  if (nameMatch) { filled.title = nameMatch[1]; filled.firstName = nameMatch[2]; filled.lastName = nameMatch[3]; }
+  const nameMatch = text.match(/(นางสาว|นาง|นาย)\s*([ก-๙A-Za-z]+?)(?:\s?หรือ([ก-๙A-Za-z]+))?\s+([ก-๙A-Za-z]+)/);
+  if (nameMatch) {
+    filled.title = nameMatch[1];
+    filled.firstName = nameMatch[2];
+    filled.lastName = nameMatch[4];
+    if (nameMatch[3]) filled.nickname = nameMatch[3];
+  }
   const idMatch = text.match(/เลขบัตร[ก-๙]*ประชาชน\s*[:\s]*([0-9][0-9\s-]{10,17}[0-9])/) || text.match(/\b(\d{13})\b/);
   if (idMatch) filled.idNumber = idMatch[1].trim();
   const ageMatch = text.match(/อายุ\s*(\d+)/);
@@ -1682,8 +1687,8 @@ addSuspectRow();
 function parseMultiPersonText(text) {
   return text.split('\n').map(l => l.trim()).filter(Boolean).map(line => {
     const entry = { name: '', id: '', age: '', dob: '', address: '' };
-    const nameMatch = line.match(/(นางสาว|นาง|นาย)\s*([ก-๙A-Za-z]+)\s+([ก-๙A-Za-z]+)/);
-    if (nameMatch) entry.name = `${nameMatch[1]}${nameMatch[2]} ${nameMatch[3]}`;
+    const nameMatch = line.match(/(นางสาว|นาง|นาย)\s*([ก-๙A-Za-z]+?)(?:\s?หรือ([ก-๙A-Za-z]+))?\s+([ก-๙A-Za-z]+)/);
+    if (nameMatch) entry.name = `${nameMatch[1]}${nameMatch[2]}${nameMatch[3] ? 'หรือ' + nameMatch[3] : ''} ${nameMatch[4]}`;
     const ageMatch = line.match(/อายุ\s*(\d+)/);
     if (ageMatch) entry.age = ageMatch[1];
     const idMatch = line.match(/เลขบัตร[ก-๙]*ประชาชน\s*[:\s]*([0-9][0-9\s-]{10,17}[0-9])/) || line.match(/\b(\d{13})\b/);
@@ -1747,8 +1752,8 @@ document.getElementById('downloadBlurBtn').addEventListener('click', () => {
 
 function parseArrestRecordText(text) {
   const filled = {};
-  const nameMatch = text.match(/จับกุมตัว\s*(นางสาว|นาง|นาย)\s*([ก-๙A-Za-z]+)\s+([ก-๙A-Za-z]+)/);
-  if (nameMatch) { filled.dopaFirstName = nameMatch[2]; filled.dopaLastName = nameMatch[3]; }
+  const nameMatch = text.match(/จับกุมตัว\s*(นางสาว|นาง|นาย)\s*([ก-๙A-Za-z]+?)(?:\s?หรือ([ก-๙A-Za-z]+))?\s+([ก-๙A-Za-z]+)/);
+  if (nameMatch) { filled.dopaFirstName = nameMatch[2]; filled.dopaLastName = nameMatch[4]; }
   const idMatch = text.match(/หมายเลขประจำตัวประชาชน\s*([0-9][0-9\s-]{10,17}[0-9])/) || text.match(/\b(\d{13})\b/);
   if (idMatch) filled.dopaIdNumber = idMatch[1].replace(/\s+/g, '');
   const locMatch = text.match(/สถานที่จับกุม\s+([^\n]+)/);
