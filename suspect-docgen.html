@@ -40,9 +40,6 @@
   textarea { resize: vertical; min-height: 44px; }
   .officer-block { border: 1px dashed #33393F; border-radius: 8px; padding: 10px; margin-bottom: 10px; }
   .officer-block h3 { font-size: 14px; margin: 0 0 8px; color: #9B968D; font-weight: 600; }
-  .case-types { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
-  .case-types label { display: flex; align-items: center; gap: 8px; font-size: 16px; padding: 6px 4px; border-radius: 6px; }
-  .case-types label:hover { background: #1E232A; }
   .hint-inline { font-size: 13px; font-weight: 400; color: #7A766E; text-transform: none; letter-spacing: 0; }
   .doc-checklist { display: flex; flex-direction: column; gap: 4px; }
   .doc-check { display: flex; align-items: center; gap: 10px; font-size: 16.5px; padding: 9px 10px; border-radius: 6px; border: 1px solid transparent; cursor: pointer; }
@@ -51,7 +48,6 @@
   .doc-check:has(input:checked) { background: rgba(182,141,64,.18); border-color: #6B5626; }
   .suspect-row-detail { border: 1px dashed #33393F; border-radius: 8px; padding: 10px; margin-bottom: 10px; }
   .m80-row { display: flex; align-items: center; gap: 8px; padding-top: 10px; border-top: 1px solid #2A2F36; font-size: 16px; }
-  #m80hint { font-size: 13.5px; color: #E2685D; margin: 6px 0 0; min-height: 14px; }
   .sticky { position: sticky; top: 16px; }
   .checklist-item { display: flex; align-items: center; gap: 8px; background: rgba(46,163,89,.16); color: #6FDB93; border-radius: 6px; padding: 8px 10px; font-size: 15.5px; margin-bottom: 6px; }
   .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; border-radius: 6px; border: 1px solid transparent; font-size: 16px; font-weight: 500; padding: 10px 14px; cursor: pointer; width: 100%; }
@@ -301,18 +297,6 @@
       </div>
 
       <div class="panel" data-module="docgen">
-        <h2>ประเภทคดี <span class="hint-inline">(ติ๊กเพื่อช่วยเลือกเอกสารด้านล่างให้อัตโนมัติ)</span></h2>
-        <div class="case-types">
-          <label><input type="checkbox" class="case-type" value="drug_use"> ยาเสพติด (ผู้เสพ)</label>
-          <label><input type="checkbox" class="case-type" value="drug_sell"> ยาเสพติด (ผู้จำหน่าย)</label>
-          <label><input type="checkbox" class="case-type" value="warrant"> หมายจับ</label>
-          <label><input type="checkbox" class="case-type" value="gamble"> การพนัน</label>
-          <label><input type="checkbox" class="case-type" value="gamble_online"> พนันออนไลน์</label>
-        </div>
-        <p id="m80hint"></p>
-      </div>
-
-      <div class="panel" data-module="docgen">
         <h2>เอกสารที่ต้องการสร้าง <span class="hint-inline">(ติ๊กเลือกเองได้ทีละฉบับ)</span></h2>
         <div class="doc-checklist">
           <label class="doc-check"><input type="checkbox" class="doc-select" value="drug_test_115"><span>ปยส.115 (บันทึกตรวจสารเสพติด)</span><button type="button" class="doc-edit-btn" data-modal="modalDrugTest115">รายละเอียด</button></label>
@@ -417,6 +401,18 @@
           <option value="คีตามีน"></option><option value="กัญชา"></option><option value="เฮโรอีน"></option>
           <option value="ยาอี/เอ็คซ์ตาซี"></option><option value="ฝิ่น"></option>
         </datalist>
+        <datalist id="hospitalList">
+          <option value="โรงพยาบาลพระปกเกล้า จันทบุรี"></option>
+          <option value="โรงพยาบาลนายายอาม"></option>
+          <option value="โรงพยาบาลขลุง"></option>
+          <option value="โรงพยาบาลท่าใหม่"></option>
+          <option value="โรงพยาบาลโป่งน้ำร้อน"></option>
+          <option value="โรงพยาบาลมะขาม"></option>
+          <option value="โรงพยาบาลแหลมสิงห์"></option>
+          <option value="โรงพยาบาลสอยดาว"></option>
+          <option value="โรงพยาบาลแก่งหางแมว"></option>
+          <option value="โรงพยาบาลเขาคิชฌกูฏ"></option>
+        </datalist>
         <div class="grid3">
           <label class="f"><span>ผลการตรวจหรือค้น</span>
             <select id="searchFound"><option value="none">ไม่พบยาเสพติด</option><option value="found">พบและยึดยาเสพติด</option></select>
@@ -452,7 +448,7 @@
           <label class="f"><span>ชนิดยาเสพติดที่ขอตรวจยืนยัน</span>
             <input id="drugTypeUrine" list="drugList" placeholder="เลือกหรือพิมพ์เอง">
           </label>
-          <label class="f"><span>โรงพยาบาลที่ส่งตรวจ</span><input id="hospitalName" placeholder="นายายอาม จันทบุรี"></label>
+          <label class="f"><span>โรงพยาบาลที่ส่งตรวจ</span><input id="hospitalName" list="hospitalList" placeholder="เลือกหรือพิมพ์เอง"></label>
           <label class="f"><span>วันที่นัดตรวจปัสสาวะ (พ.ศ.)</span>
             <div class="date3"><input id="testDate_day" type="number" min="1" max="31" placeholder="วัน"><select id="testDate_month"></select><input id="testDate_year" type="number" placeholder="พ.ศ."></div>
           </label>
@@ -651,14 +647,6 @@ const DOC_INFO = {
   phone_consent_m80: { file: 'docx', xmlPath: 'word/document.xml', label: 'บันทึกยินยอมตรวจโทรศัพท์ ม.80', prefix: 'ม80' },
   profile_and_photos: { file: 'docx', xmlPath: 'word/document.xml', label: 'ประวัติบุคคล 4 ด้าน + ภาพประกอบ (2 หน้า)', prefix: 'ประวติ4ดาน', hasPhotos: true }
 };
-const CASE_TYPE_DOCS = {
-  drug_use: ['drug_test_115', 'urine_referral', 'profile_and_photos'],
-  drug_sell: ['drug_test_115', 'urine_referral', 'profile_and_photos'],
-  warrant: ['court_referral', 'profile_and_photos'],
-  gamble: ['profile_and_photos'],
-  gamble_online: ['profile_and_photos']
-};
-const RECOMMEND_M80 = new Set(['drug_sell', 'gamble_online']);
 const DOC_MODALS = {
   drug_test_115: 'modalDrugTest115',
   urine_referral: 'modalUrineReferral',
@@ -743,22 +731,12 @@ const CB_ON = '☑', CB_OFF = '☐';
 function cbv(cond) { return cond ? CB_ON : CB_OFF; }
 
 function computeChecklist() {
-  const checked = [...document.querySelectorAll('.case-type:checked')].map(c => c.value);
   const set = new Set([...document.querySelectorAll('.doc-select:checked')].map(c => c.value));
-  return { set, checked };
-}
-function applyCaseTypeSuggestions(caseTypeValue) {
-  const docs = CASE_TYPE_DOCS[caseTypeValue] || [];
-  docs.forEach(d => {
-    const box = document.querySelector(`.doc-select[value="${d}"]`);
-    if (box) box.checked = true;
-  });
+  return { set };
 }
 
 function renderChecklist() {
-  const { set, checked } = computeChecklist();
-  const hint = checked.some(t => RECOMMEND_M80.has(t));
-  document.getElementById('m80hint').textContent = hint ? 'แนะนำให้เลือก ม.80 สำหรับคดีประเภทนี้' : '';
+  const { set } = computeChecklist();
   const out = document.getElementById('checklistOut');
   if (set.size === 0) {
     out.innerHTML = '<p class="note" style="margin-top:0">ยังไม่ได้เลือกเอกสารเลย ติ๊กจากรายการด้านซ้ายได้เลย</p>';
@@ -901,7 +879,7 @@ function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 async function onGenerateAll() {
   const { set } = computeChecklist();
   const msg = document.getElementById('genMsg');
-  if (set.size === 0) { msg.textContent = 'เลือกประเภทคดีอย่างน้อย 1 ข้อก่อน'; return; }
+  if (set.size === 0) { msg.textContent = 'เลือกเอกสารที่ต้องการสร้างอย่างน้อย 1 ฉบับก่อน'; return; }
   if (set.has('profile_and_photos')) {
     const missing = ['photoFront', 'photoBack', 'photoLeft', 'photoRight'].some(id => !document.getElementById(id).files[0]);
     if (missing) { msg.textContent = 'อัปโหลดภาพให้ครบ 4 ด้านก่อน หรือยกเลิกติ๊ก "ประวัติบุคคล 4 ด้าน + ภาพประกอบ"'; return; }
@@ -1085,7 +1063,6 @@ function collectFormSnapshot() {
   const snap = {};
   ALL_FIELD_IDS.forEach(id => snap[id] = v(id));
   CHECKBOX_IDS.forEach(id => snap[id] = document.getElementById(id).checked);
-  snap.caseTypes = [...document.querySelectorAll('.case-type:checked')].map(c => c.value);
   snap.selectedDocs = [...document.querySelectorAll('.doc-select:checked')].map(c => c.value);
   snap.suspectListEntries = getSuspectListEntries().length && document.querySelectorAll('.suspect-row-detail').length
     ? [...document.querySelectorAll('.suspect-row-detail')].map(row => ({
@@ -1098,7 +1075,6 @@ function collectFormSnapshot() {
 function applyFormSnapshot(snap) {
   ALL_FIELD_IDS.forEach(id => { const el = document.getElementById(id); if (el && snap[id] !== undefined) el.value = snap[id]; });
   CHECKBOX_IDS.forEach(id => { document.getElementById(id).checked = !!snap[id]; });
-  document.querySelectorAll('.case-type').forEach(c => c.checked = (snap.caseTypes || []).includes(c.value));
   document.querySelectorAll('.doc-select').forEach(c => c.checked = (snap.selectedDocs || []).includes(c.value));
   clearSuspectRows();
   (snap.suspectListEntries && snap.suspectListEntries.length ? snap.suspectListEntries : [{}]).forEach(e => addSuspectRow(e));
@@ -1108,7 +1084,6 @@ function applyFormSnapshot(snap) {
 function clearForm() {
   ALL_FIELD_IDS.forEach(id => { const el = document.getElementById(id); if (el && !STATION_FIELDS.includes(id)) el.value = (id === 'nationality' ? 'ไทย' : id === 'ethnicity' ? 'ไทย' : id === 'religion' ? 'พุทธ' : id === 'addrProvince' ? 'จันทบุรี' : ''); });
   CHECKBOX_IDS.forEach(id => { document.getElementById(id).checked = false; });
-  document.querySelectorAll('.case-type').forEach(c => c.checked = false);
   document.querySelectorAll('.doc-select').forEach(c => c.checked = false);
   clearSuspectRows();
   addSuspectRow();
@@ -1671,10 +1646,6 @@ document.getElementById('quickFillBtn').addEventListener('click', () => {
     : 'ไม่พบข้อมูลที่จดจำได้จากข้อความนี้ ลองใส่คำนำหน้าแบบ "เลขบัตรประชาชน", "อายุ", "บ้านเลขที่" ให้ชัดเจน หรือกรอกเองในฟอร์มด้านล่าง';
 });
 
-document.querySelectorAll('.case-type').forEach(c => c.addEventListener('change', () => {
-  if (c.checked) applyCaseTypeSuggestions(c.value);
-  renderChecklist();
-}));
 document.querySelectorAll('.doc-select').forEach(c => c.addEventListener('change', () => {
   renderChecklist();
   const modalId = DOC_MODALS[c.value];
