@@ -161,10 +161,10 @@
 
       <div class="modal-overlay modal-mandatory" id="modalOfficers">
       <div class="modal-box">
-        <h2>เจ้าหน้าที่ผู้จับกุม (3 นาย)</h2>
+        <h2>เจ้าหน้าที่ผู้จับกุม</h2>
         <p class="note" style="margin-top:0">เลือกหรือกรอกเจ้าหน้าที่ผู้จับกุมก่อนเริ่มใช้งาน</p>
         <div class="officer-block">
-          <h3>เจ้าหน้าที่คนที่ 1 (ผู้บันทึก ปยส.115)</h3>
+          <h3>หัวหน้าชุดผู้จับกุม (ส่งตรวจปัสสาวะ, เข้าถึงข้อมูลโทรศัพท์, ปยส.115)</h3>
           <label class="f"><span>เลือกจากรายชื่อที่บันทึกไว้</span>
             <select id="officer1Preset"><option value="">— กรอกเอง —</option></select>
           </label>
@@ -179,22 +179,6 @@
           <div class="grid2">
             <label class="f"><span>เลขบัตร ป.ป.ส.</span><input id="cardNoPpst"></label>
             <label class="f"><span>เลขบัตรเจ้าหน้าที่ของรัฐ</span><input id="cardNoGov"></label>
-          </div>
-        </div>
-        <div class="officer-block">
-          <h3>เจ้าหน้าที่คนที่ 2</h3>
-          <div class="grid3">
-            <label class="f"><span>ยศ</span><input id="officer2Rank"></label>
-            <label class="f"><span>ชื่อ-สกุล</span><input id="officer2Name"></label>
-            <label class="f"><span>ตำแหน่ง</span><input id="officer2Position"></label>
-          </div>
-        </div>
-        <div class="officer-block">
-          <h3>เจ้าหน้าที่คนที่ 3</h3>
-          <div class="grid3">
-            <label class="f"><span>ยศ</span><input id="officer3Rank"></label>
-            <label class="f"><span>ชื่อ-สกุล</span><input id="officer3Name"></label>
-            <label class="f"><span>ตำแหน่ง</span><input id="officer3Position"></label>
           </div>
         </div>
         <p class="msg" id="officersConfirmMsg"></p>
@@ -704,11 +688,10 @@ document.addEventListener('keydown', e => {
   document.querySelectorAll('.modal-overlay.show:not(.modal-mandatory)').forEach(closeModal);
 });
 function updateOfficerSummary() {
-  const parts = [];
-  if (v('officer1Name')) parts.push(`${v('officer1Rank')}${v('officer1Name')} (${v('officer1Position') || 'คนที่ 1'})`);
-  if (v('officer2Name')) parts.push(`${v('officer2Rank')}${v('officer2Name')}`);
-  if (v('officer3Name')) parts.push(`${v('officer3Rank')}${v('officer3Name')}`);
-  document.getElementById('officerSummaryText').textContent = parts.length ? parts.join(', ') : 'ยังไม่ได้ระบุ';
+  const name = v('officer1Name');
+  document.getElementById('officerSummaryText').textContent = name
+    ? `${v('officer1Rank')}${name}${v('officer1Position') ? ' (' + v('officer1Position') + ')' : ''}`
+    : 'ยังไม่ได้ระบุ';
 }
 document.getElementById('confirmOfficersBtn').addEventListener('click', () => {
   const msg = document.getElementById('officersConfirmMsg');
@@ -1083,8 +1066,7 @@ const ALL_FIELD_IDS = ['title','firstName','lastName','nickname','alias','age','
   'treatmentConsent','officer1CardType','cardNoPpst','cardNoGov','hospitalName',
   'otherNotes','appointmentTime','appointmentPlace',
   'phoneBrand','phoneModel','phoneColor','phoneImei1','phoneImei2','recordPlace','sim1Number','sim1Network',
-  'sim2Number','sim2Network','officer1Rank','officer1Name','officer1Position','officer2Rank','officer2Name',
-  'officer2Position','officer3Rank','officer3Name','officer3Position',
+  'sim2Number','sim2Network','officer1Rank','officer1Name','officer1Position',
   'arrestTambon','dopaFirstName','dopaLastName','dopaIdNumber','dopaLocation','dopaTime','dopaCharge', ...DATE_PART_IDS];
 const PERSON_ONLY_FIELD_IDS = ['title', 'firstName', 'lastName', 'nickname', 'alias', 'age', 'nationality', 'ethnicity', 'religion',
   'idNumber', 'phone', 'occupation', 'income', 'education', 'idIssueAmphoe', 'idIssueProvince',
