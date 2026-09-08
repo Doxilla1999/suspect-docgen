@@ -187,14 +187,17 @@
           </label>
           <label class="f"><span>เลขบัตรประชาชน</span><input id="idNumber" placeholder="1-2345-00000-00-0"></label>
           <label class="f"><span>เบอร์โทรศัพท์</span><input id="phone" placeholder="08x-xxx-xxxx"></label>
-          <label class="f"><span>อาชีพ</span><input id="occupation"></label>
-          <label class="f"><span>รายได้โดยประมาณ</span><input id="income" placeholder="เช่น 500 บาท/วัน"></label>
-          <label class="f"><span>การศึกษา</span><input id="education"></label>
+          <label class="f"><span>อาชีพ</span><input id="occupation" list="occupationList" placeholder="เลือกหรือพิมพ์เอง"></label>
+          <label class="f"><span>รายได้โดยประมาณ</span><input id="income" list="incomeList" placeholder="เลือกหรือพิมพ์เอง"></label>
+          <label class="f"><span>การศึกษา</span><input id="education" list="educationList" placeholder="เลือกหรือพิมพ์เอง"></label>
           <label class="f"><span>บัตรประชาชนออกที่ อำเภอ</span><input id="idIssueAmphoe"></label>
           <label class="f"><span>บัตรประชาชนออกที่ จังหวัด</span>
             <select id="idIssueProvince"></select>
           </label>
         </div>
+        <datalist id="occupationList"><option value="รับจ้าง"></option><option value="ค้าขาย"></option><option value="ทำสวน"></option><option value="ว่างงาน"></option></datalist>
+        <datalist id="incomeList"><option value="400 บาทต่อวัน"></option></datalist>
+        <datalist id="educationList"><option value="ป.6"></option><option value="ม.3"></option><option value="ม.6"></option><option value="ป.ตรี"></option><option value="ป.โท"></option></datalist>
         <p class="field-group-label">ภูมิลำเนาตามทะเบียนบ้าน</p>
         <div class="grid3">
           <label class="f"><span>บ้านเลขที่</span><input id="addrHouseNo"></label>
