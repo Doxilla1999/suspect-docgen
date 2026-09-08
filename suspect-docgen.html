@@ -153,6 +153,44 @@
   <div class="layout">
     <div class="col-main">
 
+      <details class="panel" data-module="docgen" open>
+        <summary>เจ้าหน้าที่ผู้จับกุม (3 นาย)</summary>
+        <div class="officer-block">
+          <h3>เจ้าหน้าที่คนที่ 1 (ผู้บันทึก ปยส.115)</h3>
+          <label class="f"><span>เลือกจากรายชื่อที่บันทึกไว้</span>
+            <select id="officer1Preset"><option value="">— กรอกเอง —</option></select>
+          </label>
+          <div class="grid3">
+            <label class="f"><span>ยศ</span><input id="officer1Rank" placeholder="ร.ต.อ."></label>
+            <label class="f"><span>ชื่อ-สกุล</span><input id="officer1Name"></label>
+            <label class="f"><span>ตำแหน่ง</span><input id="officer1Position" placeholder="รอง สว.สส."></label>
+          </div>
+          <label class="f"><span>ประเภทบัตรที่ใช้แสดง</span>
+            <select id="officer1CardType"><option value="ppst">บัตรประจำตัวเจ้าพนักงาน ป.ป.ส.</option><option value="gov">บัตรประจำตัวเจ้าหน้าที่ของรัฐ</option></select>
+          </label>
+          <div class="grid2">
+            <label class="f"><span>เลขบัตร ป.ป.ส.</span><input id="cardNoPpst"></label>
+            <label class="f"><span>เลขบัตรเจ้าหน้าที่ของรัฐ</span><input id="cardNoGov"></label>
+          </div>
+        </div>
+        <div class="officer-block">
+          <h3>เจ้าหน้าที่คนที่ 2</h3>
+          <div class="grid3">
+            <label class="f"><span>ยศ</span><input id="officer2Rank"></label>
+            <label class="f"><span>ชื่อ-สกุล</span><input id="officer2Name"></label>
+            <label class="f"><span>ตำแหน่ง</span><input id="officer2Position"></label>
+          </div>
+        </div>
+        <div class="officer-block">
+          <h3>เจ้าหน้าที่คนที่ 3</h3>
+          <div class="grid3">
+            <label class="f"><span>ยศ</span><input id="officer3Rank"></label>
+            <label class="f"><span>ชื่อ-สกุล</span><input id="officer3Name"></label>
+            <label class="f"><span>ตำแหน่ง</span><input id="officer3Position"></label>
+          </div>
+        </div>
+      </details>
+
       <div class="mode-toggle" data-module="docgen">
         <span class="label">โหมด:</span>
         <button type="button" class="mode-btn active" data-mode="single">👤 คนเดียว</button>
@@ -448,44 +486,6 @@
         <button type="button" class="btn btn-primary modal-done" data-close-modal>เสร็จแล้ว</button>
       </div>
       </div>
-
-      <details class="panel" data-module="docgen" open>
-        <summary>เจ้าหน้าที่ผู้จับกุม (3 นาย)</summary>
-        <div class="officer-block">
-          <h3>เจ้าหน้าที่คนที่ 1 (ผู้บันทึก ปยส.115)</h3>
-          <label class="f"><span>เลือกจากรายชื่อที่บันทึกไว้</span>
-            <select id="officer1Preset"><option value="">— กรอกเอง —</option></select>
-          </label>
-          <div class="grid3">
-            <label class="f"><span>ยศ</span><input id="officer1Rank" placeholder="ร.ต.อ."></label>
-            <label class="f"><span>ชื่อ-สกุล</span><input id="officer1Name"></label>
-            <label class="f"><span>ตำแหน่ง</span><input id="officer1Position" placeholder="รอง สว.สส."></label>
-          </div>
-          <label class="f"><span>ประเภทบัตรที่ใช้แสดง</span>
-            <select id="officer1CardType"><option value="ppst">บัตรประจำตัวเจ้าพนักงาน ป.ป.ส.</option><option value="gov">บัตรประจำตัวเจ้าหน้าที่ของรัฐ</option></select>
-          </label>
-          <div class="grid2">
-            <label class="f"><span>เลขบัตร ป.ป.ส.</span><input id="cardNoPpst"></label>
-            <label class="f"><span>เลขบัตรเจ้าหน้าที่ของรัฐ</span><input id="cardNoGov"></label>
-          </div>
-        </div>
-        <div class="officer-block">
-          <h3>เจ้าหน้าที่คนที่ 2</h3>
-          <div class="grid3">
-            <label class="f"><span>ยศ</span><input id="officer2Rank"></label>
-            <label class="f"><span>ชื่อ-สกุล</span><input id="officer2Name"></label>
-            <label class="f"><span>ตำแหน่ง</span><input id="officer2Position"></label>
-          </div>
-        </div>
-        <div class="officer-block">
-          <h3>เจ้าหน้าที่คนที่ 3</h3>
-          <div class="grid3">
-            <label class="f"><span>ยศ</span><input id="officer3Rank"></label>
-            <label class="f"><span>ชื่อ-สกุล</span><input id="officer3Name"></label>
-            <label class="f"><span>ตำแหน่ง</span><input id="officer3Position"></label>
-          </div>
-        </div>
-      </details>
 
       <details class="panel" data-module="settings" open>
         <summary>ตั้งค่าหน่วยงาน (บันทึกไว้ใช้ซ้ำ)</summary>
