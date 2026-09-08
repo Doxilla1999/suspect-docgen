@@ -68,7 +68,7 @@
   .doc-check { position: relative; }
   .doc-edit-btn { margin-left: auto; background: none; border: 1px solid #33393F; color: #B68D40; border-radius: 6px; padding: 4px 10px; font-size: 12.5px; cursor: pointer; white-space: nowrap; }
   .doc-edit-btn:hover { background: rgba(182,141,64,.15); }
-  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.65); z-index: 1000; align-items: flex-start; justify-content: center; padding: 30px 16px; overflow-y: auto; }
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.65); backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); z-index: 1000; align-items: flex-start; justify-content: center; padding: 30px 16px; overflow-y: auto; }
   .modal-overlay.show { display: flex; }
   .modal-box { background: #171B20; border: 1px solid #2A2F36; border-radius: 12px; padding: 20px; max-width: 640px; width: 100%; position: relative; margin-bottom: 30px; }
   .modal-box h2 { font-size: 17px; margin: 0 0 4px; padding-right: 30px; }
@@ -153,8 +153,16 @@
   <div class="layout">
     <div class="col-main">
 
-      <details class="panel" data-module="docgen" open>
-        <summary>เจ้าหน้าที่ผู้จับกุม (3 นาย)</summary>
+      <div class="panel" data-module="docgen" id="officerSummaryPanel">
+        <h2>เจ้าหน้าที่ผู้จับกุม</h2>
+        <p class="note" style="margin-top:0" id="officerSummaryText">ยังไม่ได้ระบุ</p>
+        <button type="button" class="btn btn-ghost btn-sm" id="editOfficersBtn">แก้ไข/เลือกเจ้าหน้าที่</button>
+      </div>
+
+      <div class="modal-overlay modal-mandatory" id="modalOfficers">
+      <div class="modal-box">
+        <h2>เจ้าหน้าที่ผู้จับกุม (3 นาย)</h2>
+        <p class="note" style="margin-top:0">เลือกหรือกรอกเจ้าหน้าที่ผู้จับกุมก่อนเริ่มใช้งาน</p>
         <div class="officer-block">
           <h3>เจ้าหน้าที่คนที่ 1 (ผู้บันทึก ปยส.115)</h3>
           <label class="f"><span>เลือกจากรายชื่อที่บันทึกไว้</span>
@@ -189,7 +197,10 @@
             <label class="f"><span>ตำแหน่ง</span><input id="officer3Position"></label>
           </div>
         </div>
-      </details>
+        <p class="msg" id="officersConfirmMsg"></p>
+        <button type="button" class="btn btn-primary modal-done" id="confirmOfficersBtn">ยืนยัน / เริ่มใช้งาน</button>
+      </div>
+      </div>
 
       <div class="mode-toggle" data-module="docgen">
         <span class="label">โหมด:</span>
@@ -599,6 +610,8 @@ if (firebaseConfig.apiKey) {
 function showApp() {
   document.getElementById('loginScreen').style.display = 'none';
   document.getElementById('appRoot').style.display = '';
+  updateOfficerSummary();
+  openModal('modalOfficers');
 }
 function showLogin() {
   document.getElementById('loginScreen').style.display = '';
@@ -674,13 +687,29 @@ function closeModal(overlayEl) {
   overlayEl.classList.remove('show');
 }
 document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  if (overlay.classList.contains('modal-mandatory')) return;
   overlay.addEventListener('click', e => { if (e.target === overlay) closeModal(overlay); });
   overlay.querySelectorAll('[data-close-modal]').forEach(btn => btn.addEventListener('click', () => closeModal(overlay)));
 });
 document.addEventListener('keydown', e => {
   if (e.key !== 'Escape') return;
-  document.querySelectorAll('.modal-overlay.show').forEach(closeModal);
+  document.querySelectorAll('.modal-overlay.show:not(.modal-mandatory)').forEach(closeModal);
 });
+function updateOfficerSummary() {
+  const parts = [];
+  if (v('officer1Name')) parts.push(`${v('officer1Rank')}${v('officer1Name')} (${v('officer1Position') || 'คนที่ 1'})`);
+  if (v('officer2Name')) parts.push(`${v('officer2Rank')}${v('officer2Name')}`);
+  if (v('officer3Name')) parts.push(`${v('officer3Rank')}${v('officer3Name')}`);
+  document.getElementById('officerSummaryText').textContent = parts.length ? parts.join(', ') : 'ยังไม่ได้ระบุ';
+}
+document.getElementById('confirmOfficersBtn').addEventListener('click', () => {
+  const msg = document.getElementById('officersConfirmMsg');
+  if (!v('officer1Name')) { msg.textContent = 'กรอกชื่อเจ้าหน้าที่คนที่ 1 ก่อนเริ่มใช้งาน'; return; }
+  msg.textContent = '';
+  updateOfficerSummary();
+  closeModal(document.getElementById('modalOfficers'));
+});
+document.getElementById('editOfficersBtn').addEventListener('click', () => openModal('modalOfficers'));
 document.querySelectorAll('.doc-edit-btn').forEach(btn => btn.addEventListener('click', e => {
   e.preventDefault();
   e.stopPropagation();
