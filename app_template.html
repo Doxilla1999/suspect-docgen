@@ -797,7 +797,10 @@ function buildTagMap() {
     doc_date: thaiDate('issueDate'), hospital_name: v('hospitalName'), drug_type: v('drugType'),
     test_date: thaiDate('testDate'), test_count: String(getSuspectListEntries().length), suspect_full_name: fullName,
     suspect_name_with_nick: nameWithNick,
-    signer_rank: v('signerRank'), signer_name: v('signerName'), signer_position: v('signerPosition'),
+    // ถ้าไม่ได้ตั้งผู้ลงนามไว้ในหน้าตั้งค่า ให้ใช้เจ้าหน้าที่ที่เลือกไว้ตอนล็อกอินแทน
+    signer_rank: v('signerRank') || v('officer1Rank'),
+    signer_name: v('signerName') || v('officer1Name'),
+    signer_position: v('signerPosition') || v('officer1Position'),
     record_day: issueParts.day, record_month: issueParts.month, record_year: issueParts.year,
     officer1_rank: v('officer1Rank'), officer1_name: v('officer1Name'), officer1_position: v('officer1Position'),
     officer_affiliation: v('officerAffiliation'),

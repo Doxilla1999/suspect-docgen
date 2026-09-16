@@ -79,10 +79,18 @@ def build_urine_referral():
     # [10] ตัวอย่างรายชื่อคนที่สองในฟอร์มเดิม ลบทิ้ง
     p[10]._element.getparent().remove(p[10]._element)
 
+    # [18] บรรทัดว่างเหนือชื่อผู้ลงนาม ใส่ยศของเจ้าหน้าที่ที่เลือกไว้ตอนล็อกอิน
+    rank_run = p[18].add_run("{signer_rank}")
+    rank_run.font.name = p[19].runs[2].font.name
+
     # [19] ( ชื่อผู้ลงนาม )  /  [20] ตำแหน่งผู้ลงนาม
     set_runs(p[19], {2: "{signer_name} "})
     clear_runs(p[19], [3, 4])
     flatten(p[20], "{signer_position}")
+
+    # ตารางท้ายเอกสาร: ช่อง "ผู้ส่ง" คือเจ้าหน้าที่คนเดียวกับผู้ลงนาม
+    sender = doc.tables[0].rows[1].cells[0]
+    sender.paragraphs[0].runs[0].text = "ผู้ส่ง {signer_rank}{signer_name}"
 
     doc.save(OUT + "urine_referral_template.docx")
     print("built urine_referral_template.docx from real form")
