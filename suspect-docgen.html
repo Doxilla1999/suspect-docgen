@@ -41,11 +41,6 @@
   .officer-block { border: 1px dashed #33393F; border-radius: 8px; padding: 10px; margin-bottom: 10px; }
   .officer-block h3 { font-size: 14px; margin: 0 0 8px; color: #9B968D; font-weight: 600; }
   .hint-inline { font-size: 13px; font-weight: 400; color: #7A766E; text-transform: none; letter-spacing: 0; }
-  .doc-checklist { display: flex; flex-direction: column; gap: 4px; }
-  .doc-check { display: flex; align-items: center; gap: 10px; font-size: 16.5px; padding: 9px 10px; border-radius: 6px; border: 1px solid transparent; cursor: pointer; }
-  .doc-check:hover { background: #1E232A; border-color: #2A2F36; }
-  .doc-check input:checked ~ span { font-weight: 600; color: #E8E6E0; }
-  .doc-check:has(input:checked) { background: rgba(182,141,64,.18); border-color: #6B5626; }
   .suspect-row-detail { border: 1px dashed #33393F; border-radius: 8px; padding: 10px; margin-bottom: 10px; }
   .m80-row { display: flex; align-items: center; gap: 8px; padding-top: 10px; border-top: 1px solid #2A2F36; font-size: 16px; }
   .sticky { position: sticky; top: 16px; }
@@ -61,7 +56,6 @@
   .note { font-size: 13.5px; color: #9B968D; line-height: 1.5; margin-top: 10px; }
   .msg { font-size: 15px; color: #E2685D; margin: 6px 0 0; min-height: 16px; }
   .mono { font-family: 'IBM Plex Mono', monospace; }
-  .doc-check { position: relative; }
   .doc-edit-btn { background: none; border: 1px solid #33393F; color: #B68D40; border-radius: 6px; padding: 4px 10px; font-size: 12.5px; cursor: pointer; white-space: nowrap; }
   .doc-edit-btn:hover { background: rgba(182,141,64,.15); }
   .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.65); backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); z-index: 1000; align-items: flex-start; justify-content: center; padding: 30px 16px; overflow-y: auto; }
@@ -73,7 +67,15 @@
   .modal-close:hover { color: #E8E6E0; }
   .modal-done { margin-top: 16px; }
   .shell { display: flex; align-items: flex-start; gap: 0; padding: 20px 24px 0; }
-  .module-nav { width: 190px; flex-shrink: 0; display: flex; flex-direction: column; gap: 10px; position: sticky; top: 16px; }
+  .module-nav { width: 235px; flex-shrink: 0; display: flex; flex-direction: column; gap: 10px; position: sticky; top: 16px; }
+  .nav-docs { display: flex; flex-direction: column; gap: 8px; margin-top: 6px; padding-top: 12px; border-top: 1px solid #2A2F36; }
+  .nav-docs-title { margin: 0; font-size: 12.5px; font-weight: 700; color: #9B968D; letter-spacing: .3px; }
+  .nav-doc { border: 1px solid #33393F; border-left: 4px solid var(--doc-color); border-radius: 8px; padding: 8px 10px; background: #14181C; }
+  .nav-doc:has(input:checked) { border-color: var(--doc-color); background: color-mix(in srgb, var(--doc-color) 20%, #14181C); }
+  .nav-doc-main { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px; color: #C9C5BD; line-height: 1.25; }
+  .nav-doc:has(input:checked) .nav-doc-main { color: #FFFFFF; font-weight: 700; }
+  .nav-doc-icon { font-size: 16px; flex-shrink: 0; }
+  .nav-doc .doc-edit-btn { display: block; width: 100%; margin-top: 7px; text-align: center; }
   .nav-btn { display: flex; align-items: center; gap: 8px; background: var(--nav-color, #2E7BFA); color: #fff; border: none; border-radius: 10px; padding: 14px 14px; font-weight: 700; font-size: 15px; text-align: left; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,.3); line-height: 1.3; }
   .nav-btn:hover { filter: brightness(1.08); }
   .nav-btn.active { outline: 3px solid rgba(255,255,255,.55); outline-offset: -3px; }
@@ -144,6 +146,44 @@
       <button type="button" class="nav-btn" data-nav="linereport" style="--nav-color:#17A2B8">💬 รายงาน LINE</button>
       <button type="button" class="nav-btn" data-nav="dopa" style="--nav-color:#8A5CF6">🏛️ รายงานอำเภอ/อัยการ</button>
       <button type="button" class="nav-btn" data-nav="settings" style="--nav-color:#F0A93A">⚙️ ตั้งค่า</button>
+
+      <div class="nav-docs" data-module="docgen">
+        <p class="nav-docs-title">เอกสารที่ต้องการสร้าง</p>
+        <div class="nav-doc" style="--doc-color:#E2685D">
+          <label class="nav-doc-main" title="ปยส.115 (บันทึกตรวจสารเสพติด)">
+            <input type="checkbox" class="doc-select" value="drug_test_115">
+            <span class="nav-doc-icon">💊</span><span class="nav-doc-label">ปยส.115</span>
+          </label>
+          <button type="button" class="doc-edit-btn" data-modal="modalDrugTest115">✏ รายละเอียด</button>
+        </div>
+        <div class="nav-doc" style="--doc-color:#17A2B8">
+          <label class="nav-doc-main" title="หนังสือส่งตรวจปัสสาวะ">
+            <input type="checkbox" class="doc-select" value="urine_referral">
+            <span class="nav-doc-icon">🧪</span><span class="nav-doc-label">ส่งตรวจปัสสาวะ</span>
+          </label>
+          <button type="button" class="doc-edit-btn" data-modal="modalUrineReferral">✏ รายละเอียด</button>
+        </div>
+        <div class="nav-doc" style="--doc-color:#8A5CF6">
+          <label class="nav-doc-main" title="ประวัติบุคคล 4 ด้าน + ภาพประกอบ (2 หน้า)">
+            <input type="checkbox" id="photoAttach" class="doc-select" value="profile_and_photos">
+            <span class="nav-doc-icon">📸</span><span class="nav-doc-label">ประวัติบุคคล 4 ด้าน</span>
+          </label>
+          <button type="button" class="doc-edit-btn" data-modal="modalProfilePhotos">✏ รายละเอียด</button>
+        </div>
+        <div class="nav-doc" style="--doc-color:#B68D40">
+          <label class="nav-doc-main" title="ใบปะหน้าส่งศาล">
+            <input type="checkbox" class="doc-select" value="court_referral">
+            <span class="nav-doc-icon">⚖️</span><span class="nav-doc-label">ใบปะหน้าส่งศาล</span>
+          </label>
+        </div>
+        <div class="nav-doc" style="--doc-color:#2EA359">
+          <label class="nav-doc-main" title="บันทึกยินยอมตรวจโทรศัพท์ ม.80">
+            <input type="checkbox" class="doc-select" value="phone_consent_m80">
+            <span class="nav-doc-icon">📱</span><span class="nav-doc-label">ตรวจโทรศัพท์ ม.80</span>
+          </label>
+          <button type="button" class="doc-edit-btn" data-modal="modalPhoneM80">✏ รายละเอียด</button>
+        </div>
+      </div>
     </nav>
     <div class="module-body">
   <div class="layout">
@@ -296,16 +336,6 @@
       </div>
       </div>
 
-      <div class="panel" data-module="docgen">
-        <h2>เอกสารที่ต้องการสร้าง <span class="hint-inline">(ติ๊กเลือกเองได้ทีละฉบับ)</span></h2>
-        <div class="doc-checklist">
-          <label class="doc-check"><input type="checkbox" class="doc-select" value="drug_test_115"><button type="button" class="doc-edit-btn" data-modal="modalDrugTest115">รายละเอียด</button><span>ปยส.115 (บันทึกตรวจสารเสพติด)</span></label>
-          <label class="doc-check"><input type="checkbox" class="doc-select" value="urine_referral"><button type="button" class="doc-edit-btn" data-modal="modalUrineReferral">รายละเอียด</button><span>ส่งตรวจปัสสาวะ</span></label>
-          <label class="doc-check"><input type="checkbox" id="photoAttach" class="doc-select" value="profile_and_photos"><button type="button" class="doc-edit-btn" data-modal="modalProfilePhotos">รายละเอียด</button><span>ประวัติบุคคล 4 ด้าน + ภาพประกอบ (2 หน้า)</span></label>
-          <label class="doc-check"><input type="checkbox" class="doc-select" value="court_referral"><span>ใบปะหน้าส่งศาล</span></label>
-          <label class="doc-check"><input type="checkbox" class="doc-select" value="phone_consent_m80"><button type="button" class="doc-edit-btn" data-modal="modalPhoneM80">รายละเอียด</button><span>บันทึกยินยอมตรวจโทรศัพท์ ม.80</span></label>
-        </div>
-      </div>
 
       <details class="panel" data-module="docgen" open>
         <summary>ข้อมูลคดี / หมายจับ</summary>
