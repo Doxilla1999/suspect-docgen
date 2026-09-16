@@ -797,6 +797,7 @@ function buildTagMap() {
     doc_date: thaiDate('issueDate'), hospital_name: v('hospitalName'), drug_type: v('drugType'),
     test_date: thaiDate('testDate'), test_count: String(getSuspectListEntries().length), suspect_full_name: fullName,
     suspect_name_with_nick: nameWithNick,
+    sample_send_date: thaiShortDateNumeral('issueDate'), sample_send_time: thaiTimeNowNumeral(),
     // ถ้าไม่ได้ตั้งผู้ลงนามไว้ในหน้าตั้งค่า ให้ใช้เจ้าหน้าที่ที่เลือกไว้ตอนล็อกอินแทน
     signer_rank: v('signerRank') || v('officer1Rank'),
     signer_name: v('signerName') || v('officer1Name'),
@@ -1512,6 +1513,17 @@ function clearSuspectRows() {
 }
 const THAI_DIGITS = ['๐','๑','๒','๓','๔','๕','๖','๗','๘','๙'];
 function toThaiNumeral(n) { return String(n).split('').map(d => THAI_DIGITS[parseInt(d, 10)] ?? d).join(''); }
+const THAI_MONTHS_SHORT = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+// วันที่แบบเลขไทยย่อ เช่น ๑๖ ก.ย. ๒๕๖๙ (ใช้ในตารางรับ-ส่งตัวอย่าง)
+function thaiShortDateNumeral(prefix) {
+  const day = v(prefix + '_day'), monthIdx = v(prefix + '_month'), year = v(prefix + '_year');
+  if (!day || monthIdx === '' || !year) return '';
+  return `${toThaiNumeral(day)} ${THAI_MONTHS_SHORT[parseInt(monthIdx, 10)]} ${toThaiNumeral(year)}`;
+}
+function thaiTimeNowNumeral() {
+  const now = new Date();
+  return toThaiNumeral(String(now.getHours()).padStart(2, '0')) + '.' + toThaiNumeral(String(now.getMinutes()).padStart(2, '0'));
+}
 // โคลนย่อหน้า {suspect_list_block} ในแม่แบบทีละคน เพื่อให้รายชื่อใช้ฟอนต์/ระยะบรรทัด
 // ของฟอร์มจริงเอง ไม่ต้องกำหนดรูปแบบซ้ำในโค้ด (ฟอร์มจึงไม่เพี้ยนเวลา export)
 function fillSuspectListBlock(xmlStr, entries) {

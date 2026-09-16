@@ -88,9 +88,11 @@ def build_urine_referral():
     clear_runs(p[19], [3, 4])
     flatten(p[20], "{signer_position}")
 
-    # ตารางท้ายเอกสาร: ช่อง "ผู้ส่ง" คือเจ้าหน้าที่คนเดียวกับผู้ลงนาม
-    sender = doc.tables[0].rows[1].cells[0]
-    sender.paragraphs[0].runs[0].text = "ผู้ส่ง {signer_rank}{signer_name}"
+    # ตารางท้ายเอกสาร ฝั่ง "สำหรับการรับ-ส่งตัวอย่าง" — ผู้ส่ง/วันที่/เวลา ที่นำส่งตัวอย่าง
+    rows = doc.tables[0].rows
+    rows[1].cells[0].paragraphs[0].runs[0].text = "ผู้ส่ง {signer_rank}{signer_name}"
+    rows[3].cells[0].paragraphs[0].runs[1].text = "  {sample_send_date}"
+    rows[4].cells[0].paragraphs[0].runs[1].text = "   {sample_send_time}   "
 
     doc.save(OUT + "urine_referral_template.docx")
     print("built urine_referral_template.docx from real form")
