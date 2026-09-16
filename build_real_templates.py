@@ -43,6 +43,88 @@ def flatten(para, text):
         r.text = ""
 
 
+def replace_across_runs(para, old, new):
+    """แทนที่ข้อความในย่อหน้า แม้ Word จะตัดข้อความนั้นคร่อมหลาย run
+
+    คงรูปแบบของ run แรกที่ทับกับข้อความเดิมไว้ (ตัวหนา/ฟอนต์) แล้วล้างส่วนที่ทับใน run ถัดๆ ไป
+    ทำให้แท็กที่ใส่เข้าไปอยู่ใน run เดียว ไม่ถูกตัดคร่อมตอนแทนค่าในเว็บแอป
+    """
+    runs = para.runs
+    full = "".join(r.text for r in runs)
+    idx = full.find(old)
+    if idx < 0:
+        raise ValueError(f"ไม่พบข้อความ {old!r} ในย่อหน้า: {full!r}")
+    start, end = idx, idx + len(old)
+    pos = 0
+    replaced = False
+    for r in runs:
+        r_start, r_end = pos, pos + len(r.text)
+        pos = r_end
+        if r_end <= start or r_start >= end:
+            continue
+        head = r.text[:max(0, start - r_start)]
+        tail = r.text[max(0, end - r_start):] if r_end > end else ""
+        if not replaced:
+            r.text = head + new + tail
+            replaced = True
+        else:
+            r.text = head + tail
+
+
+def build_drug_test_115():
+    doc = Document(FORMS + "drug_test_115_original.docx")
+    p = doc.paragraphs
+
+    # (ดัชนีย่อหน้า, ข้อความเดิมในฟอร์ม, แท็กที่ใส่แทน)
+    subs = [
+        (3, "สถานีตำรวจภูธรนายายอาม", "{station_name}"),
+        (4, "16 เดือน กันยายน พ.ศ. 2569", "{record_day} เดือน {record_month} พ.ศ. {record_year}"),
+        (5, "ร.ต.อ.รัฐภูมิ พวงมาลา", "{officer1_rank}{officer1_name}"),
+        (5, "รอง สว.สส.สภ.นายายอาม", "{officer1_position}"),
+        (6, "ผบก.ภ.จว.จันทบุรี", "{officer_affiliation}"),
+        (7, "☑", "{cb_card_ppst}"),
+        (7, "6705928", "{card_no_ppst}"),
+        (8, "☐", "{cb_card_gov}"),
+        (8, "เลขที่", "เลขที่ {card_no_gov}"),
+        (10, "นายวรากร วรรณมาลี", "{suspect_title}{suspect_full_name}"),
+        (10, "อายุ 36 ปี", "อายุ {suspect_age} ปี"),
+        (11, "☑ บัตรประชาชน", "{cb_id_card} บัตรประชาชน"),
+        (11, "☐ บัตรคนซึ่งไม่มีสัญชาติไทย", "{cb_id_alien} บัตรคนซึ่งไม่มีสัญชาติไทย"),
+        (11, "☐ หนังสือเดินทาง", "{cb_id_passport} หนังสือเดินทาง"),
+        (11, "☐ เอกสารอื่นที่ราชการออกให้ ระบุ", "{cb_id_other} เอกสารอื่นที่ราชการออกให้ ระบุ {id_other_detail}"),
+        (12, "1 2299 00306 18 6", "{suspect_id_number}"),
+        (13, "หมู่ที่ 4 ตำบลช้างข้าม อำเภอนายายอาม จังหวัดจันทบุรี", "{suspect_address}"),
+        (14, "หมู่ที่ 4 ตำบลช้างข้าม อำเภอนายายอาม จังหวัดจันทบุรี", "{suspect_current_address}"),
+        (14, "หมายเลขโทรศัพท์", "หมายเลขโทรศัพท์ {suspect_phone}"),
+        (16, "☑", "{cb_test_pos}"),
+        (16, "เมทแอมเฟตามีน", "{drug_type}"),
+        (17, "☐", "{cb_test_neg}"),
+        (19, "☑", "{cb_search_none}"),
+        (20, "☐", "{cb_search_found}"),
+        (20, "ประเภท/ชนิด  ปริมาณ", "ประเภท/ชนิด {search_drug_type} ปริมาณ {search_amount}"),
+        (24, "☐", "{cb_pb1}"),
+        (25, "☐", "{cb_pb2}"),
+        (26, "☐", "{cb_pb3}"),
+        (27, "☑", "{cb_pb4}"),
+        (29, "อาชีพ", "อาชีพ {suspect_occupation}"),
+        (29, "รายได้โดยประมาณ", "รายได้โดยประมาณ {suspect_income}"),
+        (32, "วรากร วรรณมาลี", "{suspect_full_name}"),
+        (33, "☐ ขอลงนามสมัครใจ", "{cb_consent_yes} ขอลงนามสมัครใจ"),
+        (33, "☑ ขอลงนามไม่สมัครใจ", "{cb_consent_no} ขอลงนามไม่สมัครใจ"),
+        (42, "ในวันที่  เวลา  น.", "ในวันที่ {appointment_date} เวลา {appointment_time} น."),
+        (43, "ณ สถานที่", "ณ สถานที่ {appointment_place}"),
+        (53, "วรากร วรรณมาลี", "{suspect_full_name}"),
+        (55, "ร.ต.อ.", "{officer1_rank}"),
+        (56, "รัฐภูมิ พวงมาลา", "{officer1_name}"),
+        (59, "วรากร วรรณมาลี", "{suspect_full_name}"),
+    ]
+    for idx, old, new in subs:
+        replace_across_runs(p[idx], old, new)
+
+    doc.save(OUT + "drug_test_115_template.docx")
+    print("built drug_test_115_template.docx from real form")
+
+
 def build_urine_referral():
     doc = Document(FORMS + "urine_referral_original.docx")
     p = doc.paragraphs
@@ -101,3 +183,4 @@ def build_urine_referral():
 if __name__ == "__main__":
     os.makedirs(OUT, exist_ok=True)
     build_urine_referral()
+    build_drug_test_115()
