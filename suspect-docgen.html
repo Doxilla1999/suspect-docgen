@@ -62,7 +62,7 @@
   .msg { font-size: 15px; color: #E2685D; margin: 6px 0 0; min-height: 16px; }
   .mono { font-family: 'IBM Plex Mono', monospace; }
   .doc-check { position: relative; }
-  .doc-edit-btn { margin-left: auto; background: none; border: 1px solid #33393F; color: #B68D40; border-radius: 6px; padding: 4px 10px; font-size: 12.5px; cursor: pointer; white-space: nowrap; }
+  .doc-edit-btn { background: none; border: 1px solid #33393F; color: #B68D40; border-radius: 6px; padding: 4px 10px; font-size: 12.5px; cursor: pointer; white-space: nowrap; }
   .doc-edit-btn:hover { background: rgba(182,141,64,.15); }
   .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.65); backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); z-index: 1000; align-items: flex-start; justify-content: center; padding: 30px 16px; overflow-y: auto; }
   .modal-overlay.show { display: flex; }
@@ -299,11 +299,11 @@
       <div class="panel" data-module="docgen">
         <h2>เอกสารที่ต้องการสร้าง <span class="hint-inline">(ติ๊กเลือกเองได้ทีละฉบับ)</span></h2>
         <div class="doc-checklist">
-          <label class="doc-check"><input type="checkbox" class="doc-select" value="drug_test_115"><span>ปยส.115 (บันทึกตรวจสารเสพติด)</span><button type="button" class="doc-edit-btn" data-modal="modalDrugTest115">รายละเอียด</button></label>
-          <label class="doc-check"><input type="checkbox" class="doc-select" value="urine_referral"><span>ส่งตรวจปัสสาวะ</span><button type="button" class="doc-edit-btn" data-modal="modalUrineReferral">รายละเอียด</button></label>
-          <label class="doc-check"><input type="checkbox" id="photoAttach" class="doc-select" value="profile_and_photos"><span>ประวัติบุคคล 4 ด้าน + ภาพประกอบ (2 หน้า)</span><button type="button" class="doc-edit-btn" data-modal="modalProfilePhotos">รายละเอียด</button></label>
+          <label class="doc-check"><input type="checkbox" class="doc-select" value="drug_test_115"><button type="button" class="doc-edit-btn" data-modal="modalDrugTest115">รายละเอียด</button><span>ปยส.115 (บันทึกตรวจสารเสพติด)</span></label>
+          <label class="doc-check"><input type="checkbox" class="doc-select" value="urine_referral"><button type="button" class="doc-edit-btn" data-modal="modalUrineReferral">รายละเอียด</button><span>ส่งตรวจปัสสาวะ</span></label>
+          <label class="doc-check"><input type="checkbox" id="photoAttach" class="doc-select" value="profile_and_photos"><button type="button" class="doc-edit-btn" data-modal="modalProfilePhotos">รายละเอียด</button><span>ประวัติบุคคล 4 ด้าน + ภาพประกอบ (2 หน้า)</span></label>
           <label class="doc-check"><input type="checkbox" class="doc-select" value="court_referral"><span>ใบปะหน้าส่งศาล</span></label>
-          <label class="doc-check"><input type="checkbox" class="doc-select" value="phone_consent_m80"><span>บันทึกยินยอมตรวจโทรศัพท์ ม.80</span><button type="button" class="doc-edit-btn" data-modal="modalPhoneM80">รายละเอียด</button></label>
+          <label class="doc-check"><input type="checkbox" class="doc-select" value="phone_consent_m80"><button type="button" class="doc-edit-btn" data-modal="modalPhoneM80">รายละเอียด</button><span>บันทึกยินยอมตรวจโทรศัพท์ ม.80</span></label>
         </div>
       </div>
 
