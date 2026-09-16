@@ -6,6 +6,11 @@
 """
 import os
 from docx import Document
+from docx.enum.text import WD_TAB_ALIGNMENT
+from docx.shared import Cm
+
+# ตำแหน่งบล็อกหัวจดหมายด้านขวา (ชื่อสถานี / จังหวัด) วัดจากขอบซ้ายของพื้นที่พิมพ์
+LETTERHEAD_TAB = Cm(10)
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 FORMS = os.path.join(SCRIPT_DIR, "forms") + os.sep
@@ -42,12 +47,16 @@ def build_urine_referral():
     doc = Document(FORMS + "urine_referral_original.docx")
     p = doc.paragraphs
 
-    # [2] ที่ <เลขหนังสือ> ............ <ชื่อสถานี>
+    # [2] ที่ <เลขหนังสือ> --tab--> <ชื่อสถานี>
+    # เลขที่หนังสือยาวไม่เท่ากันทุกวัน (ออกเลขจากระบบอื่นแล้วมากรอก) ฟอร์มเดิมใช้เคาะเว้นวรรค
+    # จัดตำแหน่ง ชื่อสถานีจึงเลื่อนตามความยาวเลข เปลี่ยนมาใช้ tab stop ตายตัวแทน
+    p[2].paragraph_format.tab_stops.add_tab_stop(LETTERHEAD_TAB, WD_TAB_ALIGNMENT.LEFT)
     set_runs(p[2], {3: "{doc_number}", 14: "{station_name}"})
-    clear_runs(p[2], [4, 5, 6, 7])
+    clear_runs(p[2], [4, 5, 6, 7, 8, 10, 11, 12, 13])  # เหลือ run9 ที่เป็นแท็บเดียว
 
-    # [3] จังหวัด.... รหัสไปรษณีย์
-    set_runs(p[3], {1: "{province}", 2: "  {postal_code}"})
+    # [3] จังหวัด.... รหัสไปรษณีย์ — ใช้ tab stop เดียวกันให้ตรงกับชื่อสถานีเสมอ
+    p[3].paragraph_format.tab_stops.add_tab_stop(LETTERHEAD_TAB, WD_TAB_ALIGNMENT.LEFT)
+    set_runs(p[3], {0: "\t", 1: "จังหวัด{province}", 2: "  {postal_code}"})
 
     # [4] วันที่ออกหนังสือ
     set_runs(p[4], {6: "{doc_date}"})
