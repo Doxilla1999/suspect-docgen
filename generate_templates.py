@@ -122,34 +122,8 @@ def signature_block(doc, rank_tag, name_tag, position_tag):
 OUT = os.path.join(SCRIPT_DIR, "build") + os.sep
 os.makedirs(OUT, exist_ok=True)
 
-# ---------- 1. urine referral ----------
-doc = base_doc()
-letterhead(doc, "{doc_number}")
-add_mixed(doc, [("เรื่อง\t", True), ("ขอส่งตรวจยืนยัน/สารเสพติดในปัสสาวะ ในขั้นที่สองด้วยหลักการทางวิทยาศาสตร์", False)])
-add_mixed(doc, [("เรียน\t", True), ("ผู้อำนวยการโรงพยาบาล{hospital_name}", False)])
-add_p(doc, "เนื่องด้วย {station_name} ขอส่งตรวจยืนยัน{drug_type}/สารเสพติดในปัสสาวะ ในขั้นที่สองด้วยหลักการทางวิทยาศาสตร์ "
-          "เพื่อเป็นการดำเนินการตามแนวทางการตรวจพิสูจน์หาสารเสพติดในปัสสาวะตามพระราชบัญญัติฟื้นฟูสมรรถภาพผู้ติดยาเสพติด พ.ศ. ๒๕๔๕ "
-          "ที่ห้องเคมีคลินิกและพิษวิทยา กลุ่มงานพยาธิวิทยาคลินิก โรงพยาบาล{hospital_name} ในวันที่ {test_date} เป็นจำนวน {test_count} ราย ดังมีรายชื่อต่อไปนี้")
-add_p(doc, "{suspect_list_block}")
-add_p(doc, "ทั้งนี้หากผลการตรวจยืนยันการคัดกรองเป็นอย่างไรขอให้ดำเนินการแจ้งให้ทราบ")
-add_p(doc, "จึงเรียนมาเพื่อโปรดพิจารณา")
-add_p(doc, "ขอแสดงความนับถือ")
-signature_block(doc, "{signer_rank}", "{signer_name}", "{signer_position}")
-add_p(doc, "")
-table = doc.add_table(rows=5, cols=2)
-table.style = 'Table Grid'
-rows_data = [
-    ("สำหรับการรับ-ส่งตัวอย่าง", "สำหรับรับผลการตรวจวิเคราะห์"),
-    ("ผู้ส่ง", "ผู้มอบผล"),
-    ("ผู้รับ", "ผู้รับผล"),
-    ("วันที่", "วันที่"),
-    ("เวลา         น.", "เวลา         น."),
-]
-for i, (a, b) in enumerate(rows_data):
-    ra, rb = table.rows[i].cells[0].paragraphs[0].add_run(a), table.rows[i].cells[1].paragraphs[0].add_run(b)
-    set_font(ra, bold=(i == 0))
-    set_font(rb, bold=(i == 0))
-doc.save(OUT + "urine_referral_template.docx")
+# หมายเหตุ: urine_referral ไม่ได้สร้างที่นี่แล้ว — ใช้ไฟล์ฟอร์มจริงของสถานีเป็นแม่แบบแทน
+# ดู build_real_templates.py (อ่านจาก forms/urine_referral_original.docx)
 
 # ---------- 2. drug test record (pys115) ----------
 CB_ON = "☑"

@@ -882,8 +882,7 @@ async function generateDoc(key, tags, suspectName) {
   const zip = await JSZip.loadAsync(bytes);
   let xmlStr = await zip.file(info.xmlPath).async('string');
   if (key === 'urine_referral') {
-    const listXml = buildSuspectListXml(getSuspectListEntries());
-    xmlStr = xmlStr.replace(/<w:p>(?:(?!<\/w:p>)[\s\S])*?\{suspect_list_block\}(?:(?!<\/w:p>)[\s\S])*?<\/w:p>/, listXml);
+    xmlStr = fillSuspectListBlock(xmlStr, getSuspectListEntries());
   }
   const filled = xmlStr.replace(/\{([a-zA-Z0-9_]+)\}/g, (m, tag) => (tag in tags) ? tags[tag] : '');
   zip.file(info.xmlPath, filled);
@@ -1510,18 +1509,22 @@ function clearSuspectRows() {
 }
 const THAI_DIGITS = ['๐','๑','๒','๓','๔','๕','๖','๗','๘','๙'];
 function toThaiNumeral(n) { return String(n).split('').map(d => THAI_DIGITS[parseInt(d, 10)] ?? d).join(''); }
-function buildSuspectListXml(entries) {
-  const pPr = '<w:pPr><w:spacing w:after="40" w:lineRule="auto" w:line="240"/></w:pPr>';
-  const rPr = '<w:rPr><w:rFonts w:ascii="TH SarabunIT๙" w:hAnsi="TH SarabunIT๙" w:eastAsia="TH SarabunIT๙" w:cs="TH SarabunIT๙"/><w:b w:val="0"/><w:sz w:val="32"/></w:rPr>';
+// โคลนย่อหน้า {suspect_list_block} ในแม่แบบทีละคน เพื่อให้รายชื่อใช้ฟอนต์/ระยะบรรทัด
+// ของฟอร์มจริงเอง ไม่ต้องกำหนดรูปแบบซ้ำในโค้ด (ฟอร์มจึงไม่เพี้ยนเวลา export)
+function fillSuspectListBlock(xmlStr, entries) {
+  const paraRe = /<w:p\b(?:(?!<\/w:p>)[\s\S])*?\{suspect_list_block\}(?:(?!<\/w:p>)[\s\S])*?<\/w:p>/;
+  const templatePara = xmlStr.match(paraRe);
+  if (!templatePara) return xmlStr;
   const list = entries.length ? entries : [{ name: '', id: '', age: '', address: '' }];
-  return list.map((e, i) => {
+  const paras = list.map((e, i) => {
     const bits = [e.name];
     if (e.id) bits.push(`เลขบัตรประชาชน ${e.id}`);
     if (e.age) bits.push(`อายุ ${e.age} ปี`);
     if (e.address) bits.push(`ที่อยู่ ${e.address}`);
     const text = escapeXml(`${toThaiNumeral(i + 1)}. ${bits.join(' ')}`);
-    return `<w:p>${pPr}<w:r>${rPr}<w:t xml:space="preserve">${text}</w:t></w:r></w:p>`;
+    return templatePara[0].replace('{suspect_list_block}', text);
   }).join('');
+  return xmlStr.replace(paraRe, paras);
 }
 
 const OFFICER_PRESETS = [
