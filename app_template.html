@@ -1859,9 +1859,12 @@ document.getElementById('copyDopaBtn').addEventListener('click', async () => {
 
 function setDefaultIssueDate() {
   const now = new Date();
-  document.getElementById('issueDate_day').value = now.getDate();
-  document.getElementById('issueDate_month').value = String(now.getMonth());
-  document.getElementById('issueDate_year').value = now.getFullYear() + 543;
+  // วันที่ออกหนังสือ และวันนัดตรวจปัสสาวะ ปกติเป็นวันเดียวกัน (วันที่ทำเรื่อง) เติมให้อัตโนมัติ แก้เองได้
+  ['issueDate', 'testDate'].forEach(prefix => {
+    document.getElementById(prefix + '_day').value = now.getDate();
+    document.getElementById(prefix + '_month').value = String(now.getMonth());
+    document.getElementById(prefix + '_year').value = now.getFullYear() + 543;
+  });
 }
 
 function switchModule(name) {
