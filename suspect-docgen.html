@@ -362,7 +362,10 @@
             <div class="date3"><input id="warrantDate_day" type="number" min="1" max="31" placeholder="วัน"><select id="warrantDate_month"></select><input id="warrantDate_year" type="number" placeholder="พ.ศ."></div>
           </label>
           <label class="f"><span>ศาล</span><input id="courtName" placeholder="ศาลจังหวัดจันทบุรี"></label>
-          <label class="f"><span>เลขที่หนังสือใบปะหน้าส่งศาล (เลขหลัง / จาก e-Saraban)</span><input id="courtDocNo" placeholder="เว้นว่าง = ใช้เลขที่หนังสือกลาง" inputmode="numeric"></label>
+          <label class="f"><span>วันที่จับกุม (พ.ศ.) — ใช้ในใบปะหน้าส่งศาล</span>
+            <div class="date3"><input id="arrestDate_day" type="number" min="1" max="31" placeholder="วัน"><select id="arrestDate_month"></select><input id="arrestDate_year" type="number" placeholder="พ.ศ."></div>
+          </label>
+          <label class="f"><span>เลขที่หนังสือใบปะหน้าส่งศาล (เลขหลัง / จาก e-Saraban)</span><input id="courtDocNo" placeholder="เว้นว่าง = ใช้เลขที่หนังสือส่งตรวจปัสสาวะ" inputmode="numeric"></label>
         </div>
         <p class="field-group-label" style="margin-top:12px">ของกลางของคนนี้ (ถ้ามี)</p>
         <div id="evidenceRows"></div>
@@ -376,22 +379,6 @@
         <label class="f"><span>รายละเอียดวิธีกระทำความผิด</span><textarea id="crimeDetails"></textarea></label>
         <label class="f"><span>พฤติการณ์ที่น่าสนใจ</span><textarea id="crimeNotes"></textarea></label>
         <label class="f"><span>ประวัติการกระทำผิด</span><textarea id="crimeHistory"></textarea></label>
-      </details>
-
-      <details class="panel" data-module="docgen" open>
-        <summary>ข้อมูลการจับกุม (ใช้ร่วมกันทุกคน)</summary>
-        <p class="note" style="margin-top:0">วัน-เวลา-สถานที่จับกุม วันที่ออกเอกสาร และเลขที่หนังสือกลาง ใช้ชุดเดียวกันทุกคนในเคสนี้</p>
-        <div class="grid3">
-          <label class="f"><span>วันที่จับกุม (พ.ศ.)</span>
-            <div class="date3"><input id="arrestDate_day" type="number" min="1" max="31" placeholder="วัน"><select id="arrestDate_month"></select><input id="arrestDate_year" type="number" placeholder="พ.ศ."></div>
-          </label>
-          <label class="f"><span>เวลาจับกุม</span><input id="arrestTime" placeholder="เช่น 14.30"></label>
-          <label class="f"><span>สถานที่จับกุม</span><input id="arrestLocation"></label>
-          <label class="f"><span>วันที่ออกเอกสาร / บันทึก (พ.ศ.)</span>
-            <div class="date3"><input id="issueDate_day" type="number" min="1" max="31" placeholder="วัน"><select id="issueDate_month"></select><input id="issueDate_year" type="number" placeholder="พ.ศ."></div>
-          </label>
-          <label class="f"><span>เลขที่หนังสือกลาง (เลขหลัง / ส่งตรวจปัสสาวะ)</span><input id="docRunningNo" placeholder="เช่น 45"></label>
-        </div>
       </details>
 
       <details class="panel" data-module="linereport" open>
@@ -504,6 +491,9 @@
           <label class="f"><span>วันที่นัดตรวจปัสสาวะ (พ.ศ.)</span>
             <div class="date3"><input id="testDate_day" type="number" min="1" max="31" placeholder="วัน"><select id="testDate_month"></select><input id="testDate_year" type="number" placeholder="พ.ศ."></div>
           </label>
+          <label class="f"><span>วันที่ออกเอกสาร (พ.ศ.) — ตั้งเป็นวันนี้ให้แล้ว ใช้กับทุกเอกสาร</span>
+            <div class="date3"><input id="issueDate_day" type="number" min="1" max="31" placeholder="วัน"><select id="issueDate_month"></select><input id="issueDate_year" type="number" placeholder="พ.ศ."></div>
+          </label>
         </div>
         <p class="note" style="margin-top:0">ไม่มีโรงพยาบาลที่ต้องการในรายการ? พิมพ์ชื่อโรงพยาบาลเองในช่อง "โรงพยาบาลที่ส่งตรวจ" ได้เลย ไม่ต้องเลือกจากรายการก็ได้</p>
         <p class="field-group-label">รายชื่อผู้ถูกส่งตรวจปัสสาวะ (ส่งพร้อมกันได้หลายคน — เว้นว่างไว้จะใช้ชื่อผู้ต้องหาหลักโดยอัตโนมัติ)</p>
@@ -519,7 +509,7 @@
         <button type="button" class="btn btn-primary btn-sm" id="copySarabanBtn">คัดลอกข้อมูล + เปิด e-Saraban</button>
         <p class="note">กดแล้วจะเปิดเว็บ saraban ในแท็บใหม่ (ล็อกอินเอง) → ระบบสารบรรณอิเล็กทรอนิกส์ → ลงทะเบียนรับส่ง → สร้าง/หนังสือส่งภายใน → กดปุ่มลอย "📋 กรอกจาก suspect-docgen" สคริปต์จะกรอก ถึง (ชื่อโรงพยาบาล), เรื่อง (ส่งตรวจปัสสาวะ จำนวน N ราย) และตั้ง หมวดหนังสือ=หนังสือส่งภายนอก, ชั้นความเร็ว/ความลับ/การลงนาม=ปกติ, วิธีรับ-ส่ง=รับไปดำเนินการ ช่องอื่นปล่อยว่าง ตรวจแล้วกด "สร้าง" เอง → ได้เลขแล้วกลับมาใส่ช่องด้านล่างนี้</p>
         <p class="msg" id="sarabanMsg"></p>
-        <label class="f" style="margin-top:8px"><span>เลขที่หนังสือที่ได้จาก e-Saraban (เฉพาะเลขหลัง /)</span><input id="sarabanRunningNo" placeholder="เช่น 1524" inputmode="numeric"></label>
+        <label class="f" style="margin-top:8px"><span>เลขที่หนังสือที่ได้จาก e-Saraban (เฉพาะเลขหลัง /) — ขึ้นหัวหนังสือส่งตรวจปัสสาวะ</span><input id="docRunningNo" placeholder="เช่น 1524" inputmode="numeric"></label>
 
         <button type="button" class="btn btn-primary modal-done" data-close-modal>เสร็จแล้ว</button>
       </div>
@@ -718,8 +708,6 @@ function openModal(id) {
   if (!el) return;
   el.classList.add('show');
   renderModalPersonTag(el);
-  // เปิดป็อบอัพส่งตรวจปัสสาวะทางไหนก็ตาม (ติ๊ก/ปุ่มรายละเอียด/โหลดเคส) ให้เลขที่หนังสือในป็อบอัพตรงกับค่าจริงเสมอ
-  if (id === 'modalUrineReferral') document.getElementById('sarabanRunningNo').value = v('docRunningNo');
   // เปิด ปยส.115 → ถ้ายังไม่ได้กรอกผลการตรวจค้น ให้ดึงของกลางที่เป็นยาเสพติดของคนนี้มาใส่ให้
   if (id === 'modalDrugTest115') document.getElementById('syncSeizedMsg').textContent = syncSeizedFromEvidence(false);
 }
@@ -898,7 +886,7 @@ function buildTagMap() {
     appointment_time: v('appointmentTime'), appointment_place: v('appointmentPlace'), court_name: v('courtName'),
     warrant_no: v('warrantNo'), case_black_no: v('caseBlackNo'), case_red_no: v('caseRedNo'),
     warrant_date: thaiDate('warrantDate'), charge: v('charge'), arrest_date: thaiDate('arrestDate'),
-    arrest_time: v('arrestTime'), arrest_location: v('arrestLocation'), suspect_nationality: v('nationality'),
+    suspect_nationality: v('nationality'),
     record_place: v('recordPlace') || v('stationName'), record_date: thaiDate('issueDate'),
     phone_brand: v('phoneBrand'), phone_model: v('phoneModel'), phone_color: v('phoneColor'),
     phone_imei1: v('phoneImei1'), phone_imei2: v('phoneImei2'), sim1_number: v('sim1Number'), sim1_network: v('sim1Network'),
@@ -1207,7 +1195,7 @@ const ALL_FIELD_IDS = ['title','firstName','lastName','nickname','alias','age','
   'friends','hangouts','knownBy','idIssueAmphoe','idIssueProvince',
   'addrHouseNo','addrMoo','addrRoad','addrTambon','addrAmphoe','addrProvince',
   'height','weight','skin','head','hair','face','eyes','nose','ears','beard','marks','accent',
-  'charge','caseBlackNo','caseRedNo','warrantNo','courtName','courtDocNo','arrestTime','arrestLocation',
+  'charge','caseBlackNo','caseRedNo','warrantNo','courtName','courtDocNo',
   'docRunningNo','crimeWeapon','crimeVehicle','crimeAccomplice','crimeDetails','crimeNotes','crimeHistory',
   'idDocType','idOtherDetail','drugType','drugTypeUrine','testResult','searchFound','searchDrugType','seizedAmount',
   'treatmentConsent','officer1CardType','cardNoPpst','cardNoGov','hospitalName',
@@ -2155,13 +2143,6 @@ document.getElementById('copySarabanBtn').addEventListener('click', async () => 
 
 // เลขที่ที่ได้จาก e-Saraban กรอกได้ในป็อบอัพส่งตรวจปัสสาวะ แต่ค่าจริงอยู่ที่ช่อง "เลขที่หนังสือ (เลขที่ออก)"
 // ในข้อมูลคดี (ใช้กับหัวจดหมายทุกฉบับ) จึงผูกสองช่องให้ค่าตรงกันเสมอ
-(function syncSarabanRunningNo() {
-  const inModal = document.getElementById('sarabanRunningNo');
-  const master = document.getElementById('docRunningNo');
-  inModal.addEventListener('input', () => { master.value = inModal.value; });
-  master.addEventListener('input', () => { inModal.value = master.value; });
-})();
-
 function setDefaultIssueDate() {
   const now = new Date();
   // วันที่ออกหนังสือ และวันนัดตรวจปัสสาวะ ปกติเป็นวันเดียวกัน (วันที่ทำเรื่อง) เติมให้อัตโนมัติ แก้เองได้
