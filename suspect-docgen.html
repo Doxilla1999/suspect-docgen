@@ -56,6 +56,9 @@
   .queue-doc-chip { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; padding: 2px 7px; border: 1px solid #33393F; border-radius: 12px; background: #12151A; color: #9AA0A6; cursor: pointer; user-select: none; }
   .queue-doc-chip input[type="checkbox"] { width: 14px; height: 14px; margin: 0; }
   .queue-doc-chip.on { color: #F0D9A0; border-color: #B68D40; background: rgba(182,141,64,.15); }
+  .urine-pick { display: flex; align-items: center; gap: 10px; padding: 8px 10px; margin-bottom: 6px; border: 1px solid #33393F; border-radius: 6px; background: #12151A; font-size: 15px; color: #9AA0A6; cursor: pointer; }
+  .urine-pick input[type="checkbox"] { width: 18px; height: 18px; margin: 0; }
+  .urine-pick.on { color: #E8E6E0; border-color: #17A2B8; background: rgba(23,162,184,.12); }
   .case-row:hover { background: #1E232A; }
   .case-row button.load { background: none; border: none; text-align: left; flex: 1; cursor: pointer; font-size: 15px; color: #E8E6E0; padding: 2px; }
   .note { font-size: 13.5px; color: #9B968D; line-height: 1.5; margin-top: 10px; }
@@ -497,9 +500,9 @@
         </div>
         <p class="note" style="margin-top:0">ไม่มีโรงพยาบาลที่ต้องการในรายการ? พิมพ์ชื่อโรงพยาบาลเองในช่อง "โรงพยาบาลที่ส่งตรวจ" ได้เลย ไม่ต้องเลือกจากรายการก็ได้</p>
         <div id="urineQueuePreview" style="display:none">
-          <p class="field-group-label">รายชื่อผู้ถูกส่งตรวจปัสสาวะ — โหมดหลายคน: ออกหนังสือฉบับเดียว รวมทุกคนในคิวที่ติ๊ก 🧪</p>
+          <p class="field-group-label">รายชื่อผู้ถูกส่งตรวจปัสสาวะ — โหมดหลายคน: ออกหนังสือฉบับเดียว เฉพาะคนที่ติ๊ก</p>
           <div id="urineQueuePreviewList"></div>
-          <p class="note">อยากตัดใครออกจากหนังสือฉบับนี้ ให้เอาติ๊ก 🧪 ปัสสาวะ ของคนนั้นออกในคิว โรงพยาบาล/ชนิดยา/วันนัด/วันที่ออก/เลขที่หนังสือ ใช้ค่าที่เห็นในป็อบอัพนี้กับทุกคน</p>
+          <p class="note">จับมา 6 คน ส่งตรวจแค่ 3 คน ก็ติ๊กแค่ 3 คน (ช่องติ๊กนี้คืออันเดียวกับ 🧪 ปัสสาวะ ของคนนั้นในคิว) โรงพยาบาล/ชนิดยา/วันนัด/วันที่ออก/เลขที่หนังสือ ใช้ค่าที่เห็นในป็อบอัพนี้กับทุกคน</p>
         </div>
         <div id="urineManualList">
         <p class="field-group-label">รายชื่อผู้ถูกส่งตรวจปัสสาวะ (ส่งพร้อมกันได้หลายคน — เว้นว่างไว้จะใช้ชื่อผู้ต้องหาหลักโดยอัตโนมัติ)</p>
@@ -970,15 +973,31 @@ function renderUrineQueuePreview() {
   const manual = document.getElementById('urineManualList');
   if (personMode !== 'batch') { preview.style.display = 'none'; manual.style.display = ''; return; }
   preview.style.display = ''; manual.style.display = 'none';
-  const list = getUrineQueuePersons().map(x => x.suspect);
-  // คนที่กำลังกรอกใหม่ (ยังไม่อยู่ในคิว) ถ้าติ๊ก 🧪 ไว้ก็นับด้วย — ตอนสร้างจริงจะถูกบันทึกลงคิวก่อน
+  // แสดงทุกคนในคิว มีช่องติ๊กหน้าชื่อ — ติ๊กเฉพาะคนที่ต้องส่งตรวจ (ผูกกับติ๊ก 🧪 ของคนนั้นในคิว)
+  const rows = docQueue.map((q, i) => ({
+    idx: i, suspect: urineEntryFromSnapshot(q.snapshot),
+    on: (q.snapshot.selectedDocs || []).includes('urine_referral')
+  }));
+  // คนที่กำลังกรอกใหม่ (ยังไม่อยู่ในคิว) แสดงด้วย ผูกกับช่องติ๊กด้านซ้าย — ตอนสร้างจริงจะถูกบันทึกลงคิวก่อน
   const curName = `${v('firstName')} ${v('lastName')}`.trim();
-  const curTicked = document.querySelector('.doc-select[value="urine_referral"]').checked;
-  if (editingQueueIndex === null && curName && curTicked) list.push({ ...urineEntryFromSnapshot(collectFormSnapshot()), pending: true });
-  document.getElementById('urineQueuePreviewList').innerHTML = list.length
-    ? `<p class="note" style="margin-top:0">จะออกหนังสือ 1 ฉบับ จำนวน <b>${list.length}</b> ราย:</p>` +
-      list.map((e, i) => `<div class="checklist-item">${i + 1}. ${escapeXml(e.name)}${e.id ? ' เลขบัตร ' + escapeXml(e.id) : ''}${e.age ? ' อายุ ' + escapeXml(e.age) + ' ปี' : ''}${e.pending ? ' <span class="note">(กำลังกรอก ยังไม่เข้าคิว)</span>' : ''}</div>`).join('')
-    : '<p class="note" style="margin-top:0;color:#E2685D">ยังไม่มีใครในคิวติ๊ก 🧪 ปัสสาวะ — ติ๊กที่ชื่อในคิว หรือติ๊กด้านซ้ายให้คนที่กำลังกรอก</p>';
+  if (editingQueueIndex === null && curName) {
+    rows.push({ idx: 'pending', suspect: urineEntryFromSnapshot(collectFormSnapshot()), on: document.querySelector('.doc-select[value="urine_referral"]').checked });
+  }
+  const selected = rows.filter(r => r.on).length;
+  const box = document.getElementById('urineQueuePreviewList');
+  box.innerHTML = rows.length
+    ? `<p class="note" style="margin-top:0">ติ๊กเฉพาะคนที่ต้องส่งตรวจ — จะออกหนังสือ 1 ฉบับ จำนวน <b>${selected}</b> ราย จากทั้งหมด ${rows.length} คน</p>` +
+      rows.map(r => `<label class="urine-pick${r.on ? ' on' : ''}"><input type="checkbox" data-upick="${r.idx}"${r.on ? ' checked' : ''}><span>${escapeXml(r.suspect.name)}${r.suspect.id ? ' เลขบัตร ' + escapeXml(r.suspect.id) : ''}${r.suspect.age ? ' อายุ ' + escapeXml(r.suspect.age) + ' ปี' : ''}${r.idx === 'pending' ? ' <span class="note">(กำลังกรอก ยังไม่เข้าคิว)</span>' : ''}</span></label>`).join('')
+    : '<p class="note" style="margin-top:0;color:#E2685D">คิวยังว่าง — วางข้อความหลายคน หรือกรอกชื่อแล้วกด "เพิ่ม/อัปเดตในคิว" ก่อน</p>';
+  box.querySelectorAll('[data-upick]').forEach(c => c.addEventListener('change', () => {
+    if (c.dataset.upick === 'pending') {
+      document.querySelector('.doc-select[value="urine_referral"]').checked = c.checked;
+      renderChecklist();
+      renderUrineQueuePreview();
+    } else {
+      setQueuePersonDoc(parseInt(c.dataset.upick, 10), 'urine_referral', c.checked);
+    }
+  }));
 }
 // จำนวนรายสำหรับหัวข้อ e-Saraban / test_count: โหมดหลายคนนับจากคิว โหมดคนเดียวนับจากรายชื่อในป็อบอัพ
 function getUrineCount() {
@@ -1090,24 +1109,28 @@ function renderQueue() {
       renderQueue();
       renderPersonTags();
     }));
-    // ติ๊กเอกสารรายคนได้ตรงนี้เลย (เช่น คนที่มีหมายจับถึงจะติ๊กใบปะหน้าส่งศาล) — ถ้าเป็นคนที่กำลังแก้อยู่ให้ช่องติ๊กด้านซ้ายเปลี่ยนตาม
+    // ติ๊กเอกสารรายคนได้ตรงนี้เลย (เช่น คนที่มีหมายจับถึงจะติ๊กใบปะหน้าส่งศาล)
     out.querySelectorAll('[data-qdoc]').forEach(c => c.addEventListener('change', () => {
-      const i = parseInt(c.dataset.qidx, 10), key = c.dataset.qdoc;
-      const entry = docQueue[i];
-      const set = new Set(entry.snapshot.selectedDocs || []);
-      if (c.checked) set.add(key); else set.delete(key);
-      entry.snapshot.selectedDocs = Object.keys(DOC_SHORT).filter(k => set.has(k));
-      entry.docLabels = entry.snapshot.selectedDocs.map(k => DOC_INFO[k].label);
-      if (i === editingQueueIndex) {
-        const box = document.querySelector(`.doc-select[value="${key}"]`);
-        if (box) box.checked = c.checked;
-        renderChecklist();
-      }
-      renderQueue();
+      setQueuePersonDoc(parseInt(c.dataset.qidx, 10), c.dataset.qdoc, c.checked);
     }));
   }
   renderQueuePersonSelect();
   renderUrineQueuePreview();
+}
+// ติ๊ก/เอาติ๊กเอกสารของคนที่ i ในคิว — ถ้าเป็นคนที่กำลังแก้อยู่ให้ช่องติ๊กด้านซ้ายเปลี่ยนตาม
+function setQueuePersonDoc(i, key, on) {
+  const entry = docQueue[i];
+  if (!entry) return;
+  const set = new Set(entry.snapshot.selectedDocs || []);
+  if (on) set.add(key); else set.delete(key);
+  entry.snapshot.selectedDocs = Object.keys(DOC_SHORT).filter(k => set.has(k));
+  entry.docLabels = entry.snapshot.selectedDocs.map(k => DOC_INFO[k].label);
+  if (i === editingQueueIndex) {
+    const box = document.querySelector(`.doc-select[value="${key}"]`);
+    if (box) box.checked = on;
+    renderChecklist();
+  }
+  renderQueue();
 }
 function renderQueuePersonSelect() {
   const sel = document.getElementById('queuePersonSelect');
