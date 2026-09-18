@@ -146,7 +146,7 @@
       <h1>ระบบสร้างเอกสารผู้ต้องหา · สภ.นายายอาม</h1>
       <p>กรอกครั้งเดียว ออกเอกสารได้หลายฉบับ</p>
     </div>
-    <div class="credit-top">BY บังโต KN60 <span title="เวอร์ชันของไฟล์นี้ — ถ้าไม่ตรงกับที่แจ้งไว้ ให้กด Ctrl+F5 โหลดหน้าใหม่" style="opacity:.6;font-size:11px;font-weight:400;margin-left:6px">build 18/09/2569 23:13</span></div>
+    <div class="credit-top">BY บังโต KN60 <span title="เวอร์ชันของไฟล์นี้ — ถ้าไม่ตรงกับที่แจ้งไว้ ให้กด Ctrl+F5 โหลดหน้าใหม่" style="opacity:.6;font-size:11px;font-weight:400;margin-left:6px">build 18/09/2569 23:47</span></div>
     <button type="button" class="header-logout" id="logoutBtn">ออกจากระบบ</button>
   </header>
 
@@ -1067,10 +1067,18 @@ async function generateDoc(key, tags, suspectName, opts = {}) {
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
+// กันสร้างเอกสารทั้งที่ยังไม่มีชื่อเจ้าหน้าที่ผู้จับกุม (ปยส.115 ใช้ชื่อนี้ตรง ๆ) — เปิดหน้าเลือกเจ้าหน้าที่ให้แทน
+function ensureOfficerSelected(msgEl) {
+  if (v('officer1Name')) return true;
+  msgEl.textContent = 'ยังไม่ได้เลือกเจ้าหน้าที่ผู้จับกุม — เลือกก่อนแล้วกดสร้างอีกครั้ง';
+  openModal('modalOfficers');
+  return false;
+}
 async function onGenerateAll() {
   const { set } = computeChecklist();
   const msg = document.getElementById('genMsg');
   if (set.size === 0) { msg.textContent = 'เลือกเอกสารที่ต้องการสร้างอย่างน้อย 1 ฉบับก่อน'; return; }
+  if (!ensureOfficerSelected(msg)) return;
   if (set.has('profile_and_photos')) {
     const missing = ['photoFront', 'photoBack', 'photoLeft', 'photoRight'].some(id => !document.getElementById(id).files[0]);
     if (missing) { msg.textContent = 'อัปโหลดภาพให้ครบ 4 ด้านก่อน หรือยกเลิกติ๊ก "ประวัติบุคคล 4 ด้าน + ภาพประกอบ"'; return; }
@@ -1268,14 +1276,20 @@ document.getElementById('genQueueBtn').addEventListener('click', async () => {
   autoSaveCurrentPersonToQueue();
   renderQueue();
   if (docQueue.length === 0) { msg.textContent = 'คิวว่าง ยังไม่มีใครให้สร้างเอกสาร'; return; }
+  if (!ensureOfficerSelected(msg)) return;
   // ค่าที่เห็นในป็อบอัพปัสสาวะล่าสุด ใช้กับหนังสือฉบับรวม
   const sharedUrine = {};
   URINE_SHARED_FIELD_IDS.forEach(id => { sharedUrine[id] = v(id); });
+  // เจ้าหน้าที่ผู้จับกุมใช้คนที่เลือกไว้ตอนนี้กับทุกคนในคิว (ไม่ใช่คนที่ค้างอยู่ใน snapshot ตอนเพิ่มเข้าคิว)
+  const officerNow = {};
+  OFFICER_FIELD_IDS.forEach(id => { officerNow[id] = v(id); });
+  const applyOfficerNow = () => OFFICER_FIELD_IDS.forEach(id => { document.getElementById(id).value = officerNow[id]; });
   const urinePersons = getUrineQueuePersons();
   let doneCount = 0;
   for (const entry of docQueue) {
     msg.textContent = `กำลังสร้างเอกสารให้ ${entry.name} (${doneCount + 1}/${docQueue.length})...`;
     applyFormSnapshot(entry.snapshot);
+    applyOfficerNow();
     if (entry.photos) {
       setFileInput('photoFront', entry.photos[0]);
       setFileInput('photoBack', entry.photos[1]);
@@ -1294,6 +1308,7 @@ document.getElementById('genQueueBtn').addEventListener('click', async () => {
   if (urinePersons.length) {
     msg.textContent = `กำลังสร้างหนังสือส่งตรวจปัสสาวะ รวม ${urinePersons.length} ราย...`;
     applyFormSnapshot(urinePersons[0].entry.snapshot);
+    applyOfficerNow();
     Object.entries(sharedUrine).forEach(([id, val]) => { if (val) document.getElementById(id).value = val; });
     try {
       await generateDoc('urine_referral', buildTagMap(), `รวม${urinePersons.length}ราย`, { suspectEntries: urinePersons.map(x => x.suspect) });
@@ -1360,7 +1375,13 @@ function collectFormSnapshot() {
   return snap;
 }
 function applyFormSnapshot(snap) {
-  ALL_FIELD_IDS.forEach(id => { const el = document.getElementById(id); if (el && snap[id] !== undefined) el.value = snap[id]; });
+  ALL_FIELD_IDS.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el || snap[id] === undefined) return;
+    // ข้อมูลเจ้าหน้าที่ที่ว่างใน snapshot เก่า (เคสที่บันทึกไว้ก่อนมีหน้าเลือกเจ้าหน้าที่) ห้ามมาทับคนที่เลือกไว้ตอนเข้าระบบ
+    if (OFFICER_FIELD_IDS.includes(id) && !String(snap[id]).trim()) return;
+    el.value = snap[id];
+  });
   CHECKBOX_IDS.forEach(id => { document.getElementById(id).checked = !!snap[id]; });
   document.querySelectorAll('.doc-select').forEach(c => c.checked = (snap.selectedDocs || []).includes(c.value));
   clearSuspectRows();
@@ -1369,15 +1390,16 @@ function applyFormSnapshot(snap) {
   updateConditionalVisibility();
   renderChecklist();
 }
+// เจ้าหน้าที่ผู้จับกุมที่เลือกตอนเข้าระบบ คงอยู่ทั้งรอบการใช้งาน — ปุ่ม "ใหม่"/สร้างทั้งคิว ต้องไม่ล้าง (เคยล้างแล้วชื่อใน ปยส.115 หาย)
+const OFFICER_FIELD_IDS = ['officer1Rank', 'officer1Name', 'officer1Position', 'officer1CardType', 'cardNoPpst', 'cardNoGov'];
 function clearForm() {
-  ALL_FIELD_IDS.forEach(id => { const el = document.getElementById(id); if (el && !STATION_FIELDS.includes(id)) el.value = (id === 'nationality' ? 'ไทย' : id === 'ethnicity' ? 'ไทย' : id === 'religion' ? 'พุทธ' : id === 'addrProvince' ? 'จันทบุรี' : ''); });
+  ALL_FIELD_IDS.forEach(id => { const el = document.getElementById(id); if (el && !STATION_FIELDS.includes(id) && !OFFICER_FIELD_IDS.includes(id)) el.value = (id === 'nationality' ? 'ไทย' : id === 'ethnicity' ? 'ไทย' : id === 'religion' ? 'พุทธ' : id === 'addrProvince' ? 'จันทบุรี' : ''); });
   CHECKBOX_IDS.forEach(id => { document.getElementById(id).checked = false; });
   document.querySelectorAll('.doc-select').forEach(c => c.checked = false);
   clearSuspectRows();
   addSuspectRow();
   resetEvidenceRows([]);
   ['photoFront', 'photoBack', 'photoLeft', 'photoRight'].forEach(id => { document.getElementById(id).value = ''; });
-  document.getElementById('officer1Preset').value = '';
   setDefaultIssueDate();
   updateConditionalVisibility();
   renderChecklist();
