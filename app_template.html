@@ -208,17 +208,18 @@
       <div class="modal-overlay modal-mandatory" id="modalOfficers">
       <div class="modal-box">
         <h2>เจ้าหน้าที่ผู้จับกุม</h2>
-        <p class="note" style="margin-top:0">เลือกหรือกรอกเจ้าหน้าที่ผู้จับกุมก่อนเริ่มใช้งาน</p>
+        <p class="note" style="margin-top:0">เลือกหรือกรอกเจ้าหน้าที่ผู้จับกุมก่อนเริ่มใช้งาน — รายชื่อในรายการเป็นของบัญชีที่ล็อกอินอยู่ (ชุดใครชุดมัน) เพิ่ม/แก้/ลบได้เอง</p>
         <div class="officer-block">
           <h3>หัวหน้าชุดผู้จับกุม (ส่งตรวจปัสสาวะ, เข้าถึงข้อมูลโทรศัพท์, ปยส.115)</h3>
-          <label class="f"><span>เลือกจากรายชื่อที่บันทึกไว้</span>
-            <select id="officer1Preset"><option value="">— กรอกเอง —</option></select>
+          <label class="f"><span>เลือกจากรายชื่อของชุดคุณ</span>
+            <select id="officer1Preset"><option value="">— กรอกเอง / เพิ่มคนใหม่ —</option></select>
           </label>
           <div class="grid3">
             <label class="f"><span>ยศ</span><input id="officer1Rank" placeholder="ร.ต.อ."></label>
             <label class="f"><span>ชื่อ-สกุล</span><input id="officer1Name"></label>
-            <label class="f"><span>ตำแหน่ง</span><input id="officer1Position" placeholder="รอง สว.สส."></label>
+            <label class="f"><span>ตำแหน่ง (ย่อ)</span><input id="officer1Position" placeholder="รอง สว.สส.สภ.นายายอาม"></label>
           </div>
+          <label class="f"><span>ตำแหน่งเต็ม สำหรับลงนามหนังสือส่งตรวจปัสสาวะ</span><input id="officer1SignerPosition" placeholder="เช่น รองสารวัตรสืบสวน สถานีตำรวจภูธรนายายอาม (เว้นว่าง = ใช้ตำแหน่งย่อ)"></label>
           <label class="f"><span>ประเภทบัตรที่ใช้แสดง</span>
             <select id="officer1CardType"><option value="ppst">บัตรประจำตัวเจ้าพนักงาน ป.ป.ส.</option><option value="gov">บัตรประจำตัวเจ้าหน้าที่ของรัฐ</option></select>
           </label>
@@ -226,6 +227,11 @@
             <label class="f"><span>เลขบัตร ป.ป.ส.</span><input id="cardNoPpst"></label>
             <label class="f"><span>เลขบัตรเจ้าหน้าที่ของรัฐ</span><input id="cardNoGov"></label>
           </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">
+            <button type="button" class="btn btn-ghost btn-sm" id="saveOfficerPresetBtn">💾 บันทึกคนนี้ไว้ในรายการ</button>
+            <button type="button" class="btn-danger-outline" id="deleteOfficerPresetBtn" style="display:none">ลบคนนี้ออกจากรายการ</button>
+          </div>
+          <p class="msg" id="officerPresetMsg" style="margin:6px 0 0"></p>
         </div>
         <p class="msg" id="officersConfirmMsg"></p>
         <button type="button" class="btn btn-primary modal-done" id="confirmOfficersBtn">ยืนยัน / เริ่มใช้งาน</button>
@@ -655,9 +661,22 @@ if (firebaseConfig.apiKey) {
   firebaseReady = true;
 }
 
+// ตัวเก็บข้อมูลในเครื่อง (หน้าตั้งค่า / เคสที่บันทึกไว้) — โค้ดเดิมเรียก window.storage ซึ่งไม่มีบนเว็บจริง
+// ทำให้ค่าที่ตั้งไว้หายทุกครั้งที่โหลดหน้าใหม่ ตรงนี้ผูกเข้ากับ localStorage ให้ด้วยรูปแบบเดิม ({ value })
+if (!window.storage) {
+  window.storage = {
+    async get(key) { const value = localStorage.getItem('sdg:' + key); return value === null ? null : { value }; },
+    async set(key, value) { localStorage.setItem('sdg:' + key, value); return { ok: true }; },
+    async delete(key) { localStorage.removeItem('sdg:' + key); return { ok: true }; }
+  };
+}
+
 function showApp() {
   document.getElementById('loginScreen').style.display = 'none';
   document.getElementById('appRoot').style.display = '';
+  // รายชื่อเจ้าหน้าที่ของบัญชีนี้ (รู้ uid หลังล็อกอินแล้วเท่านั้น)
+  loadOfficerRoster();
+  renderOfficerRosterSelect();
   updateOfficerSummary();
   openModal('modalOfficers');
 }
@@ -785,8 +804,9 @@ function updateOfficerSummary() {
 }
 document.getElementById('confirmOfficersBtn').addEventListener('click', () => {
   const msg = document.getElementById('officersConfirmMsg');
-  if (!v('officer1Name')) { msg.textContent = 'กรอกชื่อเจ้าหน้าที่คนที่ 1 ก่อนเริ่มใช้งาน'; return; }
+  if (!v('officer1Name')) { msg.textContent = 'กรอกยศและชื่อ-สกุลเจ้าหน้าที่ก่อนเริ่มใช้งาน'; return; }
   msg.textContent = '';
+  syncSignerFromOfficer();
   updateOfficerSummary();
   closeModal(document.getElementById('modalOfficers'));
 });
@@ -1336,7 +1356,7 @@ const ALL_FIELD_IDS = ['title','firstName','lastName','nickname','alias','age','
   'treatmentConsent','officer1CardType','cardNoPpst','cardNoGov','hospitalName',
   'otherNotes','appointmentTime','appointmentPlace',
   'phoneBrand','phoneModel','phoneColor','phoneImei1','phoneImei2','recordPlace','sim1Number','sim1Network',
-  'sim2Number','sim2Network','officer1Rank','officer1Name','officer1Position',
+  'sim2Number','sim2Network','officer1Rank','officer1Name','officer1Position','officer1SignerPosition',
   'arrestTambon','dopaFirstName','dopaLastName','dopaIdNumber','dopaLocation','dopaTime','dopaCharge', ...DATE_PART_IDS];
 const PERSON_ONLY_FIELD_IDS = ['title', 'firstName', 'lastName', 'nickname', 'alias', 'age', 'nationality', 'ethnicity', 'religion',
   'idNumber', 'phone', 'occupation', 'income', 'education', 'idIssueAmphoe', 'idIssueProvince',
@@ -1391,7 +1411,7 @@ function applyFormSnapshot(snap) {
   renderChecklist();
 }
 // เจ้าหน้าที่ผู้จับกุมที่เลือกตอนเข้าระบบ คงอยู่ทั้งรอบการใช้งาน — ปุ่ม "ใหม่"/สร้างทั้งคิว ต้องไม่ล้าง (เคยล้างแล้วชื่อใน ปยส.115 หาย)
-const OFFICER_FIELD_IDS = ['officer1Rank', 'officer1Name', 'officer1Position', 'officer1CardType', 'cardNoPpst', 'cardNoGov'];
+const OFFICER_FIELD_IDS = ['officer1Rank', 'officer1Name', 'officer1Position', 'officer1SignerPosition', 'officer1CardType', 'cardNoPpst', 'cardNoGov'];
 function clearForm() {
   ALL_FIELD_IDS.forEach(id => { const el = document.getElementById(id); if (el && !STATION_FIELDS.includes(id) && !OFFICER_FIELD_IDS.includes(id)) el.value = (id === 'nationality' ? 'ไทย' : id === 'ethnicity' ? 'ไทย' : id === 'religion' ? 'พุทธ' : id === 'addrProvince' ? 'จันทบุรี' : ''); });
   CHECKBOX_IDS.forEach(id => { document.getElementById(id).checked = false; });
@@ -1921,30 +1941,87 @@ function fillSuspectListBlock(xmlStr, entries) {
   return xmlStr.replace(paraRe, paras);
 }
 
-const OFFICER_PRESETS = [
-  { label: 'ร.ต.อ.รัฐภูมิ พวงมาลา (รอง สว.สส.)', rank: 'ร.ต.อ.', name: 'รัฐภูมิ พวงมาลา', position: 'รอง สว.สส.สภ.นายายอาม', signerPosition: 'รองสารวัตรสืบสวน สถานีตำรวจภูธรนายายอาม', cardType: 'ppst', cardNo: '6705928' },
-  { label: 'ร.ต.อ.สมบัติ หอมสวัสดิ์ (รอง สวป.)', rank: 'ร.ต.อ.', name: 'สมบัติ หอมสวัสดิ์', position: 'รอง สวป.สภ.นายายอาม', signerPosition: 'รองสารวัตรป้องกันปราบปราม สถานีตำรวจภูธรนายายอาม', cardType: 'gov', cardNo: '0017(จบ)-67-0005' }
+// รายชื่อเจ้าหน้าที่ตั้งต้น — ใช้เฉพาะครั้งแรกที่บัญชีนั้นยังไม่มีรายการของตัวเอง หลังจากนั้นผู้ใช้เพิ่ม/แก้/ลบเองได้
+const DEFAULT_OFFICER_PRESETS = [
+  { rank: 'ร.ต.อ.', name: 'รัฐภูมิ พวงมาลา', position: 'รอง สว.สส.สภ.นายายอาม', signerPosition: 'รองสารวัตรสืบสวน สถานีตำรวจภูธรนายายอาม', cardType: 'ppst', cardNo: '6705928' },
+  { rank: 'ร.ต.อ.', name: 'สมบัติ หอมสวัสดิ์', position: 'รอง สวป.สภ.นายายอาม', signerPosition: 'รองสารวัตรป้องกันปราบปราม สถานีตำรวจภูธรนายายอาม', cardType: 'gov', cardNo: '0017(จบ)-67-0005' }
 ];
+let officerRoster = [];
+// รายการแยกตามบัญชีที่ล็อกอิน (ชุดใครชุดมัน) — เก็บในเครื่องนี้
+function officerRosterKey() {
+  try { const u = firebase.auth().currentUser; return 'officer-roster:' + (u ? u.uid : 'local'); } catch (e) { return 'officer-roster:local'; }
+}
+function loadOfficerRoster() {
+  try {
+    const raw = localStorage.getItem(officerRosterKey());
+    officerRoster = raw ? JSON.parse(raw) : DEFAULT_OFFICER_PRESETS.map(o => ({ ...o }));
+  } catch (e) { officerRoster = DEFAULT_OFFICER_PRESETS.map(o => ({ ...o })); }
+}
+function saveOfficerRoster() {
+  try { localStorage.setItem(officerRosterKey(), JSON.stringify(officerRoster)); } catch (e) {}
+}
+function officerLabel(o) { return `${o.rank}${o.name}${o.position ? ' (' + o.position + ')' : ''}`; }
+function renderOfficerRosterSelect(selectedIndex) {
+  const sel = document.getElementById('officer1Preset');
+  sel.innerHTML = '<option value="">— กรอกเอง / เพิ่มคนใหม่ —</option>' +
+    officerRoster.map((o, i) => `<option value="${i}">${escapeXml(officerLabel(o))}</option>`).join('');
+  sel.value = selectedIndex === undefined || selectedIndex === null ? '' : String(selectedIndex);
+  document.getElementById('deleteOfficerPresetBtn').style.display = sel.value === '' ? 'none' : '';
+}
+function officerFromFields() {
+  const cardType = v('officer1CardType');
+  return {
+    rank: v('officer1Rank'), name: v('officer1Name'), position: v('officer1Position'),
+    signerPosition: v('officer1SignerPosition'), cardType,
+    cardNo: cardType === 'ppst' ? v('cardNoPpst') : v('cardNoGov')
+  };
+}
+function fillOfficerFields(o) {
+  document.getElementById('officer1Rank').value = o.rank || '';
+  document.getElementById('officer1Name').value = o.name || '';
+  document.getElementById('officer1Position').value = o.position || '';
+  document.getElementById('officer1SignerPosition').value = o.signerPosition || '';
+  document.getElementById('officer1CardType').value = o.cardType || 'ppst';
+  document.getElementById('cardNoPpst').value = o.cardType === 'ppst' ? (o.cardNo || '') : '';
+  document.getElementById('cardNoGov').value = o.cardType === 'gov' ? (o.cardNo || '') : '';
+}
+// ผู้ลงนามหนังสือ (ส่งตรวจปัสสาวะ) = หัวหน้าชุดที่เลือก ใช้ตำแหน่งเต็มถ้ากรอกไว้
+function syncSignerFromOfficer() {
+  document.getElementById('signerRank').value = v('officer1Rank');
+  document.getElementById('signerName').value = v('officer1Name');
+  document.getElementById('signerPosition').value = v('officer1SignerPosition') || v('officer1Position');
+  scheduleStationSave();
+}
 function initOfficerPresets() {
   const sel = document.getElementById('officer1Preset');
-  OFFICER_PRESETS.forEach((o, i) => {
-    const opt = document.createElement('option');
-    opt.value = String(i); opt.textContent = o.label;
-    sel.appendChild(opt);
-  });
+  const msg = document.getElementById('officerPresetMsg');
+  loadOfficerRoster();
+  renderOfficerRosterSelect();
   sel.addEventListener('change', () => {
+    msg.textContent = '';
+    document.getElementById('deleteOfficerPresetBtn').style.display = sel.value === '' ? 'none' : '';
     if (sel.value === '') return;
-    const o = OFFICER_PRESETS[parseInt(sel.value, 10)];
-    document.getElementById('officer1Rank').value = o.rank;
-    document.getElementById('officer1Name').value = o.name;
-    document.getElementById('officer1Position').value = o.position;
-    document.getElementById('officer1CardType').value = o.cardType;
-    if (o.cardType === 'ppst') document.getElementById('cardNoPpst').value = o.cardNo;
-    else document.getElementById('cardNoGov').value = o.cardNo;
-    document.getElementById('signerRank').value = o.rank;
-    document.getElementById('signerName').value = o.name;
-    document.getElementById('signerPosition').value = o.signerPosition;
-    scheduleStationSave();
+    fillOfficerFields(officerRoster[parseInt(sel.value, 10)]);
+    syncSignerFromOfficer();
+  });
+  document.getElementById('saveOfficerPresetBtn').addEventListener('click', () => {
+    const o = officerFromFields();
+    if (!o.rank || !o.name) { msg.textContent = 'กรอกยศและชื่อ-สกุลก่อนบันทึก'; return; }
+    // ชื่อซ้ำ = แก้ไขคนเดิม ไม่เพิ่มซ้ำ
+    let idx = officerRoster.findIndex(x => x.name === o.name);
+    if (idx >= 0) officerRoster[idx] = o; else { officerRoster.push(o); idx = officerRoster.length - 1; }
+    saveOfficerRoster();
+    renderOfficerRosterSelect(idx);
+    msg.textContent = `บันทึก "${officerLabel(o)}" ไว้ในรายการของชุดคุณแล้ว (${officerRoster.length} คน)`;
+  });
+  document.getElementById('deleteOfficerPresetBtn').addEventListener('click', () => {
+    if (sel.value === '') return;
+    const o = officerRoster[parseInt(sel.value, 10)];
+    if (!confirm(`ลบ "${officerLabel(o)}" ออกจากรายการ?`)) return;
+    officerRoster.splice(parseInt(sel.value, 10), 1);
+    saveOfficerRoster();
+    renderOfficerRosterSelect();
+    msg.textContent = `ลบออกจากรายการแล้ว (ช่องด้านบนยังเป็นคนนี้อยู่ ใช้ต่อได้ แค่ไม่อยู่ในรายการ)`;
   });
 }
 
