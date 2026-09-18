@@ -63,6 +63,8 @@
   .modal-box { background: #171B20; border: 1px solid #2A2F36; border-radius: 12px; padding: 20px; max-width: 640px; width: 100%; position: relative; margin-bottom: 30px; }
   .modal-box h2 { font-size: 17px; margin: 0 0 4px; padding-right: 30px; }
   .modal-person-tag { font-size: 14px; font-weight: 700; color: #B68D40; margin: 0 0 14px; padding: 6px 10px; background: rgba(182,141,64,.12); border-radius: 6px; display: inline-block; }
+  .modal-person-tag select { width: auto; display: inline-block; margin-left: 8px; padding: 4px 8px; font-size: 15px; font-weight: 700; color: #F0D9A0; border-color: #6B5626; }
+  .modal-person-tag .note { display: inline; margin-left: 8px; font-weight: 400; }
   .modal-close { position: absolute; top: 14px; right: 14px; background: none; border: none; color: #9B968D; font-size: 22px; line-height: 1; cursor: pointer; padding: 4px; }
   .modal-close:hover { color: #E8E6E0; }
   .modal-done { margin-top: 16px; }
@@ -554,7 +556,7 @@
       </div>
       <div class="panel" data-module="docgen" id="queuePanel" style="display:none">
         <h2>คิวสร้างเอกสาร (จับหลายคน)</h2>
-        <p class="note" style="margin-top:0">เลือก "+ คนใหม่" ด้านล่างเพื่อกรอกคนถัดไป หรือเลือกชื่อคนที่เพิ่มไว้แล้วเพื่อกลับไปแก้ไข/ติ๊กเอกสารเพิ่ม (เช่น เข้ามาเปิดกรอก ปยส.115 หรืออัปโหลดรูปให้คนนั้นภายหลัง) กรอกเสร็จกด "เพิ่ม/อัปเดตในคิว" ทำจนครบทุกคนแล้วค่อยกด "สร้างเอกสารทั้งหมดในคิว" ทีเดียว</p>
+        <p class="note" style="margin-top:0">เลือก "+ คนใหม่" ด้านล่างเพื่อกรอกคนถัดไป หรือเลือกชื่อคนที่เพิ่มไว้แล้วเพื่อกลับไปแก้ไข/ติ๊กเอกสารเพิ่ม (เช่น เข้ามาเปิดกรอก ปยส.115 หรืออัปโหลดรูปให้คนนั้นภายหลัง) กรอกเสร็จกด "เพิ่ม/อัปเดตในคิว" ทำจนครบทุกคนแล้วค่อยกด "สร้างเอกสารทั้งหมดในคิว" ทีเดียว — ในป็อบอัพรายละเอียดแต่ละเอกสารก็มี dropdown "สำหรับ:" ให้สลับคนได้เลย ข้อมูลของคนก่อนหน้าจะบันทึกลงคิวให้อัตโนมัติ</p>
         <label class="f"><span>กำลังกรอก/แก้ไขข้อมูลของ</span>
           <select id="queuePersonSelect"></select>
         </label>
@@ -696,14 +698,33 @@ function openModal(id) {
   const el = document.getElementById(id);
   if (!el) return;
   el.classList.add('show');
-  const tag = el.querySelector('.modal-person-tag');
-  if (tag) {
-    const name = `${v('firstName')} ${v('lastName')}`.trim();
-    tag.textContent = 'สำหรับ: ' + (name || 'ยังไม่กรอกชื่อ (กรอกชื่อก่อนเพื่อกันสับสน)');
-  }
+  renderModalPersonTag(el);
   // เปิดป็อบอัพส่งตรวจปัสสาวะทางไหนก็ตาม (ติ๊ก/ปุ่มรายละเอียด/โหลดเคส) ให้เลขที่หนังสือในป็อบอัพตรงกับค่าจริงเสมอ
   if (id === 'modalUrineReferral') document.getElementById('sarabanRunningNo').value = v('docRunningNo');
 }
+// แท็ก "สำหรับ: ..." บนหัวป็อบอัพ — โหมดคนเดียวเป็นข้อความเฉย ๆ, โหมดหลายคนเป็น dropdown เลือกคนในคิวได้จากในป็อบอัพเลย
+function renderModalPersonTag(overlayEl) {
+  const tag = overlayEl.querySelector('.modal-person-tag');
+  if (!tag) return;
+  const name = `${v('firstName')} ${v('lastName')}`.trim();
+  if (personMode !== 'batch') {
+    tag.textContent = 'สำหรับ: ' + (name || 'ยังไม่กรอกชื่อ (กรอกชื่อก่อนเพื่อกันสับสน)');
+    return;
+  }
+  const newLabel = editingQueueIndex === null && name
+    ? `กำลังกรอกคนใหม่: ${name} (คนที่ ${docQueue.length + 1})`
+    : `+ คนใหม่ (คนที่ ${docQueue.length + 1})`;
+  const options = docQueue.map((q, i) => `<option value="${i}">คนที่ ${i + 1}: ${escapeXml(q.name)}</option>`)
+    .concat([`<option value="new">${escapeXml(newLabel)}</option>`]);
+  tag.innerHTML = `สำหรับ: <select class="modal-person-select">${options.join('')}</select><span class="note">เปลี่ยนคนได้เลย ข้อมูลที่แก้ไว้จะบันทึกลงคิวให้อัตโนมัติ</span>`;
+  tag.querySelector('select').value = editingQueueIndex === null ? 'new' : String(editingQueueIndex);
+}
+function renderAllModalPersonTags() {
+  document.querySelectorAll('.modal-overlay.show').forEach(renderModalPersonTag);
+}
+document.addEventListener('change', e => {
+  if (e.target.classList && e.target.classList.contains('modal-person-select')) switchQueuePerson(e.target.value);
+});
 function closeModal(overlayEl) {
   overlayEl.classList.remove('show');
 }
@@ -975,20 +996,46 @@ function renderQueuePersonSelect() {
   sel.innerHTML = options.join('');
   sel.value = editingQueueIndex === null ? 'new' : String(editingQueueIndex);
 }
-document.getElementById('queuePersonSelect').addEventListener('change', () => {
-  const val = document.getElementById('queuePersonSelect').value;
+const PHOTO_INPUT_IDS = ['photoFront', 'photoBack', 'photoLeft', 'photoRight'];
+// เก็บข้อมูลในฟอร์มตอนนี้ลงคิว: ถ้ากำลังแก้คนเดิมให้ทับที่เดิม ถ้าเป็นคนใหม่ที่พิมพ์ชื่อแล้วให้เพิ่มต่อท้าย (คืนข้อความสถานะ)
+function autoSaveCurrentPersonToQueue() {
+  const name = `${v('firstName')} ${v('lastName')}`.trim();
+  if (!name) return '';
+  const { set } = computeChecklist();
+  const files = PHOTO_INPUT_IDS.map(id => document.getElementById(id).files[0]);
+  const entry = {
+    name,
+    snapshot: collectFormSnapshot(),
+    docLabels: [...set].map(k => DOC_INFO[k].label),
+    photos: files.some(Boolean) ? files : null
+  };
+  if (editingQueueIndex !== null && docQueue[editingQueueIndex]) {
+    docQueue[editingQueueIndex] = entry;
+    return `บันทึกข้อมูลของ "${name}" ลงคิวแล้ว`;
+  }
+  docQueue.push(entry);
+  return `เพิ่ม "${name}" เข้าคิวให้อัตโนมัติแล้ว (${docQueue.length} คนในคิว)`;
+}
+// สลับคนที่กำลังกรอก (ใช้ร่วมกันทั้ง dropdown ในพาแนลคิวและ dropdown ในป็อบอัพ) — บันทึกคนปัจจุบันก่อนเสมอ กันข้อมูลหาย
+function switchQueuePerson(val) {
+  const saved = autoSaveCurrentPersonToQueue();
   if (val === 'new') {
     editingQueueIndex = null;
     clearPersonOnlyFields();
-    ['photoFront', 'photoBack', 'photoLeft', 'photoRight'].forEach(id => setFileInput(id, null));
+    PHOTO_INPUT_IDS.forEach(id => setFileInput(id, null));
   } else {
     editingQueueIndex = parseInt(val, 10);
     const entry = docQueue[editingQueueIndex];
+    if (!entry) { editingQueueIndex = null; renderQueue(); renderAllModalPersonTags(); return; }
     applyFormSnapshot(entry.snapshot);
-    const photoIds = ['photoFront', 'photoBack', 'photoLeft', 'photoRight'];
-    photoIds.forEach((id, i) => setFileInput(id, entry.photos ? entry.photos[i] : null));
+    PHOTO_INPUT_IDS.forEach((id, i) => setFileInput(id, entry.photos ? entry.photos[i] : null));
   }
-  document.getElementById('queueMsg').textContent = '';
+  renderQueue();
+  renderAllModalPersonTags();
+  document.getElementById('queueMsg').textContent = saved;
+}
+document.getElementById('queuePersonSelect').addEventListener('change', () => {
+  switchQueuePerson(document.getElementById('queuePersonSelect').value);
 });
 let personMode = 'single';
 function setPersonMode(mode) {
