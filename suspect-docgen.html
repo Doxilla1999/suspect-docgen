@@ -51,6 +51,11 @@
   .btn-ghost { background: #1E232A; color: #E8E6E0; border-color: #33393F; margin-top: 8px; }
   .btn-danger-outline { background: none; color: #E2685D; border: none; font-size: 13.5px; padding: 2px 4px; cursor: pointer; }
   .case-row { display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 8px 6px; border-radius: 6px; font-size: 15px; }
+  .case-row.editing { background: rgba(46,163,89,.10); border: 1px solid rgba(46,163,89,.45); }
+  .queue-doc-chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+  .queue-doc-chip { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; padding: 2px 7px; border: 1px solid #33393F; border-radius: 12px; background: #12151A; color: #9AA0A6; cursor: pointer; user-select: none; }
+  .queue-doc-chip input[type="checkbox"] { width: 14px; height: 14px; margin: 0; }
+  .queue-doc-chip.on { color: #F0D9A0; border-color: #B68D40; background: rgba(182,141,64,.15); }
   .case-row:hover { background: #1E232A; }
   .case-row button.load { background: none; border: none; text-align: left; flex: 1; cursor: pointer; font-size: 15px; color: #E8E6E0; padding: 2px; }
   .note { font-size: 13.5px; color: #9B968D; line-height: 1.5; margin-top: 10px; }
@@ -340,9 +345,11 @@
       </div>
 
 
-      <details class="panel" data-module="docgen" open>
-        <summary>ข้อมูลคดี / หมายจับ</summary>
-        <p class="note" style="margin-top:0">ช่องด้านล่างนี้ใช้ร่วมกันทั้งฟอร์ม — ถ้าจับมาหลายคนและ<b>ข้อหาไม่เหมือนกัน</b> (เช่น บางคนเสพ บางคนครอบครอง บางคนตามหมายจับ) ให้กรอกและสร้างเอกสารทีละคน/ทีละกลุ่มที่ข้อหาเดียวกัน แล้วค่อยเปลี่ยนข้อมูลตรงนี้ก่อนสร้างเอกสารของกลุ่มถัดไป</p>
+      <details class="panel" data-module="docgen" open id="chargePanel">
+        <summary>ข้อหา / หมายจับ / ของกลาง (รายคน)</summary>
+        <p class="modal-person-tag" id="chargePersonTag"></p>
+        <p class="note" style="margin-top:0">ข้อมูลในส่วนนี้เป็น<b>ของแต่ละคน</b> (ข้อหา หมายจับ ของกลาง) — โหมดหลายคนเลือกชื่อจาก dropdown ด้านบนก่อนกรอก ระบบจะใช้ข้อมูลตรงนี้ทำใบปะหน้าส่งศาล ปยส.115 (ของกลางที่ยึด) และข้อความรายงานไลน์ของคนนั้น ๆ</p>
+        <button type="button" class="btn btn-ghost btn-sm" id="copyChargeFromPrevBtn" style="display:none;margin-bottom:10px">คัดลอกข้อหา/หมายจับ/ของกลางจากคนก่อนหน้า</button>
         <label class="f"><span>ประเภทบุคคล (เลือกเพื่อช่วยร่างข้อหา)</span>
           <select id="chargePreset"><option value="">— เลือกเพื่อร่างให้ —</option></select>
         </label>
@@ -355,17 +362,13 @@
             <div class="date3"><input id="warrantDate_day" type="number" min="1" max="31" placeholder="วัน"><select id="warrantDate_month"></select><input id="warrantDate_year" type="number" placeholder="พ.ศ."></div>
           </label>
           <label class="f"><span>ศาล</span><input id="courtName" placeholder="ศาลจังหวัดจันทบุรี"></label>
-          <label class="f"><span>วันที่จับกุม (พ.ศ.)</span>
-            <div class="date3"><input id="arrestDate_day" type="number" min="1" max="31" placeholder="วัน"><select id="arrestDate_month"></select><input id="arrestDate_year" type="number" placeholder="พ.ศ."></div>
-          </label>
-          <label class="f"><span>เวลาจับกุม</span><input id="arrestTime" placeholder="เช่น 14.30"></label>
-          <label class="f"><span>สถานที่จับกุม</span><input id="arrestLocation"></label>
-          <label class="f"><span>วันที่ออกเอกสาร / บันทึก (พ.ศ.)</span>
-            <div class="date3"><input id="issueDate_day" type="number" min="1" max="31" placeholder="วัน"><select id="issueDate_month"></select><input id="issueDate_year" type="number" placeholder="พ.ศ."></div>
-          </label>
-          <label class="f"><span>เลขที่หนังสือ (เลขที่ออก)</span><input id="docRunningNo" placeholder="เช่น 45"></label>
+          <label class="f"><span>เลขที่หนังสือใบปะหน้าส่งศาล (เลขหลัง / จาก e-Saraban)</span><input id="courtDocNo" placeholder="เว้นว่าง = ใช้เลขที่หนังสือกลาง" inputmode="numeric"></label>
         </div>
-        <div class="grid2">
+        <p class="field-group-label" style="margin-top:12px">ของกลางของคนนี้ (ถ้ามี)</p>
+        <div id="evidenceRows"></div>
+        <button type="button" class="btn btn-ghost btn-sm" id="addEvidenceRow">+ เพิ่มของกลาง</button>
+        <p class="note">รายการแรกที่เป็นยาเสพติดจะถูกดึงไปใส่ช่อง "ผลการตรวจหรือค้น" ใน ปยส.115 ของคนนี้ให้อัตโนมัติ และทุกรายการจะไปอยู่ในข้อความรายงานไลน์พร้อมระบุว่าเป็นของผู้ต้องหารายไหน</p>
+        <div class="grid2" style="margin-top:12px">
           <label class="f"><span>อาวุธที่ใช้ในการกระทำผิด</span><input id="crimeWeapon"></label>
           <label class="f"><span>ยานพาหนะที่ใช้</span><input id="crimeVehicle"></label>
           <label class="f"><span>ผู้ร่วมกระทำผิด</span><input id="crimeAccomplice"></label>
@@ -375,6 +378,22 @@
         <label class="f"><span>ประวัติการกระทำผิด</span><textarea id="crimeHistory"></textarea></label>
       </details>
 
+      <details class="panel" data-module="docgen" open>
+        <summary>ข้อมูลการจับกุม (ใช้ร่วมกันทุกคน)</summary>
+        <p class="note" style="margin-top:0">วัน-เวลา-สถานที่จับกุม วันที่ออกเอกสาร และเลขที่หนังสือกลาง ใช้ชุดเดียวกันทุกคนในเคสนี้</p>
+        <div class="grid3">
+          <label class="f"><span>วันที่จับกุม (พ.ศ.)</span>
+            <div class="date3"><input id="arrestDate_day" type="number" min="1" max="31" placeholder="วัน"><select id="arrestDate_month"></select><input id="arrestDate_year" type="number" placeholder="พ.ศ."></div>
+          </label>
+          <label class="f"><span>เวลาจับกุม</span><input id="arrestTime" placeholder="เช่น 14.30"></label>
+          <label class="f"><span>สถานที่จับกุม</span><input id="arrestLocation"></label>
+          <label class="f"><span>วันที่ออกเอกสาร / บันทึก (พ.ศ.)</span>
+            <div class="date3"><input id="issueDate_day" type="number" min="1" max="31" placeholder="วัน"><select id="issueDate_month"></select><input id="issueDate_year" type="number" placeholder="พ.ศ."></div>
+          </label>
+          <label class="f"><span>เลขที่หนังสือกลาง (เลขหลัง / ส่งตรวจปัสสาวะ)</span><input id="docRunningNo" placeholder="เช่น 45"></label>
+        </div>
+      </details>
+
       <details class="panel" data-module="linereport" open>
         <summary>รายงานผลการปฏิบัติ (LINE)</summary>
         <label class="f"><span>สายการบังคับบัญชา (แก้ไขได้ บรรทัดละ 1 คน)</span>
@@ -382,13 +401,11 @@
 พ.ต.ท.วรรณวุฒิ แสนเสนยา รอง ผกก.สส.ฯ
 พ.ต.ท.พิพัฒน์ ที่รัก สว.สส.สภ.นายายอาม พร้อมด้วยชุดสืบสวนฯ</textarea>
         </label>
-        <label class="f"><span>โดยกล่าวหาว่า (พิมพ์เอง หรือกดปุ่มด้านล่างเพื่อร่างจากข้อมูลหมายจับ)</span>
+        <label class="f"><span>โดยกล่าวหาว่า (เว้นว่างได้ — จะร่างจากข้อหา/หมายจับของแต่ละคนในพาแนล "ข้อหา / หมายจับ / ของกลาง" ให้อัตโนมัติ ถ้าพิมพ์ตรงนี้จะใช้ข้อความนี้แทนกับทุกคน)</span>
           <textarea id="reportChargeText" rows="3" placeholder='เช่น "ร่วมกันลักลอบเล่นการพนัน...โดยไม่ได้รับอนุญาต"'></textarea>
         </label>
-        <button type="button" class="btn btn-ghost btn-sm" id="draftChargeFromWarrant">ร่างจากข้อมูลหมายจับ</button>
-        <p class="field-group-label" style="margin-top:14px">ของกลาง (ถ้ามี)</p>
-        <div id="evidenceRows"></div>
-        <button type="button" class="btn btn-ghost btn-sm" id="addEvidenceRow">+ เพิ่มของกลาง</button>
+        <button type="button" class="btn btn-ghost btn-sm" id="draftChargeFromWarrant">ร่างจากข้อมูลหมายจับของคนที่กำลังกรอก</button>
+        <p class="note">ของกลางย้ายไปกรอกรายคนในพาแนล "ข้อหา / หมายจับ / ของกลาง" แล้ว ข้อความรายงานจะระบุให้เองว่าของกลางชิ้นไหนเป็นของผู้ต้องหารายไหน</p>
         <button class="btn btn-primary" id="genReportBtn" style="margin-top:14px">สร้างข้อความรายงาน</button>
         <label class="f" style="margin-top:10px"><span>ข้อความที่ได้ (แก้ไขก่อนคัดลอกได้)</span>
           <textarea id="reportOutput" rows="16" class="mono" style="font-size:15px"></textarea>
@@ -453,6 +470,8 @@
           <label class="f" id="searchDrugWrap" style="display:none"><span>ประเภท/ชนิดที่ยึด</span><input id="searchDrugType" list="drugList"></label>
           <label class="f" id="searchAmountWrap" style="display:none"><span>ปริมาณที่ยึด</span><input id="seizedAmount"></label>
         </div>
+        <button type="button" class="btn btn-ghost btn-sm" id="syncSeizedFromEvidenceBtn" style="margin-bottom:8px">ดึงจากของกลางของคนนี้</button>
+        <p class="msg" id="syncSeizedMsg" style="margin:0 0 8px"></p>
         <div class="panel" style="background:#1B1F24;border-style:dashed;margin:10px 0">
           <p style="font-size:15px;font-weight:600;margin:0 0 8px">2.1 พฤติการณ์ต้องห้ามตามมาตรา 115 (ติ๊กได้มากกว่า 1 ข้อ)</p>
           <label style="display:flex;gap:8px;font-size:15.5px;padding:4px 0"><input type="checkbox" class="pb-check" id="pb1">อยู่ระหว่างตกเป็นผู้ต้องหาหรืออยู่ในระหว่างถูกดำเนินคดีในความผิดอื่นซึ่งเป็นความผิดที่มีโทษจำคุก</label>
@@ -701,7 +720,12 @@ function openModal(id) {
   renderModalPersonTag(el);
   // เปิดป็อบอัพส่งตรวจปัสสาวะทางไหนก็ตาม (ติ๊ก/ปุ่มรายละเอียด/โหลดเคส) ให้เลขที่หนังสือในป็อบอัพตรงกับค่าจริงเสมอ
   if (id === 'modalUrineReferral') document.getElementById('sarabanRunningNo').value = v('docRunningNo');
+  // เปิด ปยส.115 → ถ้ายังไม่ได้กรอกผลการตรวจค้น ให้ดึงของกลางที่เป็นยาเสพติดของคนนี้มาใส่ให้
+  if (id === 'modalDrugTest115') document.getElementById('syncSeizedMsg').textContent = syncSeizedFromEvidence(false);
 }
+document.getElementById('syncSeizedFromEvidenceBtn').addEventListener('click', () => {
+  document.getElementById('syncSeizedMsg').textContent = syncSeizedFromEvidence(true);
+});
 // แท็ก "สำหรับ: ..." บนหัวป็อบอัพ — โหมดคนเดียวเป็นข้อความเฉย ๆ, โหมดหลายคนเป็น dropdown เลือกคนในคิวได้จากในป็อบอัพเลย
 function renderModalPersonTag(overlayEl) {
   const tag = overlayEl.querySelector('.modal-person-tag');
@@ -719,9 +743,25 @@ function renderModalPersonTag(overlayEl) {
   tag.innerHTML = `สำหรับ: <select class="modal-person-select">${options.join('')}</select><span class="note">เปลี่ยนคนได้เลย ข้อมูลที่แก้ไว้จะบันทึกลงคิวให้อัตโนมัติ</span>`;
   tag.querySelector('select').value = editingQueueIndex === null ? 'new' : String(editingQueueIndex);
 }
-function renderAllModalPersonTags() {
+// อัปเดตแท็ก "สำหรับ:" ทุกจุดที่แสดงอยู่ (ป็อบอัพที่เปิดอยู่ + พาแนลข้อหา/หมายจับ/ของกลาง)
+function renderPersonTags() {
   document.querySelectorAll('.modal-overlay.show').forEach(renderModalPersonTag);
+  renderModalPersonTag(document.getElementById('chargePanel'));
+  const prevBtn = document.getElementById('copyChargeFromPrevBtn');
+  const hasPrev = personMode === 'batch' && docQueue.length > 0 && (editingQueueIndex === null || editingQueueIndex > 0);
+  prevBtn.style.display = hasPrev ? '' : 'none';
 }
+const renderAllModalPersonTags = renderPersonTags;
+// คัดลอกข้อหา/หมายจับ/ของกลางจากคนก่อนหน้าในคิว (คนที่กำลังกรอกใหม่ → คนสุดท้ายในคิว, คนที่ i → คนที่ i-1)
+document.getElementById('copyChargeFromPrevBtn').addEventListener('click', () => {
+  const srcIndex = editingQueueIndex === null ? docQueue.length - 1 : editingQueueIndex - 1;
+  const src = docQueue[srcIndex];
+  if (!src) return;
+  CHARGE_FIELD_IDS.forEach(id => { const el = document.getElementById(id); if (el && src.snapshot[id] !== undefined) el.value = src.snapshot[id]; });
+  resetEvidenceRows(src.snapshot.evidence);
+  document.getElementById('queueMsg').textContent = `คัดลอกข้อหา/หมายจับ/ของกลางจาก "${src.name}" มาให้แล้ว (เลขที่หนังสือใบปะหน้าศาลไม่คัดลอก)`;
+});
+['firstName', 'lastName'].forEach(id => document.getElementById(id).addEventListener('input', () => renderModalPersonTag(document.getElementById('chargePanel'))));
 document.addEventListener('change', e => {
   if (e.target.classList && e.target.classList.contains('modal-person-select')) switchQueuePerson(e.target.value);
 });
@@ -919,6 +959,10 @@ async function generateDoc(key, tags, suspectName) {
   if (key === 'urine_referral') {
     xmlStr = fillSuspectListBlock(xmlStr, getSuspectListEntries());
   }
+  // ใบปะหน้าส่งศาลออกเลขหนังสือแยกรายคน (จาก e-Saraban) — ถ้ากรอกไว้ให้ใช้แทนเลขที่หนังสือกลาง
+  if (key === 'court_referral' && v('courtDocNo')) {
+    tags = { ...tags, doc_number: `${v('docNumberPrefix')}/${v('courtDocNo')}` };
+  }
   const filled = xmlStr.replace(/\{([a-zA-Z0-9_]+)\}/g, (m, tag) => (tag in tags) ? tags[tag] : '');
   zip.file(info.xmlPath, filled);
   if (info.hasPhotos) {
@@ -968,22 +1012,55 @@ async function onGenerateAll() {
 
 let docQueue = [];
 let editingQueueIndex = null;
+// ไอคอน+ชื่อย่อเอกสาร สำหรับช่องติ๊กรายคนในคิว
+const DOC_SHORT = {
+  drug_test_115: { icon: '💊', label: 'ปยส.115' },
+  urine_referral: { icon: '🧪', label: 'ปัสสาวะ' },
+  profile_and_photos: { icon: '📸', label: '4 ด้าน' },
+  court_referral: { icon: '⚖️', label: 'ปะหน้าศาล' },
+  phone_consent_m80: { icon: '📱', label: 'ม.80' }
+};
 function renderQueue() {
   const out = document.getElementById('queueOut');
   if (docQueue.length === 0) {
     out.innerHTML = '<p class="note" style="margin-top:0">คิวว่าง ยังไม่มีใครถูกเพิ่ม</p>';
   } else {
-    out.innerHTML = docQueue.map((q, i) => `
-      <div class="case-row">
+    out.innerHTML = docQueue.map((q, i) => {
+      const selected = q.snapshot.selectedDocs || [];
+      const needPhotos = selected.includes('profile_and_photos') && !(q.photos && q.photos.every(Boolean));
+      const hasWarrant = !!(q.snapshot.warrantNo || '').trim();
+      const docChips = Object.keys(DOC_SHORT).map(k =>
+        `<label class="queue-doc-chip${selected.includes(k) ? ' on' : ''}" title="${escapeXml(DOC_INFO[k].label)}"><input type="checkbox" data-qdoc="${k}" data-qidx="${i}"${selected.includes(k) ? ' checked' : ''}>${DOC_SHORT[k].icon} ${DOC_SHORT[k].label}</label>`
+      ).join('');
+      return `
+      <div class="case-row${i === editingQueueIndex ? ' editing' : ''}">
         <div style="flex:1">
-          <div>${escapeXml(q.name)}</div>
-          <p class="note" style="margin:2px 0 0">${escapeXml(q.docLabels.join(', '))}</p>
+          <div>คนที่ ${i + 1}: ${escapeXml(q.name)}${hasWarrant ? ' <span class="note" style="color:#B68D40">มีหมายจับ</span>' : ''}${i === editingQueueIndex ? ' <span class="note" style="color:#2EA359">กำลังแก้ไข</span>' : ''}</div>
+          <div class="queue-doc-chips">${docChips}</div>
+          ${needPhotos ? '<p class="note" style="margin:2px 0 0;color:#E2685D">ยังไม่มีรูป 4 ด้าน — เลือกคนนี้แล้วอัปโหลดรูป</p>' : ''}
         </div>
         <button type="button" class="btn-danger-outline" data-qdel="${i}">ลบ</button>
-      </div>`).join('');
+      </div>`;
+    }).join('');
     out.querySelectorAll('[data-qdel]').forEach(b => b.addEventListener('click', () => {
       docQueue.splice(parseInt(b.dataset.qdel, 10), 1);
       editingQueueIndex = null;
+      renderQueue();
+      renderPersonTags();
+    }));
+    // ติ๊กเอกสารรายคนได้ตรงนี้เลย (เช่น คนที่มีหมายจับถึงจะติ๊กใบปะหน้าส่งศาล) — ถ้าเป็นคนที่กำลังแก้อยู่ให้ช่องติ๊กด้านซ้ายเปลี่ยนตาม
+    out.querySelectorAll('[data-qdoc]').forEach(c => c.addEventListener('change', () => {
+      const i = parseInt(c.dataset.qidx, 10), key = c.dataset.qdoc;
+      const entry = docQueue[i];
+      const set = new Set(entry.snapshot.selectedDocs || []);
+      if (c.checked) set.add(key); else set.delete(key);
+      entry.snapshot.selectedDocs = Object.keys(DOC_SHORT).filter(k => set.has(k));
+      entry.docLabels = entry.snapshot.selectedDocs.map(k => DOC_INFO[k].label);
+      if (i === editingQueueIndex) {
+        const box = document.querySelector(`.doc-select[value="${key}"]`);
+        if (box) box.checked = c.checked;
+        renderChecklist();
+      }
       renderQueue();
     }));
   }
@@ -1055,6 +1132,7 @@ function setPersonMode(mode) {
     queuePanel.classList.remove('queue-panel-prominent');
     genPanel.style.display = '';
   }
+  renderPersonTags();
 }
 function setFileInput(id, file) {
   const input = document.getElementById(id);
@@ -1129,7 +1207,7 @@ const ALL_FIELD_IDS = ['title','firstName','lastName','nickname','alias','age','
   'friends','hangouts','knownBy','idIssueAmphoe','idIssueProvince',
   'addrHouseNo','addrMoo','addrRoad','addrTambon','addrAmphoe','addrProvince',
   'height','weight','skin','head','hair','face','eyes','nose','ears','beard','marks','accent',
-  'charge','caseBlackNo','caseRedNo','warrantNo','courtName','arrestTime','arrestLocation',
+  'charge','caseBlackNo','caseRedNo','warrantNo','courtName','courtDocNo','arrestTime','arrestLocation',
   'docRunningNo','crimeWeapon','crimeVehicle','crimeAccomplice','crimeDetails','crimeNotes','crimeHistory',
   'idDocType','idOtherDetail','drugType','drugTypeUrine','testResult','searchFound','searchDrugType','seizedAmount',
   'treatmentConsent','officer1CardType','cardNoPpst','cardNoGov','hospitalName',
@@ -1141,13 +1219,22 @@ const PERSON_ONLY_FIELD_IDS = ['title', 'firstName', 'lastName', 'nickname', 'al
   'idNumber', 'phone', 'occupation', 'income', 'education', 'idIssueAmphoe', 'idIssueProvince',
   'currentAddress', 'parents', 'spouse', 'spouseAddress', 'friends', 'hangouts', 'knownBy',
   'addrHouseNo', 'addrMoo', 'addrRoad', 'addrTambon', 'addrAmphoe', 'addrProvince',
-  'dobDate_day', 'dobDate_month', 'dobDate_year'];
+  'dobDate_day', 'dobDate_month', 'dobDate_year',
+  // ข้อหา/หมายจับ/ของกลาง เป็นของแต่ละคน (คนละข้อหากันได้)
+  'charge', 'caseBlackNo', 'caseRedNo', 'warrantNo', 'courtName', 'courtDocNo',
+  'warrantDate_day', 'warrantDate_month', 'warrantDate_year',
+  'crimeWeapon', 'crimeVehicle', 'crimeAccomplice', 'crimeDetails', 'crimeNotes', 'crimeHistory'];
+// ช่องที่คัดลอกจากคนก่อนหน้าได้ (ปุ่ม "คัดลอกข้อหา/หมายจับ/ของกลางจากคนก่อนหน้า")
+const CHARGE_FIELD_IDS = ['charge', 'caseBlackNo', 'caseRedNo', 'warrantNo', 'courtName',
+  'warrantDate_day', 'warrantDate_month', 'warrantDate_year',
+  'crimeWeapon', 'crimeVehicle', 'crimeAccomplice', 'crimeDetails', 'crimeNotes', 'crimeHistory'];
 function clearPersonOnlyFields() {
   PERSON_ONLY_FIELD_IDS.forEach(id => {
     const el = document.getElementById(id);
     if (!el) return;
     el.value = (id === 'nationality' ? 'ไทย' : id === 'ethnicity' ? 'ไทย' : id === 'religion' ? 'พุทธ' : id === 'addrProvince' ? 'จันทบุรี' : '');
   });
+  resetEvidenceRows([]);
 }
 
 function collectFormSnapshot() {
@@ -1161,6 +1248,7 @@ function collectFormSnapshot() {
         age: row.querySelector('.sl-age').value, address: row.querySelector('.sl-address').value
       }))
     : [];
+  snap.evidence = getEvidenceRows();
   return snap;
 }
 function applyFormSnapshot(snap) {
@@ -1169,6 +1257,7 @@ function applyFormSnapshot(snap) {
   document.querySelectorAll('.doc-select').forEach(c => c.checked = (snap.selectedDocs || []).includes(c.value));
   clearSuspectRows();
   (snap.suspectListEntries && snap.suspectListEntries.length ? snap.suspectListEntries : [{}]).forEach(e => addSuspectRow(e));
+  resetEvidenceRows(snap.evidence);
   updateConditionalVisibility();
   renderChecklist();
 }
@@ -1178,6 +1267,7 @@ function clearForm() {
   document.querySelectorAll('.doc-select').forEach(c => c.checked = false);
   clearSuspectRows();
   addSuspectRow();
+  resetEvidenceRows([]);
   ['photoFront', 'photoBack', 'photoLeft', 'photoRight'].forEach(id => { document.getElementById(id).value = ''; });
   document.getElementById('officer1Preset').value = '';
   setDefaultIssueDate();
@@ -1302,14 +1392,14 @@ function initChargePresets() {
   });
 }
 
-function composeAddress() {
+function composeAddress(get = v) {
   const parts = [];
-  if (v('addrHouseNo')) parts.push(`บ้านเลขที่ ${v('addrHouseNo')}`);
-  if (v('addrMoo')) parts.push(`หมู่ที่ ${v('addrMoo')}`);
-  if (v('addrRoad')) parts.push(`ถนน/ซอย ${v('addrRoad')}`);
-  if (v('addrTambon')) parts.push(`ตำบล${v('addrTambon')}`);
-  if (v('addrAmphoe')) parts.push(`อำเภอ${v('addrAmphoe')}`);
-  if (v('addrProvince')) parts.push(`จังหวัด${v('addrProvince')}`);
+  if (get('addrHouseNo')) parts.push(`บ้านเลขที่ ${get('addrHouseNo')}`);
+  if (get('addrMoo')) parts.push(`หมู่ที่ ${get('addrMoo')}`);
+  if (get('addrRoad')) parts.push(`ถนน/ซอย ${get('addrRoad')}`);
+  if (get('addrTambon')) parts.push(`ตำบล${get('addrTambon')}`);
+  if (get('addrAmphoe')) parts.push(`อำเภอ${get('addrAmphoe')}`);
+  if (get('addrProvince')) parts.push(`จังหวัด${get('addrProvince')}`);
   return parts.join(' ');
 }
 function addSuspectRow(data) {
@@ -1407,16 +1497,43 @@ function getEvidenceRows() {
     qty: row.querySelector('.ev-qty').value.trim()
   })).filter(e => e.desc);
 }
+function clearEvidenceRows() {
+  document.getElementById('evidenceRows').innerHTML = '';
+}
+// แทนที่รายการของกลางทั้งหมด (ว่าง = เหลือแถวเปล่า 1 แถวให้กรอก)
+function resetEvidenceRows(list) {
+  clearEvidenceRows();
+  (list && list.length ? list : [{}]).forEach(e => addEvidenceRow(e));
+}
+const DRUG_EVIDENCE_RE = /ยาเสพติด|ยาบ้า|ไอซ์|เมทแอมเฟตามีน|คีตามีน|เฮโรอีน|กัญชา|ยาอี|เอ็คซ์ตาซี|ฝิ่น|โคเคน|กระท่อม/;
+// ดึงของกลางที่เป็นยาเสพติดรายการแรกไปใส่ "ผลการตรวจหรือค้น" ใน ปยส.115 (force=true คือทับค่าที่มีอยู่)
+function syncSeizedFromEvidence(force) {
+  const drug = getEvidenceRows().find(e => DRUG_EVIDENCE_RE.test(e.desc));
+  const hasExisting = v('searchFound') === 'found' && (v('searchDrugType') || v('seizedAmount'));
+  if (!drug) return force ? 'ยังไม่มีของกลางที่เป็นยาเสพติดของคนนี้ในพาแนล "ข้อหา / หมายจับ / ของกลาง"' : '';
+  if (hasExisting && !force) return '';
+  document.getElementById('searchFound').value = 'found';
+  document.getElementById('searchDrugType').value = drug.desc;
+  document.getElementById('seizedAmount').value = drug.qty;
+  updateConditionalVisibility();
+  return `ดึงจากของกลางให้แล้ว: ${drug.desc}${drug.qty ? ' จำนวน ' + drug.qty : ''}`;
+}
 
-function draftChargeFromWarrant() {
+// ร่างข้อความ "โดยกล่าวหาว่า" จากข้อมูลหมายจับ/ข้อหา — get(id) อ่านจากฟอร์มปัจจุบันหรือจาก snapshot ของคนในคิวก็ได้
+function composeChargeText(get) {
   const parts = [];
-  if (v('warrantNo')) {
-    parts.push(`จับตามหมายจับ${v('courtName')} ที่ ${v('warrantNo')} ลงวันที่ ${thaiDate('warrantDate')}`);
+  if (get('warrantNo')) {
+    const d = get('warrantDate_day'), m = get('warrantDate_month'), y = get('warrantDate_year');
+    const wDate = d ? `${d} ${m !== '' ? THAI_MONTHS[parseInt(m, 10)] : ''} พ.ศ. ${y}` : '';
+    parts.push(`จับตามหมายจับ${get('courtName')} ที่ ${get('warrantNo')}${wDate ? ' ลงวันที่ ' + wDate : ''}`);
   }
-  if (v('caseBlackNo')) parts.push(`คดีหมายเลขดำที่ ${v('caseBlackNo')}`);
-  if (v('caseRedNo')) parts.push(`คดีหมายเลขแดงที่ ${v('caseRedNo')}`);
-  if (v('charge')) parts.push(`ต้องหาว่ากระทำความผิดฐาน "${v('charge')}"`);
-  document.getElementById('reportChargeText').value = parts.join(' ');
+  if (get('caseBlackNo')) parts.push(`คดีหมายเลขดำที่ ${get('caseBlackNo')}`);
+  if (get('caseRedNo')) parts.push(`คดีหมายเลขแดงที่ ${get('caseRedNo')}`);
+  if (get('charge')) parts.push(`ต้องหาว่ากระทำความผิดฐาน "${get('charge')}"`);
+  return parts.join(' ');
+}
+function draftChargeFromWarrant() {
+  document.getElementById('reportChargeText').value = composeChargeText(v);
 }
 
 function evidenceEmoji(desc) {
@@ -1437,13 +1554,44 @@ function evidenceEmoji(desc) {
   return '🔸';
 }
 
+// รวมรายชื่อ+ข้อหา+ของกลางสำหรับรายงานไลน์
+// โหมดหลายคน: ใช้คิว (บันทึกคนที่กำลังกรอกลงคิวก่อน) แต่ละคนมีข้อหา/ของกลางของตัวเอง
+// โหมดคนเดียว: ใช้รายชื่อในส่งตรวจปัสสาวะ (หรือผู้ต้องหาหลัก) แบบเดิม ข้อหา/ของกลางชุดเดียวกัน
+function collectReportPersons() {
+  if (personMode === 'batch') {
+    const saved = autoSaveCurrentPersonToQueue();
+    if (saved) { renderQueue(); renderPersonTags(); document.getElementById('queueMsg').textContent = saved; }
+    if (docQueue.length) {
+      return docQueue.map(q => {
+        const s = q.snapshot;
+        const g = id => String(s[id] == null ? '' : s[id]).trim();
+        const dobDay = g('dobDate_day'), dobMonth = g('dobDate_month'), dobYear = g('dobDate_year');
+        let evidence = s.evidence || [];
+        // ถ้าไม่ได้กรอกของกลางไว้ แต่ ปยส.115 ระบุว่าพบและยึด ให้ใช้ข้อมูลนั้นแทน
+        if (!evidence.length && g('searchFound') === 'found' && g('searchDrugType')) evidence = [{ desc: g('searchDrugType'), qty: g('seizedAmount') }];
+        return {
+          name: `${g('title')}${g('firstName')}${g('nickname') ? 'หรือ' + g('nickname') : ''} ${g('lastName')}`.trim(),
+          age: g('age'), id: g('idNumber'),
+          dob: dobDay ? `${dobDay} ${dobMonth !== '' ? THAI_MONTHS[parseInt(dobMonth, 10)] : ''} พ.ศ. ${dobYear}` : '',
+          address: composeAddress(g),
+          charge: composeChargeText(g),
+          evidence
+        };
+      });
+    }
+  }
+  const charge = composeChargeText(v);
+  let evidence = getEvidenceRows();
+  if (!evidence.length && v('searchFound') === 'found' && v('searchDrugType')) evidence = [{ desc: v('searchDrugType'), qty: v('seizedAmount') }];
+  // โหมดคนเดียว: ของกลางเป็นชุดรวมของทั้งเคส ไม่ระบุว่าเป็นของใคร
+  return getSuspectListEntries().filter(e => e.name).map((e, i) => ({ ...e, charge, evidence: i === 0 ? evidence : [], sharedEvidence: true }));
+}
 function buildOperationReport() {
   const station = v('stationName') || 'สภ.นายายอาม';
   const date = shortThaiDate('issueDate');
   const chain = document.getElementById('reportCommandChain').value.split('\n').map(l => l.trim()).filter(Boolean);
-  const entries = getSuspectListEntries().filter(e => e.name);
-  const charge = document.getElementById('reportChargeText').value.trim();
-  const evidence = getEvidenceRows();
+  const persons = collectReportPersons();
+  const overrideCharge = document.getElementById('reportChargeText').value.trim();
 
   const lines = [];
   lines.push(`🚔${station}🚔`);
@@ -1451,9 +1599,9 @@ function buildOperationReport() {
   lines.push(`   🚨ภายใต้การอำนวยการของ 🚨`);
   chain.forEach((l, i) => lines.push((i === 0 ? '👮' : '     ') + l));
   lines.push('');
-  lines.push(entries.length > 1 ? '⚠️ร่วมกันจับกุม⚠️' : '⚠️จับกุม⚠️');
+  lines.push(persons.length > 1 ? '⚠️ร่วมกันจับกุม⚠️' : '⚠️จับกุม⚠️');
   lines.push('');
-  entries.forEach((e, i) => {
+  persons.forEach((e, i) => {
     let line = `${i + 1}.${e.name} อายุ ${e.age} ปี`;
     if (e.dob) line += ` วันเดือนปีเกิด ${e.dob}`;
     line += ` เลขบัตรประชาชน ${e.id}`;
@@ -1462,11 +1610,23 @@ function buildOperationReport() {
   });
   lines.push('');
   lines.push('📍โดยกล่าวหาว่า');
-  lines.push(charge);
-  if (evidence.length) {
+  const charges = persons.map(p => p.charge);
+  const allSame = charges.every(c => c === charges[0]);
+  if (overrideCharge || persons.length <= 1 || allSame) {
+    lines.push(overrideCharge || charges[0] || '');
+  } else {
+    // ข้อหาต่างกัน → ระบุรายคน
+    persons.forEach((p, i) => lines.push(`ผู้ต้องหาที่ ${i + 1} ${p.charge || '(ยังไม่กรอกข้อหา)'}`));
+  }
+  const evidenceLines = [];
+  persons.forEach((p, i) => (p.evidence || []).forEach(ev => {
+    const owner = persons.length > 1 && !p.sharedEvidence ? ` (ของผู้ต้องหาที่ ${i + 1})` : '';
+    evidenceLines.push(`${evidenceEmoji(ev.desc)}${ev.desc}${ev.qty ? ' จำนวน ' + ev.qty : ''}${owner}`);
+  }));
+  if (evidenceLines.length) {
     lines.push('');
     lines.push('📦 พร้อมด้วยของกลาง 📦');
-    evidence.forEach((ev, i) => lines.push(`${i + 1}.${evidenceEmoji(ev.desc)}${ev.desc}${ev.qty ? ' จำนวน ' + ev.qty : ''}`));
+    evidenceLines.forEach((l, i) => lines.push(`${i + 1}.${l}`));
   }
   lines.push('');
   lines.push(`นำตัวผู้ถูกจับ ส่ง พงส.${station}`);
@@ -1743,11 +1903,18 @@ document.getElementById('quickFillBtn').addEventListener('click', () => {
     }
     const wantsPhotos = set.has('profile_and_photos');
     const docs = [...set].filter(k => k !== 'profile_and_photos');
+    // ข้อหา/หมายจับ/ของกลางที่กรอกไว้ก่อนวาง ใช้เป็นค่าตั้งต้นให้ทุกคน (ข้อมูลในบรรทัดของแต่ละคนจะทับค่าตั้งต้นนี้)
+    const sharedCharge = {};
+    CHARGE_FIELD_IDS.forEach(id => { sharedCharge[id] = v(id); });
+    const sharedEvidence = getEvidenceRows();
+    const hasSharedCharge = Object.values(sharedCharge).some(Boolean) || sharedEvidence.length > 0;
     let added = 0;
     personLines.forEach(line => {
       const filled = parseQuickFillText(line);
       if (!filled.firstName) return;
       clearPersonOnlyFields();
+      CHARGE_FIELD_IDS.forEach(id => { const el = document.getElementById(id); if (el) el.value = sharedCharge[id]; });
+      if (sharedEvidence.length) resetEvidenceRows(sharedEvidence);
       applyQuickFill(filled);
       const name = `${v('firstName')} ${v('lastName')}`.trim();
       if (!name || docs.length === 0) return;
@@ -1762,7 +1929,8 @@ document.getElementById('quickFillBtn').addEventListener('click', () => {
     renderQueue();
     setPersonMode('batch');
     msg.textContent = `เพิ่มเข้าคิวแล้ว ${added} คน จาก ${personLines.length} คนที่พบ` +
-      (wantsPhotos ? ' — ข้าม "ประวัติบุคคล 4 ด้าน" ไว้ เพราะต้องอัปโหลดรูปเอง ไปกดปุ่ม "รายละเอียด" แก้ไขทีละคนในคิวด้านขวาได้' : '') +
+      (hasSharedCharge ? ' — ข้อหา/หมายจับ/ของกลางที่กรอกไว้ก่อนวางถูกใส่ให้ทุกคนแล้ว เลือกชื่อแล้วแก้รายคนได้' : ' — ข้อหา/ของกลางยังว่าง เลือกชื่อจาก dropdown "สำหรับ:" ในพาแนล "ข้อหา / หมายจับ / ของกลาง" แล้วกรอกรายคน') +
+      (wantsPhotos ? ' — ข้าม "ประวัติบุคคล 4 ด้าน" ไว้ เพราะต้องอัปโหลดรูปเอง เลือกชื่อแล้วอัปโหลดรูปทีละคนได้' : '') +
       ' ตรวจสอบข้อมูลในคิวอีกครั้งก่อนกด "สร้างเอกสารทั้งหมดในคิว"';
     return;
   }
@@ -1777,6 +1945,13 @@ document.getElementById('quickFillBtn').addEventListener('click', () => {
 
 document.querySelectorAll('.doc-select').forEach(c => c.addEventListener('change', () => {
   renderChecklist();
+  // โหมดหลายคน: ติ๊กด้านซ้ายให้สะท้อนลงคิวของคนที่กำลังแก้ทันที
+  if (personMode === 'batch' && editingQueueIndex !== null && docQueue[editingQueueIndex]) {
+    const entry = docQueue[editingQueueIndex];
+    entry.snapshot.selectedDocs = [...document.querySelectorAll('.doc-select:checked')].map(x => x.value);
+    entry.docLabels = entry.snapshot.selectedDocs.map(k => DOC_INFO[k].label);
+    renderQueue();
+  }
   const modalId = DOC_MODALS[c.value];
   if (modalId && c.checked) openModal(modalId);
 }));
