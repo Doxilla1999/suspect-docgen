@@ -496,6 +496,12 @@
           </label>
         </div>
         <p class="note" style="margin-top:0">ไม่มีโรงพยาบาลที่ต้องการในรายการ? พิมพ์ชื่อโรงพยาบาลเองในช่อง "โรงพยาบาลที่ส่งตรวจ" ได้เลย ไม่ต้องเลือกจากรายการก็ได้</p>
+        <div id="urineQueuePreview" style="display:none">
+          <p class="field-group-label">รายชื่อผู้ถูกส่งตรวจปัสสาวะ — โหมดหลายคน: ออกหนังสือฉบับเดียว รวมทุกคนในคิวที่ติ๊ก 🧪</p>
+          <div id="urineQueuePreviewList"></div>
+          <p class="note">อยากตัดใครออกจากหนังสือฉบับนี้ ให้เอาติ๊ก 🧪 ปัสสาวะ ของคนนั้นออกในคิว โรงพยาบาล/ชนิดยา/วันนัด/วันที่ออก/เลขที่หนังสือ ใช้ค่าที่เห็นในป็อบอัพนี้กับทุกคน</p>
+        </div>
+        <div id="urineManualList">
         <p class="field-group-label">รายชื่อผู้ถูกส่งตรวจปัสสาวะ (ส่งพร้อมกันได้หลายคน — เว้นว่างไว้จะใช้ชื่อผู้ต้องหาหลักโดยอัตโนมัติ)</p>
         <div class="panel" style="background:#1E1A10;border-color:#6B5626;margin-bottom:10px">
           <textarea id="multiPersonText" rows="3" placeholder="วางรายชื่อหลายคน บรรทัดละ 1 คน เช่น&#10;1.นายกมล จันสด อายุ 57 ปี เลขบัตรประชาชน 3420300343605 วันเดือนปีเกิด 16 ก.ย. 2511 บ้านเลขที่ 43/1 หมู่2 ต.เขาแก้ว อ.เชียงคาน จ.เลย&#10;2.นายรังสี ศรีสมศักดิ์ อายุ 46 ปี ..."></textarea>
@@ -504,6 +510,7 @@
         </div>
         <div id="suspectListRows"></div>
         <button type="button" class="btn btn-ghost btn-sm" id="addSuspectRow">+ เพิ่มรายชื่อ</button>
+        </div>
 
         <p class="field-group-label" style="margin-top:16px">ออกเลขที่หนังสือใน e-Saraban</p>
         <button type="button" class="btn btn-primary btn-sm" id="copySarabanBtn">คัดลอกข้อมูล + เปิด e-Saraban</button>
@@ -708,6 +715,7 @@ function openModal(id) {
   if (!el) return;
   el.classList.add('show');
   renderModalPersonTag(el);
+  if (id === 'modalUrineReferral') renderUrineQueuePreview();
   // เปิด ปยส.115 → ถ้ายังไม่ได้กรอกผลการตรวจค้น ให้ดึงของกลางที่เป็นยาเสพติดของคนนี้มาใส่ให้
   if (id === 'modalDrugTest115') document.getElementById('syncSeizedMsg').textContent = syncSeizedFromEvidence(false);
 }
@@ -735,6 +743,7 @@ function renderModalPersonTag(overlayEl) {
 function renderPersonTags() {
   document.querySelectorAll('.modal-overlay.show').forEach(renderModalPersonTag);
   renderModalPersonTag(document.getElementById('chargePanel'));
+  renderUrineQueuePreview();
   const prevBtn = document.getElementById('copyChargeFromPrevBtn');
   const hasPrev = personMode === 'batch' && docQueue.length > 0 && (editingQueueIndex === null || editingQueueIndex > 0);
   prevBtn.style.display = hasPrev ? '' : 'none';
@@ -939,13 +948,58 @@ async function fileToJpegBytes(file, maxDim = 1000, quality = 0.85) {
   return new Uint8Array(await blob.arrayBuffer());
 }
 
-async function generateDoc(key, tags, suspectName) {
+// รายชื่อสำหรับหนังสือส่งตรวจปัสสาวะในโหมดหลายคน: ทุกคนในคิวที่ติ๊ก 🧪 (สร้างจาก snapshot ของแต่ละคน)
+function urineEntryFromSnapshot(s) {
+  const g = id => String(s[id] == null ? '' : s[id]).trim();
+  const d = g('dobDate_day'), m = g('dobDate_month'), y = g('dobDate_year');
+  return {
+    name: `${g('title')}${g('firstName')}${g('nickname') ? 'หรือ' + g('nickname') : ''} ${g('lastName')}`.trim(),
+    id: g('idNumber'), age: g('age'),
+    dob: d ? `${d} ${m !== '' ? THAI_MONTHS[parseInt(m, 10)] : ''} พ.ศ. ${y}` : '',
+    address: composeAddress(g)
+  };
+}
+function getUrineQueuePersons() {
+  return docQueue
+    .map((q, i) => ({ index: i, entry: q, suspect: urineEntryFromSnapshot(q.snapshot) }))
+    .filter(x => (x.entry.snapshot.selectedDocs || []).includes('urine_referral') && x.suspect.name);
+}
+// แสดงรายชื่อที่จะออกในหนังสือฉบับรวม (โหมดหลายคน) แทนช่องกรอกรายชื่อเอง
+function renderUrineQueuePreview() {
+  const preview = document.getElementById('urineQueuePreview');
+  const manual = document.getElementById('urineManualList');
+  if (personMode !== 'batch') { preview.style.display = 'none'; manual.style.display = ''; return; }
+  preview.style.display = ''; manual.style.display = 'none';
+  const list = getUrineQueuePersons().map(x => x.suspect);
+  // คนที่กำลังกรอกใหม่ (ยังไม่อยู่ในคิว) ถ้าติ๊ก 🧪 ไว้ก็นับด้วย — ตอนสร้างจริงจะถูกบันทึกลงคิวก่อน
+  const curName = `${v('firstName')} ${v('lastName')}`.trim();
+  const curTicked = document.querySelector('.doc-select[value="urine_referral"]').checked;
+  if (editingQueueIndex === null && curName && curTicked) list.push({ ...urineEntryFromSnapshot(collectFormSnapshot()), pending: true });
+  document.getElementById('urineQueuePreviewList').innerHTML = list.length
+    ? `<p class="note" style="margin-top:0">จะออกหนังสือ 1 ฉบับ จำนวน <b>${list.length}</b> ราย:</p>` +
+      list.map((e, i) => `<div class="checklist-item">${i + 1}. ${escapeXml(e.name)}${e.id ? ' เลขบัตร ' + escapeXml(e.id) : ''}${e.age ? ' อายุ ' + escapeXml(e.age) + ' ปี' : ''}${e.pending ? ' <span class="note">(กำลังกรอก ยังไม่เข้าคิว)</span>' : ''}</div>`).join('')
+    : '<p class="note" style="margin-top:0;color:#E2685D">ยังไม่มีใครในคิวติ๊ก 🧪 ปัสสาวะ — ติ๊กที่ชื่อในคิว หรือติ๊กด้านซ้ายให้คนที่กำลังกรอก</p>';
+}
+// จำนวนรายสำหรับหัวข้อ e-Saraban / test_count: โหมดหลายคนนับจากคิว โหมดคนเดียวนับจากรายชื่อในป็อบอัพ
+function getUrineCount() {
+  if (personMode === 'batch') {
+    const saved = autoSaveCurrentPersonToQueue();
+    if (saved) { renderQueue(); renderPersonTags(); }
+    const n = getUrineQueuePersons().length;
+    if (n) return n;
+  }
+  return getSuspectListEntries().length;
+}
+
+async function generateDoc(key, tags, suspectName, opts = {}) {
   const info = DOC_INFO[key];
   const bytes = b64ToBytes(TEMPLATES[key]);
   const zip = await JSZip.loadAsync(bytes);
   let xmlStr = await zip.file(info.xmlPath).async('string');
   if (key === 'urine_referral') {
-    xmlStr = fillSuspectListBlock(xmlStr, getSuspectListEntries());
+    const entries = opts.suspectEntries || getSuspectListEntries();
+    xmlStr = fillSuspectListBlock(xmlStr, entries);
+    tags = { ...tags, test_count: String(entries.length) };
   }
   // ใบปะหน้าส่งศาลออกเลขหนังสือแยกรายคน (จาก e-Saraban) — ถ้ากรอกไว้ให้ใช้แทนเลขที่หนังสือกลาง
   if (key === 'court_referral' && v('courtDocNo')) {
@@ -1053,6 +1107,7 @@ function renderQueue() {
     }));
   }
   renderQueuePersonSelect();
+  renderUrineQueuePreview();
 }
 function renderQueuePersonSelect() {
   const sel = document.getElementById('queuePersonSelect');
@@ -1160,9 +1215,19 @@ document.getElementById('addToQueueBtn').addEventListener('click', () => {
   msg.textContent = `${statusMsg} — เอกสารที่ติ๊กไว้ยังคงติ๊กอยู่ กรอกคนถัดไปได้เลย`;
   renderQueue();
 });
+// ช่องของหนังสือส่งตรวจปัสสาวะที่ใช้ร่วมกันทั้งฉบับ (ไม่ใช่ของรายคน)
+const URINE_SHARED_FIELD_IDS = ['hospitalName', 'drugTypeUrine', 'drugType', 'testDate_day', 'testDate_month', 'testDate_year',
+  'issueDate_day', 'issueDate_month', 'issueDate_year', 'docRunningNo'];
 document.getElementById('genQueueBtn').addEventListener('click', async () => {
   const msg = document.getElementById('queueMsg');
+  // บันทึกคนที่กำลังกรอกอยู่ลงคิวก่อน กันข้อมูลที่เพิ่งแก้หาย
+  autoSaveCurrentPersonToQueue();
+  renderQueue();
   if (docQueue.length === 0) { msg.textContent = 'คิวว่าง ยังไม่มีใครให้สร้างเอกสาร'; return; }
+  // ค่าที่เห็นในป็อบอัพปัสสาวะล่าสุด ใช้กับหนังสือฉบับรวม
+  const sharedUrine = {};
+  URINE_SHARED_FIELD_IDS.forEach(id => { sharedUrine[id] = v(id); });
+  const urinePersons = getUrineQueuePersons();
   let doneCount = 0;
   for (const entry of docQueue) {
     msg.textContent = `กำลังสร้างเอกสารให้ ${entry.name} (${doneCount + 1}/${docQueue.length})...`;
@@ -1175,17 +1240,28 @@ document.getElementById('genQueueBtn').addEventListener('click', async () => {
     }
     const tags = buildTagMap();
     const suspectName = (v('firstName') + v('lastName')) || 'case';
-    for (const key of entry.snapshot.selectedDocs) {
+    // ส่งตรวจปัสสาวะไม่ออกรายคน — รวมเป็นฉบับเดียวหลังจบลูป
+    for (const key of entry.snapshot.selectedDocs.filter(k => k !== 'urine_referral')) {
       try { await generateDoc(key, tags, suspectName); } catch (e) {}
       await sleep(400);
     }
     doneCount++;
   }
+  if (urinePersons.length) {
+    msg.textContent = `กำลังสร้างหนังสือส่งตรวจปัสสาวะ รวม ${urinePersons.length} ราย...`;
+    applyFormSnapshot(urinePersons[0].entry.snapshot);
+    Object.entries(sharedUrine).forEach(([id, val]) => { if (val) document.getElementById(id).value = val; });
+    try {
+      await generateDoc('urine_referral', buildTagMap(), `รวม${urinePersons.length}ราย`, { suspectEntries: urinePersons.map(x => x.suspect) });
+    } catch (e) {}
+    await sleep(400);
+  }
   docQueue = [];
   editingQueueIndex = null;
   renderQueue();
   clearForm();
-  msg.textContent = `สร้างเอกสารให้ครบ ${doneCount} คนแล้ว`;
+  renderPersonTags();
+  msg.textContent = `สร้างเอกสารให้ครบ ${doneCount} คนแล้ว` + (urinePersons.length ? ` + หนังสือส่งตรวจปัสสาวะ 1 ฉบับ (${urinePersons.length} ราย)` : '');
 });
 
 const DATE_PART_IDS = DATE_FIELDS.flatMap(p => [p + '_day', p + '_month', p + '_year']);
@@ -1958,6 +2034,8 @@ document.querySelectorAll('.doc-select').forEach(c => c.addEventListener('change
     entry.snapshot.selectedDocs = [...document.querySelectorAll('.doc-select:checked')].map(x => x.value);
     entry.docLabels = entry.snapshot.selectedDocs.map(k => DOC_INFO[k].label);
     renderQueue();
+  } else if (personMode === 'batch') {
+    renderUrineQueuePreview();
   }
   const modalId = DOC_MODALS[c.value];
   if (modalId && c.checked) openModal(modalId);
@@ -2129,7 +2207,7 @@ document.getElementById('copySarabanBtn').addEventListener('click', async () => 
   const payload = {
     source: 'suspect-docgen-saraban-urine',
     to: v('hospitalName'),
-    subject: `ส่งตรวจปัสสาวะ จำนวน ${getSuspectListEntries().length} ราย`
+    subject: `ส่งตรวจปัสสาวะ จำนวน ${getUrineCount()} ราย`
   };
   try {
     // คัดลอกก่อนแล้วค่อยเปิดแท็บใหม่ — ถ้าเปิดแท็บก่อน หน้านี้จะเสียโฟกัสและเขียน clipboard ไม่ได้
