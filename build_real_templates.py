@@ -7,6 +7,7 @@
 import os
 from docx import Document
 from docx.enum.text import WD_TAB_ALIGNMENT
+from docx.oxml.ns import qn
 from docx.shared import Cm
 
 # ตำแหน่งบล็อกหัวจดหมายด้านขวา (ชื่อสถานี / จังหวัด) วัดจากขอบซ้ายของพื้นที่พิมพ์
@@ -161,9 +162,18 @@ def build_urine_referral():
     # [10] ตัวอย่างรายชื่อคนที่สองในฟอร์มเดิม ลบทิ้ง
     p[10]._element.getparent().remove(p[10]._element)
 
-    # [18] บรรทัดว่างเหนือชื่อผู้ลงนาม — คงว่างไว้ตามฟอร์มจริง (ยศไปอยู่ในวงเล็บกับชื่อแทน)
-    # [19] ( ยศชื่อผู้ลงนาม )  เช่น ( ร.ต.อ.รัฐภูมิ พวงมาลา )  /  [20] ตำแหน่งผู้ลงนาม
-    set_runs(p[19], {2: "{signer_rank}{signer_name} "})
+    # [18] บรรทัดยศเหนือวงเล็บ (ที่ว่างด้านขวาของยศไว้เซ็นชื่อ) — ต้องชิดซ้ายให้ตรงขอบซ้ายของวงเล็บ
+    # บรรทัดชื่อจัดกึ่งกลาง ขอบซ้ายจึงขึ้นกับความยาวชื่อ → ให้แอปคำนวณระยะเยื้อง {signer_rank_indent} (twips) ตอน export
+    rank_run = p[18].add_run("{signer_rank}")
+    rank_run.font.name = p[19].runs[2].font.name
+    rank_pPr = p[18]._p.get_or_add_pPr()
+    rank_ind = rank_pPr.find(qn("w:ind"))
+    rank_ind.attrib.pop(qn("w:firstLine"), None)
+    rank_ind.set(qn("w:left"), "{signer_rank_indent}")
+    rank_pPr.find(qn("w:jc")).set(qn("w:val"), "left")
+
+    # [19] ( ชื่อผู้ลงนาม )  /  [20] ตำแหน่งผู้ลงนาม
+    set_runs(p[19], {2: "{signer_name} "})
     clear_runs(p[19], [3, 4])
     flatten(p[20], "{signer_position}")
 

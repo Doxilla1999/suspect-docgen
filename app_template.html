@@ -848,6 +848,27 @@ function renderChecklist() {
     [...set].map(k => `<div class="checklist-item">${DOC_INFO[k].label}</div>`).join('');
 }
 
+// ประมาณความกว้างข้อความไทยในฟอนต์ TH Sarabun (หน่วย em) — สระบน/ล่าง/วรรณยุกต์ไม่กินความกว้าง
+function estimateThaiWidthEm(s) {
+  let em = 0;
+  for (const ch of s) {
+    if (/[ัิ-ฺ็-๎]/.test(ch)) continue;
+    if (ch === ' ') em += 0.2;
+    else if (ch === '(' || ch === ')') em += 0.22;
+    else if (ch === '.') em += 0.15;
+    else if (/[ก-๛]/.test(ch)) em += 0.38;
+    else em += 0.4;
+  }
+  return em;
+}
+// หนังสือส่งตรวจปัสสาวะ: บรรทัดยศต้องชิดซ้ายตรงขอบซ้ายของ "( ชื่อ )" ที่จัดกึ่งกลางอยู่บรรทัดล่าง
+// หน้า A4 ขอบ 1440 → พื้นที่พิมพ์ 9026 twips, ย่อหน้าชื่อเยื้องบรรทัดแรก 1418 จึงจัดกึ่งกลางในช่วง [1418, 9026]
+// ฟอนต์ไทย 15pt = 300 twips/em; ถอยซ้ายเผื่ออีก 0.6 ซม. ให้ยศอยู่ก่อนวงเล็บเล็กน้อยเหมือนที่พิมพ์กันจริง
+function urineRankIndentTwips(signerName) {
+  const center = (1418 + 9026) / 2;
+  const nameWidth = estimateThaiWidthEm(`( ${signerName} )`) * 300;
+  return Math.max(0, Math.round(center - nameWidth / 2 - 340));
+}
 function buildTagMap() {
   const title = v('title'), firstName = v('firstName'), lastName = v('lastName');
   const fullName = `${firstName} ${lastName}`.trim();
@@ -873,6 +894,7 @@ function buildTagMap() {
     signer_rank: v('signerRank') || v('officer1Rank'),
     signer_name: v('signerName') || v('officer1Name'),
     signer_position: v('signerPosition') || v('officer1Position'),
+    signer_rank_indent: String(urineRankIndentTwips(v('signerName') || v('officer1Name'))),
     record_day: issueParts.day, record_month: issueParts.month, record_year: issueParts.year,
     officer1_rank: v('officer1Rank'), officer1_name: v('officer1Name'), officer1_position: v('officer1Position'),
     officer_affiliation: v('officerAffiliation'),
