@@ -492,6 +492,12 @@
         </div>
         <div id="suspectListRows"></div>
         <button type="button" class="btn btn-ghost btn-sm" id="addSuspectRow">+ เพิ่มรายชื่อ</button>
+
+        <p class="field-group-label" style="margin-top:16px">ออกเลขที่หนังสือใน e-Saraban</p>
+        <button type="button" class="btn btn-ghost btn-sm" id="copySarabanBtn">คัดลอกข้อมูลไปกรอก e-Saraban</button>
+        <p class="note">คัดลอกแล้วเปิด saraban.police.go.th → ระบบสารบรรณอิเล็กทรอนิกส์ → ลงทะเบียนรับส่ง → หน้าสร้างหนังสือ → กดปุ่มลอย "📋 กรอกจาก suspect-docgen" สคริปต์จะเลือกหมวด "หนังสือส่งภายนอก" และกรอก จาก/ถึง/เรื่อง/รายละเอียด ให้ (ไม่แตะเลขที่เอกสาร วันที่ และไม่กดสร้างให้) พอได้เลขแล้วเอามาใส่ช่อง "เลขที่หนังสือ (เลขที่ออก)" ในข้อมูลคดี</p>
+        <p class="msg" id="sarabanMsg"></p>
+
         <button type="button" class="btn btn-primary modal-done" data-close-modal>เสร็จแล้ว</button>
       </div>
       </div>
@@ -1852,6 +1858,25 @@ document.getElementById('copyDopaBtn').addEventListener('click', async () => {
   try {
     await navigator.clipboard.writeText(JSON.stringify(payload));
     msg.textContent = 'คัดลอกแล้ว ไปกดปุ่ม bookmarklet ที่หน้าเว็บ DOPA ได้เลย';
+  } catch (e) {
+    msg.textContent = 'คัดลอกไม่สำเร็จ: ' + e.message;
+  }
+});
+
+document.getElementById('copySarabanBtn').addEventListener('click', async () => {
+  const msg = document.getElementById('sarabanMsg');
+  const entries = getSuspectListEntries();
+  const names = entries.map(e => e.name).filter(Boolean);
+  const payload = {
+    source: 'suspect-docgen-saraban-urine',
+    from: v('stationName'),
+    to: 'ผู้อำนวยการ' + v('hospitalName'),
+    subject: 'ขอส่งตรวจยืนยัน/สารเสพติดในปัสสาวะ ในขั้นที่สองด้วยหลักการทางวิทยาศาสตร์',
+    detail: `ส่งตรวจยืนยัน${v('drugType')} สารเสพติดในปัสสาวะ จำนวน ${entries.length} ราย` + (names.length ? ` (${names.join(', ')})` : '')
+  };
+  try {
+    await navigator.clipboard.writeText(JSON.stringify(payload));
+    msg.textContent = 'คัดลอกแล้ว ไปกดปุ่มลอยที่หน้า "สร้าง/หนังสือส่งภายใน" ใน e-Saraban ได้เลย';
   } catch (e) {
     msg.textContent = 'คัดลอกไม่สำเร็จ: ' + e.message;
   }

@@ -1,9 +1,10 @@
 // ==UserScript==
-// @name         suspect-docgen auto-fill (DOPA)
+// @name         suspect-docgen auto-fill (DOPA + e-Saraban)
 // @namespace    suspect-docgen
-// @version      1.1
-// @description  กรอกข้อมูลอัตโนมัติจากเว็บแอป suspect-docgen ลงเว็บ arrest.dopa.go.th (ไม่กดบันทึก/ส่งให้)
+// @version      1.2
+// @description  กรอกข้อมูลอัตโนมัติจากเว็บแอป suspect-docgen ลงเว็บ arrest.dopa.go.th และ saraban.police.go.th (ไม่กดบันทึก/ส่งให้)
 // @match        https://arrest.dopa.go.th/*
+// @match        https://saraban.police.go.th/saraban/*
 // @grant        none
 // ==/UserScript==
 
@@ -115,12 +116,52 @@
     alert('ยังไม่รองรับหน้า "เพิ่มผู้ถูกควบคุมตัว" — รอการอัปเดตสคริปต์นี้');
   }
 
+  // ---------- e-Saraban: หน้า "สร้าง/หนังสือส่งภายใน" (ฟอร์ม #adddocform) ----------
+  // ฟอร์มนี้ใช้ jQuery ธรรมดา เซ็ตค่าลง input ตรงๆ ได้
+  // ไม่แตะ: เลขที่เอกสาร (txtwid/txtregno) ระบบ/ผู้ใช้จัดการเอง, วันที่ (ระบบเติมวันปัจจุบันให้แล้ว),
+  //         dropdown ชั้นความเร็ว/ความลับ/หมวดหนังสือ (ค่าเฉพาะหน่วยงาน) และไม่กดปุ่ม "สร้าง"
+  // หมวดหนังสือสำหรับส่งตรวจปัสสาวะ = "หนังสือส่งภายนอก" ตัวแรกถัดจาก "หนังสือส่งภายใน" ใน dropdown
+  // (รหัสเป็นค่าที่หน่วยตั้งเอง ถ้ารายการเปลี่ยนจะไม่เจอ สคริปต์จะให้เลือกเองแทน)
+  const SARABAN_BOOKGROUP_EXTERNAL = '0043';
+
+  function selectBookGroup(value) {
+    const sel = document.getElementById('selbookgroup');
+    if (!sel) return false;
+    const opt = [...sel.options].find(o => o.value === value);
+    if (!opt || !opt.textContent.includes('ภายนอก')) return false;
+    // เป็น select2 — ผ่าน jQuery ถ้ามี เพื่อให้ตัว dropdown และ handler ของหน้าเว็บอัปเดตเหมือนคนเลือกเอง
+    if (window.jQuery) window.jQuery(sel).val(value).trigger('change');
+    else { sel.value = value; sel.dispatchEvent(new Event('change', { bubbles: true })); }
+    return true;
+  }
+
+  async function fillSarabanUrine(data) {
+    if (!document.getElementById('adddocform')) {
+      alert('ยังไม่เจอฟอร์มสร้างหนังสือ — เปิดเมนู ลงทะเบียนรับส่ง แล้วเข้าหน้าสร้างหนังสือก่อน แล้วค่อยกดปุ่มนี้');
+      return;
+    }
+    // เลือกหมวดหนังสือก่อน แล้วรอให้หน้าเว็บจัดการ (บางกรณีเปลี่ยนหมวดแล้วฟอร์มรีเซ็ต) ค่อยกรอกข้อความ
+    const bookGroupOk = selectBookGroup(SARABAN_BOOKGROUP_EXTERNAL);
+    if (!bookGroupOk) {
+      alert('หาหมวด "หนังสือส่งภายนอก" ในรายการไม่เจอ — เลือกหมวดหนังสือเองก่อน แล้วกดปุ่มนี้อีกครั้ง');
+      return;
+    }
+    await new Promise(r => setTimeout(r, 800));
+
+    const fromEl = document.getElementById('txtfrom');
+    if (fromEl && !fromEl.value.trim()) setVal('txtfrom', data.from);
+    setVal('txtto', data.to);
+    setVal('txtwsubject', data.subject);
+    setVal('txtwdsc', data.detail);
+    alert('เลือกหมวดหนังสือส่งภายนอก และกรอก จาก/ถึง/เรื่อง/รายละเอียด ให้แล้ว\n\nตรวจสอบทุกช่อง แล้วกด "สร้าง" เองนะครับ');
+  }
+
   async function handleClick() {
     let data;
     try {
       data = JSON.parse(await navigator.clipboard.readText());
     } catch (e) {
-      alert('อ่านข้อมูลจาก clipboard ไม่ได้ — กด "คัดลอกข้อมูลสำหรับ DOPA" ในเว็บแอป suspect-docgen ก่อน แล้วค่อยกดปุ่มนี้');
+      alert('อ่านข้อมูลจาก clipboard ไม่ได้ — กดปุ่ม "คัดลอกข้อมูล..." ในเว็บแอป suspect-docgen ก่อน แล้วค่อยกดปุ่มนี้');
       return;
     }
     if (!data || !data.source) {
@@ -128,7 +169,10 @@
       return;
     }
 
-    if (data.source === 'suspect-docgen-dopa-step1' && location.pathname.includes('/detainee/')) {
+    const onSaraban = location.hostname === 'saraban.police.go.th';
+    if (data.source === 'suspect-docgen-saraban-urine' && onSaraban) {
+      await fillSarabanUrine(data);
+    } else if (data.source === 'suspect-docgen-dopa-step1' && location.pathname.includes('/detainee/')) {
       await fillDopaStep1(data);
     } else if (data.source === 'suspect-docgen-dopa-step2' && location.pathname.includes('/update_place/')) {
       await fillDopaStep2(data);
@@ -149,7 +193,16 @@
     document.body.appendChild(btn);
   }
 
-  if (location.pathname.includes('/detainee/') || location.pathname.includes('/update_place/')) {
+  if (location.hostname === 'saraban.police.go.th') {
+    // e-Saraban เป็นเว็บหน้าเดียว (URL ไม่เปลี่ยนตามเมนู) ฟอร์มถูกโหลดเข้ามาทีหลัง
+    // จึงเช็คเป็นระยะว่าฟอร์มสร้างหนังสือโผล่มาหรือยัง แล้วค่อยโชว์/ซ่อนปุ่ม
+    injectButton();
+    const btn = document.getElementById('sdg-autofill-btn');
+    setInterval(() => {
+      const form = document.getElementById('adddocform');
+      btn.style.display = (form && form.offsetParent !== null) ? '' : 'none';
+    }, 1000);
+  } else if (location.pathname.includes('/detainee/') || location.pathname.includes('/update_place/')) {
     injectButton();
   }
 })();
