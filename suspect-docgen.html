@@ -232,13 +232,14 @@
         <h2>วางข้อมูลเพื่อกรอกอัตโนมัติ</h2>
         <textarea id="quickFillText" rows="3" placeholder="วางข้อมูลผู้ต้องหาตรงนี้ เช่น &quot;นายสมชายหรือแดง ใจดี เลขบัตรประชาชน 1234567890123 อายุ 30 ปี ที่อยู่ บ้านเลขที่ 99 ม.5 ต.นายายอาม อ.นายายอาม จ.จันทบุรี&quot; (ตัวอย่างนี้เป็นชื่อสมมุติ ใช้เป็นแบบฟอร์มเท่านั้น)"></textarea>
         <button type="button" class="btn btn-primary btn-sm" id="quickFillBtn" style="margin-top:8px">แยกข้อมูลกรอกฟอร์มให้อัตโนมัติ</button>
-        <p class="note" id="quickFillMsg" style="margin-top:6px">ระบบจะพยายามจับ ชื่อ-สกุล/<b style="color:#B68D40">เลขบัตรประชาชน</b>/<b style="color:#B68D40">อายุ</b>/<b style="color:#B68D40">บ้านเลขที่</b>/<b style="color:#B68D40">หมู่ที่</b>/<b style="color:#B68D40">ต.</b>/<b style="color:#B68D40">อ.</b>/<b style="color:#B68D40">จ.</b>/เบอร์โทร/อาชีพ จากข้อความที่วาง ต้องมีคำเหล่านี้นำหน้าข้อมูลถึงจะจับได้ — เรียงชื่อแบบ "คำนำหน้า+ชื่อ(หรือชื่อเล่น ไม่เว้นวรรค) นามสกุล" เช่น "นายสมชายหรือแดง ใจดี" ระบบจะแยกชื่อเล่นให้อัตโนมัติ กรอกได้ไม่ครบทุกครั้ง ควรตรวจสอบซ้ำก่อนสร้างเอกสารเสมอ</p>
+        <p class="note" id="quickFillMsg" style="margin-top:6px">ระบบจะพยายามจับ ชื่อ-สกุล/<b style="color:#B68D40">เลขบัตรประชาชน</b>/<b style="color:#B68D40">อายุ</b>/<b style="color:#B68D40">บ้านเลขที่</b>/<b style="color:#B68D40">หมู่ที่</b>/<b style="color:#B68D40">ต.</b>/<b style="color:#B68D40">อ.</b>/<b style="color:#B68D40">จ.</b>/เบอร์โทร/อาชีพ จากข้อความที่วาง ต้องมีคำเหล่านี้นำหน้าข้อมูลถึงจะจับได้ — ชื่อเล่นใส่ได้ทั้ง "นายสมชายหรือแดง ใจดี" และ "นายสมชาย ใจดี หรือแดง" เลขบัตรจะเว้นวรรคหรือไม่ก็ได้ ที่อยู่พิมพ์ "ที่อยู่ 99 ม.5" หรือ "บ้านเลขที่ 99 ม.5" ก็ได้ กรอกได้ไม่ครบทุกครั้ง ควรตรวจสอบซ้ำก่อนสร้างเอกสารเสมอ</p>
         <details style="margin-top:8px">
           <summary style="cursor:pointer;color:#B68D40;font-size:13px;font-weight:600">ดูตัวอย่างข้อความที่ใช้ได้เพิ่มเติม</summary>
           <div class="note" style="margin-top:6px;line-height:1.7">
             มีชื่อเล่น: "นายสมชายหรือแดง ใจดี เลขบัตรประชาชน 1234567890123 อายุ 30 ปี ที่อยู่ บ้านเลขที่ 99 ม.5 ต.นายายอาม อ.นายายอาม จ.จันทบุรี"<br>
+            ชื่อเล่นอยู่หลังนามสกุล + เลขบัตรเว้นวรรค + ที่อยู่ไม่มีคำว่าบ้านเลขที่: "นายสมชาย ใจดี หรือแดง อายุ 30 ปี เลขบัตรประจำตัวประชาชน 1 2345 67890 12 3 ที่อยู่ 99 ม.5 ต.นายายอาม อ.นายายอาม จ.จันทบุรี"<br>
             ไม่มีชื่อเล่น: "นางสาวสมหญิง มีสุข เลขบัตรประชาชน 1234567890123 อายุ 22 ปี ที่อยู่ บ้านเลขที่ 12 ม.3 ต.สนามไชย อ.นายายอาม จ.จันทบุรี"<br>
-            มีเบอร์โทร/อาชีพ: "นายสมศักดิ์ พากเพียร เลขบัตรประชาชน 1234567890123 อายุ 40 ปี เบอร์โทร 0891234567 อาชีพ รับจ้าง ที่อยู่ บ้านเลขที่ 5 ม.1 ต.วังโตนด อ.นายายอาม จ.จันทบุรี"
+            มีเบอร์โทร/อาชีพ/วันเกิด: "นายสมศักดิ์ พากเพียร เลขบัตรประชาชน 1234567890123 อายุ 40 ปี เบอร์โทร 0891234567 อาชีพ รับจ้าง วันเกิด 16 มิ.ย. 2529 ที่อยู่ บ้านเลขที่ 5 ม.1 ต.วังโตนด อ.นายายอาม จ.จันทบุรี"
           </div>
         </details>
       </div>
@@ -1596,20 +1597,41 @@ function initConditionalFields() {
   pb123.forEach(c => c.addEventListener('change', () => { if (c.checked) pb4.checked = false; }));
 }
 
+// ชื่อ-สกุล รองรับชื่อเล่นได้ทั้ง 2 ตำแหน่ง: "นายสมชายหรือแดง ใจดี", "นายสมชาย หรือ แดง ใจดี", "นายสมชาย ใจดี หรือแดง"
+// group: 1=คำนำหน้า 2=ชื่อ 3=ชื่อเล่น(กลาง) 4=นามสกุล 5=ชื่อเล่น(ท้าย)
+const PERSON_NAME_RE = /(นางสาว|นาง|นาย)\s*([ก-๙A-Za-z]+?)(?:\s?หรือ\s?([ก-๙A-Za-z]+))?\s+([ก-๙A-Za-z]+)(?:\s*หรือ\s*(?!นาย|นาง)([ก-๙A-Za-z]+))?/;
+// เลขบัตร: มีคำนำหน้าได้หลายแบบ (เลขบัตรประชาชน/เลขบัตรประจำตัวประชาชน/เลขประจำตัวประชาชน/บัตรประชาชนเลขที่/เลข ปชช.)
+// ตัวเลขจะเว้นวรรคหรือขีดหรือไม่ก็ได้ ถ้าไม่มีคำนำหน้าเลย รับเฉพาะ 13 หลักติดกัน หรือรูปแบบทางการ 1-4-5-2-1
+function extractThaiId(text) {
+  const labeled = text.match(/(?:เลข(?:ที่)?\s*(?:บัตร)?\s*(?:ประจำตัว)?\s*ประชาชน|บัตรประชาชน|(?:เลข|บัตร)\s*ปชช\.?)\s*(?:เลขที่)?\s*[:\s]*([0-9][0-9\s-]{10,17}[0-9])/);
+  if (labeled) {
+    // ตัดให้เหลือ 13 หลักพอดี เผื่อมีเลขอื่น (เช่นเบอร์โทร) ต่อท้ายติดกัน
+    let out = '', digits = 0;
+    for (const ch of labeled[1]) { if (digits >= 13) break; out += ch; if (/[0-9]/.test(ch)) digits++; }
+    return out.trim();
+  }
+  const plain = text.match(/(?:^|[^0-9])(\d{13})(?![0-9])/);
+  if (plain) return plain[1];
+  const grouped = text.match(/(?:^|[^0-9])(\d[\s-]\d{4}[\s-]\d{5}[\s-]\d{2}[\s-]\d)(?![0-9])/);
+  if (grouped) return grouped[1];
+  return '';
+}
 function parseQuickFillText(text) {
   const filled = {};
-  const nameMatch = text.match(/(นางสาว|นาง|นาย)\s*([ก-๙A-Za-z]+?)(?:\s?หรือ([ก-๙A-Za-z]+))?\s+([ก-๙A-Za-z]+)/);
+  const nameMatch = text.match(PERSON_NAME_RE);
   if (nameMatch) {
     filled.title = nameMatch[1];
     filled.firstName = nameMatch[2];
     filled.lastName = nameMatch[4];
-    if (nameMatch[3]) filled.nickname = nameMatch[3];
+    const nick = nameMatch[3] || nameMatch[5];
+    if (nick) filled.nickname = nick;
   }
-  const idMatch = text.match(/เลขบัตร[ก-๙]*ประชาชน\s*[:\s]*([0-9][0-9\s-]{10,17}[0-9])/) || text.match(/\b(\d{13})\b/);
-  if (idMatch) filled.idNumber = idMatch[1].trim();
+  const idNumber = extractThaiId(text);
+  if (idNumber) filled.idNumber = idNumber;
   const ageMatch = text.match(/อายุ\s*(\d+)/);
   if (ageMatch) filled.age = ageMatch[1];
-  const houseMatch = text.match(/บ้านเลขที่\s*([0-9\/]+)/);
+  // บ้านเลขที่: "บ้านเลขที่ 57", "ที่อยู่ 57 ม.4", "ที่อยู่ บ้านเลขที่ 57", "ที่อยู่ เลขที่ 57"
+  const houseMatch = text.match(/(?:บ้านเลขที่|ที่อยู่(?:ปัจจุบัน|ตามทะเบียนบ้าน)?)\s*(?:บ้านเลขที่|เลขที่)?\s*([0-9][0-9\/-]*)/);
   if (houseMatch) filled.addrHouseNo = houseMatch[1];
   const mooMatch = text.match(/(?:หมู่ที่|ม\.)\s*(\d+)/);
   if (mooMatch) filled.addrMoo = mooMatch[1];
@@ -1627,9 +1649,11 @@ function parseQuickFillText(text) {
   if (occMatch) filled.occupation = occMatch[1];
   const aliasMatch = text.match(/(?:นามแฝง|ชื่อเล่น)\s*([ก-๙A-Za-z]+)/);
   if (aliasMatch) filled.alias = aliasMatch[1];
-  const dobMatch = text.match(/วัน\s*เดือน\s*ปี\s*เกิด\s*(\d{1,2})\s+([ก-๙]+)\s+(\d{4})/);
+  // วันเกิด: "วันเดือนปีเกิด 16 มิถุนายน 2526" หรือ "วันเกิด 16 มิ.ย. 2526"
+  const dobMatch = text.match(/(?:วัน\s*เดือน\s*ปี\s*เกิด|วัน\s*เกิด|เกิดวันที่)\s*(\d{1,2})\s+([ก-๙.]+)\s+(\d{4})/);
   if (dobMatch) {
-    const monthIdx = THAI_MONTHS.indexOf(dobMatch[2]);
+    let monthIdx = THAI_MONTHS.indexOf(dobMatch[2]);
+    if (monthIdx < 0) monthIdx = THAI_MONTHS_SHORT.indexOf(dobMatch[2]);
     if (monthIdx >= 0) {
       filled.dobDate_day = dobMatch[1];
       filled.dobDate_month = String(monthIdx);
@@ -1738,16 +1762,19 @@ addSuspectRow();
 function parseMultiPersonText(text) {
   return text.split('\n').map(l => l.trim()).filter(Boolean).map(line => {
     const entry = { name: '', id: '', age: '', dob: '', address: '' };
-    const nameMatch = line.match(/(นางสาว|นาง|นาย)\s*([ก-๙A-Za-z]+?)(?:\s?หรือ([ก-๙A-Za-z]+))?\s+([ก-๙A-Za-z]+)/);
-    if (nameMatch) entry.name = `${nameMatch[1]}${nameMatch[2]}${nameMatch[3] ? 'หรือ' + nameMatch[3] : ''} ${nameMatch[4]}`;
+    const nameMatch = line.match(PERSON_NAME_RE);
+    if (nameMatch) {
+      const nick = nameMatch[3] || nameMatch[5];
+      entry.name = `${nameMatch[1]}${nameMatch[2]}${nick ? 'หรือ' + nick : ''} ${nameMatch[4]}`;
+    }
     const ageMatch = line.match(/อายุ\s*(\d+)/);
     if (ageMatch) entry.age = ageMatch[1];
-    const idMatch = line.match(/เลขบัตร[ก-๙]*ประชาชน\s*[:\s]*([0-9][0-9\s-]{10,17}[0-9])/) || line.match(/\b(\d{13})\b/);
-    if (idMatch) entry.id = idMatch[1].trim();
-    const dobMatch = line.match(/วัน\s*เดือน\s*ปี\s*เกิด\s*(\d{1,2}\s*[ก-๙.]+\s*\d{4})/);
+    entry.id = extractThaiId(line);
+    const dobMatch = line.match(/(?:วัน\s*เดือน\s*ปี\s*เกิด|วัน\s*เกิด|เกิดวันที่)\s*(\d{1,2}\s*[ก-๙.]+\s*\d{4})/);
     if (dobMatch) entry.dob = dobMatch[1].replace(/\s+/g, ' ').trim();
-    const addrMatch = line.match(/บ้านเลขที่[\s\S]*$/);
-    if (addrMatch) entry.address = addrMatch[0].trim();
+    // ที่อยู่: เริ่มหลังคำว่า "ที่อยู่" หรือ "บ้านเลขที่" ไปจนจบบรรทัด หรือจนถึงข้อมูลอื่นที่ตามมา (วันเกิด/โทร/อาชีพ/เลขบัตร)
+    const addrMatch = line.match(/(?:ที่อยู่(?:ปัจจุบัน|ตามทะเบียนบ้าน)?|(?=บ้านเลขที่))\s*([\s\S]*?)\s*(?=$|วัน\s*เดือน\s*ปี\s*เกิด|วัน\s*เกิด|เกิดวันที่|เบอร์โทร|โทรศัพท์|โทร\.|อาชีพ|เลขบัตร|เลขประจำตัว|นามแฝง|ชื่อเล่น)/);
+    if (addrMatch) entry.address = addrMatch[1].trim();
     return entry;
   }).filter(e => e.name);
 }
@@ -1803,7 +1830,7 @@ document.getElementById('downloadBlurBtn').addEventListener('click', () => {
 
 function parseArrestRecordText(text) {
   const filled = {};
-  const nameMatch = text.match(/จับกุมตัว\s*(นางสาว|นาง|นาย)\s*([ก-๙A-Za-z]+?)(?:\s?หรือ([ก-๙A-Za-z]+))?\s+([ก-๙A-Za-z]+)/);
+  const nameMatch = text.match(/จับกุมตัว\s*(นางสาว|นาง|นาย)\s*([ก-๙A-Za-z]+?)(?:\s?หรือ\s?([ก-๙A-Za-z]+))?\s+([ก-๙A-Za-z]+)/);
   if (nameMatch) { filled.dopaFirstName = nameMatch[2]; filled.dopaLastName = nameMatch[4]; }
   const idMatch = text.match(/หมายเลขประจำตัวประชาชน\s*([0-9][0-9\s-]{10,17}[0-9])/) || text.match(/\b(\d{13})\b/);
   if (idMatch) filled.dopaIdNumber = idMatch[1].replace(/\s+/g, '');
