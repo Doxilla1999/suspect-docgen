@@ -120,40 +120,46 @@
   // ฟอร์มนี้ใช้ jQuery ธรรมดา เซ็ตค่าลง input ตรงๆ ได้
   // ไม่แตะ: เลขที่เอกสาร (txtwid/txtregno) ระบบ/ผู้ใช้จัดการเอง, วันที่ (ระบบเติมวันปัจจุบันให้แล้ว),
   //         dropdown ชั้นความเร็ว/ความลับ/หมวดหนังสือ (ค่าเฉพาะหน่วยงาน) และไม่กดปุ่ม "สร้าง"
-  // หมวดหนังสือสำหรับส่งตรวจปัสสาวะ = "หนังสือส่งภายนอก" ตัวแรกถัดจาก "หนังสือส่งภายใน" ใน dropdown
-  // (รหัสเป็นค่าที่หน่วยตั้งเอง ถ้ารายการเปลี่ยนจะไม่เจอ สคริปต์จะให้เลือกเองแทน)
-  const SARABAN_BOOKGROUP_EXTERNAL = '0043';
-
-  function selectBookGroup(value) {
-    const sel = document.getElementById('selbookgroup');
+  // dropdown ในฟอร์มเป็น select2 — เซ็ตผ่าน jQuery ถ้ามี เพื่อให้ตัว dropdown และ handler ของหน้าเว็บ
+  // อัปเดตเหมือนคนเลือกเอง; เลือกได้ทั้งจากรหัส (value) หรือข้อความที่แสดง (text)
+  function selectOption(selectId, { value, text }) {
+    const sel = document.getElementById(selectId);
     if (!sel) return false;
-    const opt = [...sel.options].find(o => o.value === value);
-    if (!opt || !opt.textContent.includes('ภายนอก')) return false;
-    // เป็น select2 — ผ่าน jQuery ถ้ามี เพื่อให้ตัว dropdown และ handler ของหน้าเว็บอัปเดตเหมือนคนเลือกเอง
-    if (window.jQuery) window.jQuery(sel).val(value).trigger('change');
-    else { sel.value = value; sel.dispatchEvent(new Event('change', { bubbles: true })); }
+    const opt = [...sel.options].find(o => value !== undefined ? o.value === value : o.textContent.trim() === text);
+    if (!opt) return false;
+    if (window.jQuery) window.jQuery(sel).val(opt.value).trigger('change');
+    else { sel.value = opt.value; sel.dispatchEvent(new Event('change', { bubbles: true })); }
     return true;
   }
 
+  // หมวดหนังสือสำหรับส่งตรวจปัสสาวะ = "หนังสือส่งภายนอก" ตัวแรกถัดจาก "หนังสือส่งภายใน" ใน dropdown
+  // ชื่อซ้ำกันหลายรายการ จึงต้องอ้างด้วยรหัส (ค่าที่หน่วยตั้งเอง ถ้ารายการเปลี่ยนจะไม่เจอ ให้เลือกเองแทน)
+  const SARABAN_BOOKGROUP_EXTERNAL = '0043';
+
+  // ช่องที่สถานีกำหนดให้กรอกสำหรับส่งตรวจปัสสาวะ — นอกเหนือจากนี้ปล่อยว่าง/ใช้ค่าที่ระบบเติมให้
+  // (จาก, ลงวันที่, เลขที่เอกสาร ระบบเติมเอง / รายละเอียด อ้างถึง สิ่งที่ส่งมาด้วย ฯลฯ เว้นว่าง)
   async function fillSarabanUrine(data) {
     if (!document.getElementById('adddocform')) {
-      alert('ยังไม่เจอฟอร์มสร้างหนังสือ — เปิดเมนู ลงทะเบียนรับส่ง แล้วเข้าหน้าสร้างหนังสือก่อน แล้วค่อยกดปุ่มนี้');
+      alert('ยังไม่เจอฟอร์มสร้างหนังสือ — เปิดเมนู ลงทะเบียนรับส่ง → สร้าง/หนังสือส่งภายใน ก่อน แล้วค่อยกดปุ่มนี้');
       return;
     }
-    // เลือกหมวดหนังสือก่อน แล้วรอให้หน้าเว็บจัดการ (บางกรณีเปลี่ยนหมวดแล้วฟอร์มรีเซ็ต) ค่อยกรอกข้อความ
-    const bookGroupOk = selectBookGroup(SARABAN_BOOKGROUP_EXTERNAL);
-    if (!bookGroupOk) {
+    const sel = document.getElementById('selbookgroup');
+    const bookGroupOpt = sel && [...sel.options].find(o => o.value === SARABAN_BOOKGROUP_EXTERNAL);
+    if (!bookGroupOpt || !bookGroupOpt.textContent.includes('ภายนอก')) {
       alert('หาหมวด "หนังสือส่งภายนอก" ในรายการไม่เจอ — เลือกหมวดหนังสือเองก่อน แล้วกดปุ่มนี้อีกครั้ง');
       return;
     }
+    // ตั้ง dropdown ก่อนแล้วรอให้หน้าเว็บจัดการ ค่อยกรอกข้อความ (กันกรณีเปลี่ยน dropdown แล้วฟอร์มรีเซ็ต)
+    selectOption('selbookgroup', { value: SARABAN_BOOKGROUP_EXTERNAL });
+    selectOption('selpriority', { text: 'ปกติ' });
+    selectOption('selseclev', { text: 'ปกติ' });
+    selectOption('selreceivedoc', { text: 'รับไปดำเนินการ' });
+    selectOption('selintaction', { text: 'ปกติ' });
     await new Promise(r => setTimeout(r, 800));
 
-    const fromEl = document.getElementById('txtfrom');
-    if (fromEl && !fromEl.value.trim()) setVal('txtfrom', data.from);
     setVal('txtto', data.to);
     setVal('txtwsubject', data.subject);
-    setVal('txtwdsc', data.detail);
-    alert('เลือกหมวดหนังสือส่งภายนอก และกรอก จาก/ถึง/เรื่อง/รายละเอียด ให้แล้ว\n\nตรวจสอบทุกช่อง แล้วกด "สร้าง" เองนะครับ');
+    alert('กรอก ถึง/เรื่อง และตั้งหมวดหนังสือส่งภายนอก, ชั้นความเร็ว/ความลับ/การลงนาม=ปกติ, วิธีรับ-ส่ง=รับไปดำเนินการ ให้แล้ว\n\nตรวจสอบทุกช่อง แล้วกด "สร้าง" เองนะครับ');
   }
 
   async function handleClick() {

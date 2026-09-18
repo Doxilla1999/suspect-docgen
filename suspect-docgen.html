@@ -495,7 +495,7 @@
 
         <p class="field-group-label" style="margin-top:16px">ออกเลขที่หนังสือใน e-Saraban</p>
         <button type="button" class="btn btn-primary btn-sm" id="copySarabanBtn">คัดลอกข้อมูล + เปิด e-Saraban</button>
-        <p class="note">กดแล้วจะเปิดเว็บ saraban ในแท็บใหม่ (ล็อกอินเอง) → ระบบสารบรรณอิเล็กทรอนิกส์ → ลงทะเบียนรับส่ง → หน้าสร้างหนังสือ → กดปุ่มลอย "📋 กรอกจาก suspect-docgen" สคริปต์จะเลือกหมวด "หนังสือส่งภายนอก" และกรอก จาก/ถึง/เรื่อง/รายละเอียด ให้ ตรวจแล้วกด "สร้าง" เอง → ได้เลขแล้วกลับมาใส่ช่องด้านล่างนี้</p>
+        <p class="note">กดแล้วจะเปิดเว็บ saraban ในแท็บใหม่ (ล็อกอินเอง) → ระบบสารบรรณอิเล็กทรอนิกส์ → ลงทะเบียนรับส่ง → สร้าง/หนังสือส่งภายใน → กดปุ่มลอย "📋 กรอกจาก suspect-docgen" สคริปต์จะกรอก ถึง (ชื่อโรงพยาบาล), เรื่อง (ส่งตรวจปัสสาวะ จำนวน N ราย) และตั้ง หมวดหนังสือ=หนังสือส่งภายนอก, ชั้นความเร็ว/ความลับ/การลงนาม=ปกติ, วิธีรับ-ส่ง=รับไปดำเนินการ ช่องอื่นปล่อยว่าง ตรวจแล้วกด "สร้าง" เอง → ได้เลขแล้วกลับมาใส่ช่องด้านล่างนี้</p>
         <p class="msg" id="sarabanMsg"></p>
         <label class="f" style="margin-top:8px"><span>เลขที่หนังสือที่ได้จาก e-Saraban (เฉพาะเลขหลัง /)</span><input id="sarabanRunningNo" placeholder="เช่น 1524" inputmode="numeric"></label>
 
@@ -1868,14 +1868,12 @@ document.getElementById('copyDopaBtn').addEventListener('click', async () => {
 
 document.getElementById('copySarabanBtn').addEventListener('click', async () => {
   const msg = document.getElementById('sarabanMsg');
-  const entries = getSuspectListEntries();
-  const names = entries.map(e => e.name).filter(Boolean);
+  // ช่องใน e-Saraban ที่ต้องกรอกตามที่สถานีกำหนด: ถึง = ชื่อโรงพยาบาล, เรื่อง = ส่งตรวจปัสสาวะ จำนวน N ราย
+  // (N = จำนวนรายชื่อในป็อบอัพนี้) ช่องอื่นปล่อยว่าง/ใช้ค่าเริ่มต้นของระบบ
   const payload = {
     source: 'suspect-docgen-saraban-urine',
-    from: v('stationName'),
-    to: 'ผู้อำนวยการ' + v('hospitalName'),
-    subject: 'ขอส่งตรวจยืนยัน/สารเสพติดในปัสสาวะ ในขั้นที่สองด้วยหลักการทางวิทยาศาสตร์',
-    detail: `ส่งตรวจยืนยัน${v('drugType')} สารเสพติดในปัสสาวะ จำนวน ${entries.length} ราย` + (names.length ? ` (${names.join(', ')})` : '')
+    to: v('hospitalName'),
+    subject: `ส่งตรวจปัสสาวะ จำนวน ${getSuspectListEntries().length} ราย`
   };
   try {
     // คัดลอกก่อนแล้วค่อยเปิดแท็บใหม่ — ถ้าเปิดแท็บก่อน หน้านี้จะเสียโฟกัสและเขียน clipboard ไม่ได้
