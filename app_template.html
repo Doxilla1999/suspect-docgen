@@ -494,9 +494,10 @@
         <button type="button" class="btn btn-ghost btn-sm" id="addSuspectRow">+ เพิ่มรายชื่อ</button>
 
         <p class="field-group-label" style="margin-top:16px">ออกเลขที่หนังสือใน e-Saraban</p>
-        <button type="button" class="btn btn-ghost btn-sm" id="copySarabanBtn">คัดลอกข้อมูลไปกรอก e-Saraban</button>
-        <p class="note">คัดลอกแล้วเปิด saraban.police.go.th → ระบบสารบรรณอิเล็กทรอนิกส์ → ลงทะเบียนรับส่ง → หน้าสร้างหนังสือ → กดปุ่มลอย "📋 กรอกจาก suspect-docgen" สคริปต์จะเลือกหมวด "หนังสือส่งภายนอก" และกรอก จาก/ถึง/เรื่อง/รายละเอียด ให้ (ไม่แตะเลขที่เอกสาร วันที่ และไม่กดสร้างให้) พอได้เลขแล้วเอามาใส่ช่อง "เลขที่หนังสือ (เลขที่ออก)" ในข้อมูลคดี</p>
+        <button type="button" class="btn btn-primary btn-sm" id="copySarabanBtn">คัดลอกข้อมูล + เปิด e-Saraban</button>
+        <p class="note">กดแล้วจะเปิดเว็บ saraban ในแท็บใหม่ (ล็อกอินเอง) → ระบบสารบรรณอิเล็กทรอนิกส์ → ลงทะเบียนรับส่ง → หน้าสร้างหนังสือ → กดปุ่มลอย "📋 กรอกจาก suspect-docgen" สคริปต์จะเลือกหมวด "หนังสือส่งภายนอก" และกรอก จาก/ถึง/เรื่อง/รายละเอียด ให้ ตรวจแล้วกด "สร้าง" เอง → ได้เลขแล้วกลับมาใส่ช่องด้านล่างนี้</p>
         <p class="msg" id="sarabanMsg"></p>
+        <label class="f" style="margin-top:8px"><span>เลขที่หนังสือที่ได้จาก e-Saraban (เฉพาะเลขหลัง /)</span><input id="sarabanRunningNo" placeholder="เช่น 1524" inputmode="numeric"></label>
 
         <button type="button" class="btn btn-primary modal-done" data-close-modal>เสร็จแล้ว</button>
       </div>
@@ -699,6 +700,8 @@ function openModal(id) {
     const name = `${v('firstName')} ${v('lastName')}`.trim();
     tag.textContent = 'สำหรับ: ' + (name || 'ยังไม่กรอกชื่อ (กรอกชื่อก่อนเพื่อกันสับสน)');
   }
+  // เปิดป็อบอัพส่งตรวจปัสสาวะทางไหนก็ตาม (ติ๊ก/ปุ่มรายละเอียด/โหลดเคส) ให้เลขที่หนังสือในป็อบอัพตรงกับค่าจริงเสมอ
+  if (id === 'modalUrineReferral') document.getElementById('sarabanRunningNo').value = v('docRunningNo');
 }
 function closeModal(overlayEl) {
   overlayEl.classList.remove('show');
@@ -1875,12 +1878,23 @@ document.getElementById('copySarabanBtn').addEventListener('click', async () => 
     detail: `ส่งตรวจยืนยัน${v('drugType')} สารเสพติดในปัสสาวะ จำนวน ${entries.length} ราย` + (names.length ? ` (${names.join(', ')})` : '')
   };
   try {
+    // คัดลอกก่อนแล้วค่อยเปิดแท็บใหม่ — ถ้าเปิดแท็บก่อน หน้านี้จะเสียโฟกัสและเขียน clipboard ไม่ได้
     await navigator.clipboard.writeText(JSON.stringify(payload));
-    msg.textContent = 'คัดลอกแล้ว ไปกดปุ่มลอยที่หน้า "สร้าง/หนังสือส่งภายใน" ใน e-Saraban ได้เลย';
+    window.open('https://saraban.police.go.th/rtpmenu/default.asp', '_blank');
+    msg.textContent = 'คัดลอกแล้ว เปิด e-Saraban ให้ในแท็บใหม่ — เข้าหน้าสร้างหนังสือแล้วกดปุ่มลอย';
   } catch (e) {
     msg.textContent = 'คัดลอกไม่สำเร็จ: ' + e.message;
   }
 });
+
+// เลขที่ที่ได้จาก e-Saraban กรอกได้ในป็อบอัพส่งตรวจปัสสาวะ แต่ค่าจริงอยู่ที่ช่อง "เลขที่หนังสือ (เลขที่ออก)"
+// ในข้อมูลคดี (ใช้กับหัวจดหมายทุกฉบับ) จึงผูกสองช่องให้ค่าตรงกันเสมอ
+(function syncSarabanRunningNo() {
+  const inModal = document.getElementById('sarabanRunningNo');
+  const master = document.getElementById('docRunningNo');
+  inModal.addEventListener('input', () => { master.value = inModal.value; });
+  master.addEventListener('input', () => { inModal.value = master.value; });
+})();
 
 function setDefaultIssueDate() {
   const now = new Date();
