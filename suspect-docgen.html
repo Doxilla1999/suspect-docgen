@@ -959,7 +959,7 @@ function urineEntryFromSnapshot(s) {
     name: `${g('title')}${g('firstName')}${g('nickname') ? 'หรือ' + g('nickname') : ''} ${g('lastName')}`.trim(),
     id: g('idNumber'), age: g('age'),
     dob: d ? `${d} ${m !== '' ? THAI_MONTHS[parseInt(m, 10)] : ''} พ.ศ. ${y}` : '',
-    address: composeAddress(g)
+    address: composeAddressShort(g)
   };
 }
 function getUrineQueuePersons() {
@@ -1479,6 +1479,17 @@ function initChargePresets() {
   });
 }
 
+// ที่อยู่แบบย่อตามที่พิมพ์ในหนังสือส่งตรวจปัสสาวะจริง: "57 ม.4 ต.ช้างข้าม อ.นายายอาม จ.จันทบุรี"
+function composeAddressShort(get = v) {
+  const parts = [];
+  if (get('addrHouseNo')) parts.push(get('addrHouseNo'));
+  if (get('addrMoo')) parts.push(`ม.${get('addrMoo')}`);
+  if (get('addrRoad')) parts.push(`ถ.${get('addrRoad')}`);
+  if (get('addrTambon')) parts.push(`ต.${get('addrTambon')}`);
+  if (get('addrAmphoe')) parts.push(`อ.${get('addrAmphoe')}`);
+  if (get('addrProvince')) parts.push(`จ.${get('addrProvince')}`);
+  return parts.join(' ');
+}
 function composeAddress(get = v) {
   const parts = [];
   if (get('addrHouseNo')) parts.push(`บ้านเลขที่ ${get('addrHouseNo')}`);
@@ -1518,7 +1529,7 @@ function addSuspectRow(data) {
     row.querySelector('.sl-id').value = v('idNumber');
     row.querySelector('.sl-age').value = v('age');
     row.querySelector('.sl-dob').value = thaiDate('dobDate');
-    row.querySelector('.sl-address').value = composeAddress();
+    row.querySelector('.sl-address').value = composeAddressShort();
   });
 }
 function getSuspectListEntries() {
@@ -1533,7 +1544,7 @@ function getSuspectListEntries() {
   if (entries.length === 0) {
     const fallbackName = `${v('firstName')} ${v('lastName')}`.trim();
     if (fallbackName) {
-      return [{ name: fallbackName, id: v('idNumber'), age: v('age'), dob: thaiDate('dobDate'), address: composeAddress() }];
+      return [{ name: fallbackName, id: v('idNumber'), age: v('age'), dob: thaiDate('dobDate'), address: composeAddressShort() }];
     }
     return [{ name: '', id: '', age: '', address: '' }];
   }
@@ -1854,12 +1865,14 @@ function fillSuspectListBlock(xmlStr, entries) {
   const templatePara = xmlStr.match(paraRe);
   if (!templatePara) return xmlStr;
   const list = entries.length ? entries : [{ name: '', id: '', age: '', address: '' }];
-  const paras = list.map((e, i) => {
+  // ย่อหน้าในฟอร์มจริงเป็นลำดับเลขอัตโนมัติของ Word (๑. ๒. ...) อยู่แล้ว ห้ามเติมเลขเอง
+  // เรียงตามฟอร์มจริง: ชื่อ อายุ เลขบัตรประจำตัวประชาชน ที่อยู่
+  const paras = list.map(e => {
     const bits = [e.name];
-    if (e.id) bits.push(`เลขบัตรประชาชน ${e.id}`);
     if (e.age) bits.push(`อายุ ${e.age} ปี`);
+    if (e.id) bits.push(`เลขบัตรประจำตัวประชาชน ${e.id}`);
     if (e.address) bits.push(`ที่อยู่ ${e.address}`);
-    const text = escapeXml(`${toThaiNumeral(i + 1)}. ${bits.join(' ')}`);
+    const text = escapeXml(bits.join(' '));
     return templatePara[0].replace('{suspect_list_block}', text);
   }).join('');
   return xmlStr.replace(paraRe, paras);
