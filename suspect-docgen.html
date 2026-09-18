@@ -1529,7 +1529,8 @@ function composeChargeText(get) {
   }
   if (get('caseBlackNo')) parts.push(`คดีหมายเลขดำที่ ${get('caseBlackNo')}`);
   if (get('caseRedNo')) parts.push(`คดีหมายเลขแดงที่ ${get('caseRedNo')}`);
-  if (get('charge')) parts.push(`ต้องหาว่ากระทำความผิดฐาน "${get('charge')}"`);
+  // มีหมายจับ/เลขคดีนำหน้า → ต่อด้วย "ต้องหาว่ากระทำความผิดฐาน ..." ให้เป็นประโยค; ไม่มี → ใส่ข้อหาตรง ๆ ตามแบบรายงานจริง
+  if (get('charge')) parts.push(parts.length ? `ต้องหาว่ากระทำความผิดฐาน "${get('charge')}"` : get('charge'));
   return parts.join(' ');
 }
 function draftChargeFromWarrant() {
@@ -1599,34 +1600,52 @@ function buildOperationReport() {
   lines.push(`   🚨ภายใต้การอำนวยการของ 🚨`);
   chain.forEach((l, i) => lines.push((i === 0 ? '👮' : '     ') + l));
   lines.push('');
-  lines.push(persons.length > 1 ? '⚠️ร่วมกันจับกุม⚠️' : '⚠️จับกุม⚠️');
-  lines.push('');
-  persons.forEach((e, i) => {
+  const personLine = (e, i) => {
     let line = `${i + 1}.${e.name} อายุ ${e.age} ปี`;
     if (e.dob) line += ` วันเดือนปีเกิด ${e.dob}`;
-    line += ` เลขบัตรประชาชน ${e.id}`;
+    line += ` เลขบัตรประจำตัวประชาชน ${e.id}`;
     if (e.address) line += ` ที่อยู่ ${e.address}`;
-    lines.push(line);
-  });
-  lines.push('');
-  lines.push('📍โดยกล่าวหาว่า');
+    return line;
+  };
+  // ไม่ให้ขึ้น "จำนวน จำนวน 4 เม็ด" ถ้าพิมพ์คำว่าจำนวนมาในช่องแล้ว
+  const evidenceLine = ev => `${evidenceEmoji(ev.desc)}${ev.desc}${ev.qty ? (/^จำนวน/.test(ev.qty) ? ' ' + ev.qty : ' จำนวน ' + ev.qty) : ''}`;
   const charges = persons.map(p => p.charge);
   const allSame = charges.every(c => c === charges[0]);
-  if (overrideCharge || persons.length <= 1 || allSame) {
-    lines.push(overrideCharge || charges[0] || '');
+  const sharedEvidence = persons.some(p => p.sharedEvidence);
+
+  if (persons.length > 1 && !overrideCharge && !allSame && !sharedEvidence) {
+    // ข้อหาต่างกัน → แยกเป็นบล็อกรายคน: ชื่อ → โดยกล่าวหาว่า → ของกลางของคนนั้น แล้วค่อยขึ้นคนถัดไป
+    lines.push('⚠️จับกุม⚠️');
+    persons.forEach((p, i) => {
+      if (i > 0) lines.push('');
+      lines.push(personLine(p, i));
+      lines.push('');
+      lines.push('📍โดยกล่าวหาว่า');
+      lines.push(p.charge || '(ยังไม่กรอกข้อหา)');
+      if (p.evidence && p.evidence.length) {
+        lines.push('');
+        lines.push('📦 พร้อมด้วยของกลาง 📦');
+        p.evidence.forEach((ev, j) => lines.push(`${j + 1}.${evidenceLine(ev)}`));
+      }
+    });
   } else {
-    // ข้อหาต่างกัน → ระบุรายคน
-    persons.forEach((p, i) => lines.push(`ผู้ต้องหาที่ ${i + 1} ${p.charge || '(ยังไม่กรอกข้อหา)'}`));
-  }
-  const evidenceLines = [];
-  persons.forEach((p, i) => (p.evidence || []).forEach(ev => {
-    const owner = persons.length > 1 && !p.sharedEvidence ? ` (ของผู้ต้องหาที่ ${i + 1})` : '';
-    evidenceLines.push(`${evidenceEmoji(ev.desc)}${ev.desc}${ev.qty ? ' จำนวน ' + ev.qty : ''}${owner}`);
-  }));
-  if (evidenceLines.length) {
+    // ข้อหาเดียวกันทุกคน (หรือคนเดียว) → รวมรายชื่อ แล้วข้อหา แล้วของกลาง
+    lines.push(persons.length > 1 ? '⚠️ร่วมกันจับกุม⚠️' : '⚠️จับกุม⚠️');
     lines.push('');
-    lines.push('📦 พร้อมด้วยของกลาง 📦');
-    evidenceLines.forEach((l, i) => lines.push(`${i + 1}.${l}`));
+    persons.forEach((p, i) => lines.push(personLine(p, i)));
+    lines.push('');
+    lines.push('📍โดยกล่าวหาว่า');
+    lines.push(overrideCharge || charges[0] || '');
+    const evidenceLines = [];
+    persons.forEach((p, i) => (p.evidence || []).forEach(ev => {
+      const owner = persons.length > 1 && !p.sharedEvidence ? ` (ของผู้ต้องหาที่ ${i + 1})` : '';
+      evidenceLines.push(evidenceLine(ev) + owner);
+    }));
+    if (evidenceLines.length) {
+      lines.push('');
+      lines.push('📦 พร้อมด้วยของกลาง 📦');
+      evidenceLines.forEach((l, i) => lines.push(`${i + 1}.${l}`));
+    }
   }
   lines.push('');
   lines.push(`นำตัวผู้ถูกจับ ส่ง พงส.${station}`);
