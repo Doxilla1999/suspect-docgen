@@ -8,6 +8,7 @@ Run generate_templates.py first, then this script:
 """
 import base64
 import os
+from datetime import datetime
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 BUILD_DIR = os.path.join(SCRIPT_DIR, "build")
@@ -34,6 +35,10 @@ def main():
 
     for token, filename in TEMPLATE_FILES.items():
         html = html.replace(token, b64_of(filename))
+
+    # ตราเวลา build (พ.ศ.) โชว์ที่หัวหน้าเว็บ ไว้เช็คว่าเบราว์เซอร์โหลดเวอร์ชันล่าสุดแล้วหรือยัง
+    now = datetime.now()
+    html = html.replace("__BUILD_STAMP__", f"{now.day:02d}/{now.month:02d}/{now.year + 543} {now:%H:%M}")
 
     if "__B64_" in html:
         raise SystemExit("Leftover __B64_ token found — a template failed to embed. Aborting.")
