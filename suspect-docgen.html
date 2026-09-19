@@ -62,6 +62,7 @@
   .officer-row { display: flex; align-items: center; gap: 8px; padding: 8px 10px; margin-bottom: 6px; border: 1px solid #33393F; border-radius: 6px; background: #12151A; font-size: 15px; }
   .officer-row .officer-row-name { flex: 1; min-width: 0; }
   .officer-row .btn, .officer-row .btn-danger-outline { width: auto; flex: none; padding: 5px 12px; margin: 0; }
+  .print-warning { margin: 10px 0 0; padding: 8px 10px; border: 1px solid rgba(226,104,93,.55); border-left: 4px solid #E2685D; border-radius: 6px; background: rgba(226,104,93,.10); color: #F3B7B0; font-size: 14px; line-height: 1.5; }
   .case-row:hover { background: #1E232A; }
   .case-row button.load { background: none; border: none; text-align: left; flex: 1; cursor: pointer; font-size: 15px; color: #E8E6E0; padding: 2px; }
   .note { font-size: 13.5px; color: #9B968D; line-height: 1.5; margin-top: 10px; }
@@ -149,7 +150,7 @@
       <h1>ระบบสร้างเอกสารผู้ต้องหา · สภ.นายายอาม</h1>
       <p>กรอกครั้งเดียว ออกเอกสารได้หลายฉบับ</p>
     </div>
-    <div class="credit-top">BY บังโต KN60 <span title="เวอร์ชันของไฟล์นี้ — ถ้าไม่ตรงกับที่แจ้งไว้ ให้กด Ctrl+F5 โหลดหน้าใหม่" style="opacity:.6;font-size:11px;font-weight:400;margin-left:6px">build 19/09/2569 16:42</span></div>
+    <div class="credit-top">BY บังโต KN60 <span title="เวอร์ชันของไฟล์นี้ — ถ้าไม่ตรงกับที่แจ้งไว้ ให้กด Ctrl+F5 โหลดหน้าใหม่" style="opacity:.6;font-size:11px;font-weight:400;margin-left:6px">build 19/09/2569 16:49</span></div>
     <button type="button" class="header-logout" id="logoutBtn">ออกจากระบบ</button>
   </header>
 
@@ -583,6 +584,7 @@
         <div id="checklistOut"></div>
         <button class="btn btn-primary" id="genBtn" style="margin-top:10px">สร้างและดาวน์โหลดเอกสาร</button>
         <p class="msg" id="genMsg"></p>
+        <p class="print-warning">⚠️ <b>ตรวจเอกสารทุกฉบับใน Word ก่อนสั่งพิมพ์ทุกครั้ง</b> — ระบบช่วยกรอกให้ แต่ข้อมูลอาจผิดหรือตกหล่นได้ ผู้สั่งพิมพ์ต้องตรวจสอบเองก่อนใช้งานจริง</p>
       </div>
       <div class="panel" data-module="docgen" id="queuePanel" style="display:none">
         <h2>คิวสร้างเอกสาร (จับหลายคน)</h2>
@@ -594,6 +596,7 @@
         <button type="button" class="btn btn-ghost" id="addToQueueBtn" style="margin-top:8px">+ เพิ่ม/อัปเดตในคิว</button>
         <button type="button" class="btn btn-primary" id="genQueueBtn" style="margin-top:8px">สร้างเอกสารทั้งหมดในคิว</button>
         <p class="msg" id="queueMsg"></p>
+        <p class="print-warning">⚠️ <b>ตรวจเอกสารทุกฉบับใน Word ก่อนสั่งพิมพ์ทุกครั้ง</b> — ระบบช่วยกรอกให้ แต่ข้อมูลอาจผิดหรือตกหล่นได้ ผู้สั่งพิมพ์ต้องตรวจสอบเองก่อนใช้งานจริง</p>
       </div>
       <div class="panel" data-module="dopa" id="arrestLogPanel">
         <h2>บันทึกประวัติการจับกุม (Google Sheet)</h2>
@@ -1116,9 +1119,10 @@ async function onGenerateAll() {
     }
     await sleep(400);
   }
-  msg.textContent = failed.length ? `สร้างแล้ว ${done} ฉบับ, ผิดพลาด: ${failed.join(', ')}` : `สร้างเอกสารแล้ว ${done} ฉบับ`;
+  msg.textContent = (failed.length ? `สร้างแล้ว ${done} ฉบับ, ผิดพลาด: ${failed.join(', ')}` : `สร้างเอกสารแล้ว ${done} ฉบับ`) + PRINT_CHECK_REMINDER;
   await saveCurrentCase();
 }
+const PRINT_CHECK_REMINDER = ' — ⚠️ เปิดตรวจทุกฉบับใน Word ก่อนสั่งพิมพ์';
 
 let docQueue = [];
 let editingQueueIndex = null;
@@ -1340,7 +1344,7 @@ document.getElementById('genQueueBtn').addEventListener('click', async () => {
   renderQueue();
   clearForm();
   renderPersonTags();
-  msg.textContent = `สร้างเอกสารให้ครบ ${doneCount} คนแล้ว` + (urinePersons.length ? ` + หนังสือส่งตรวจปัสสาวะ 1 ฉบับ (${urinePersons.length} ราย)` : '');
+  msg.textContent = `สร้างเอกสารให้ครบ ${doneCount} คนแล้ว` + (urinePersons.length ? ` + หนังสือส่งตรวจปัสสาวะ 1 ฉบับ (${urinePersons.length} ราย)` : '') + PRINT_CHECK_REMINDER;
 });
 
 const DATE_PART_IDS = DATE_FIELDS.flatMap(p => [p + '_day', p + '_month', p + '_year']);
