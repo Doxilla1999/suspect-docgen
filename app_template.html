@@ -324,6 +324,9 @@
         <button type="button" class="modal-close" data-close-modal>&times;</button>
         <h2>รูปพรรณ + ภาพประกอบ (ประวัติบุคคล 4 ด้าน)</h2>
         <p class="modal-person-tag"></p>
+        <label class="f"><span>ข้อหา (ตามที่หัวหน้าชุดแจ้ง) — ช่องเดียวกับในพาแนล "ข้อหา / หมายจับ / ของกลาง" พิมพ์ที่ไหนก็ได้</span>
+          <textarea id="chargeProfile" placeholder="เช่น เสพและครอบครองยาเสพติดให้โทษประเภท 1 (เมทแอมเฟตามีน) โดยผิดกฎหมาย"></textarea>
+        </label>
         <div class="grid3">
           <label class="f"><span>ความสูง (ซม.)</span><input id="height"></label>
           <label class="f"><span>น้ำหนัก (กก.)</span><input id="weight"></label>
@@ -740,6 +743,7 @@ function openModal(id) {
   el.classList.add('show');
   renderModalPersonTag(el);
   if (id === 'modalUrineReferral') renderUrineQueuePreview();
+  if (id === 'modalProfilePhotos') syncChargeMirror();
   // เปิด ปยส.115 → ถ้ายังไม่ได้กรอกผลการตรวจค้น ให้ดึงของกลางที่เป็นยาเสพติดของคนนี้มาใส่ให้
   if (id === 'modalDrugTest115') document.getElementById('syncSeizedMsg').textContent = syncSeizedFromEvidence(false);
 }
@@ -768,6 +772,7 @@ function renderPersonTags() {
   document.querySelectorAll('.modal-overlay.show').forEach(renderModalPersonTag);
   renderModalPersonTag(document.getElementById('chargePanel'));
   renderUrineQueuePreview();
+  syncChargeMirror();
   const prevBtn = document.getElementById('copyChargeFromPrevBtn');
   const hasPrev = personMode === 'batch' && docQueue.length > 0 && (editingQueueIndex === null || editingQueueIndex > 0);
   prevBtn.style.display = hasPrev ? '' : 'none';
@@ -780,6 +785,7 @@ document.getElementById('copyChargeFromPrevBtn').addEventListener('click', () =>
   if (!src) return;
   CHARGE_FIELD_IDS.forEach(id => { const el = document.getElementById(id); if (el && src.snapshot[id] !== undefined) el.value = src.snapshot[id]; });
   resetEvidenceRows(src.snapshot.evidence);
+  syncChargeMirror();
   document.getElementById('queueMsg').textContent = `คัดลอกข้อหา/หมายจับ/ของกลางจาก "${src.name}" มาให้แล้ว (เลขที่หนังสือใบปะหน้าศาลไม่คัดลอก)`;
 });
 ['firstName', 'lastName'].forEach(id => document.getElementById(id).addEventListener('input', () => renderModalPersonTag(document.getElementById('chargePanel'))));
@@ -1372,6 +1378,7 @@ function clearPersonOnlyFields() {
     el.value = (id === 'nationality' ? 'ไทย' : id === 'ethnicity' ? 'ไทย' : id === 'religion' ? 'พุทธ' : id === 'addrProvince' ? 'จันทบุรี' : '');
   });
   resetEvidenceRows([]);
+  syncChargeMirror();
 }
 
 function collectFormSnapshot() {
@@ -1403,6 +1410,7 @@ function applyFormSnapshot(snap) {
   resetEvidenceRows(snap.evidence);
   updateConditionalVisibility();
   renderChecklist();
+  syncChargeMirror();
 }
 // เจ้าหน้าที่ผู้จับกุมที่เลือกตอนเข้าระบบ คงอยู่ทั้งรอบการใช้งาน — ปุ่ม "ใหม่"/สร้างทั้งคิว ต้องไม่ล้าง (เคยล้างแล้วชื่อใน ปยส.115 หาย)
 const OFFICER_FIELD_IDS = ['officer1Rank', 'officer1Name', 'officer1Position', 'officer1SignerPosition', 'officer1CardType', 'cardNoPpst', 'cardNoGov'];
@@ -1417,6 +1425,7 @@ function clearForm() {
   setDefaultIssueDate();
   updateConditionalVisibility();
   renderChecklist();
+  syncChargeMirror();
 }
 
 let casesIndex = [];
@@ -2210,6 +2219,14 @@ document.getElementById('logoutBtn').addEventListener('click', () => { if (fireb
 (function syncDrugTypeFields() {
   const a = document.getElementById('drugType');
   const b = document.getElementById('drugTypeUrine');
+  a.addEventListener('input', () => { b.value = a.value; });
+  b.addEventListener('input', () => { a.value = b.value; });
+})();
+// ข้อหา: ช่องหลักอยู่ในพาแนลข้อหา/หมายจับ/ของกลาง มีสำเนาในป็อบอัพประวัติ 4 ด้าน (ค่าจริงเก็บที่ #charge เท่านั้น)
+function syncChargeMirror() { document.getElementById('chargeProfile').value = v('charge'); }
+(function syncChargeFields() {
+  const a = document.getElementById('charge');
+  const b = document.getElementById('chargeProfile');
   a.addEventListener('input', () => { b.value = a.value; });
   b.addEventListener('input', () => { a.value = b.value; });
 })();
