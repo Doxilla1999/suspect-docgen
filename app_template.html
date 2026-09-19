@@ -59,6 +59,9 @@
   .urine-pick { display: flex; align-items: center; gap: 10px; padding: 8px 10px; margin-bottom: 6px; border: 1px solid #33393F; border-radius: 6px; background: #12151A; font-size: 15px; color: #9AA0A6; cursor: pointer; }
   .urine-pick input[type="checkbox"] { width: 18px; height: 18px; margin: 0; }
   .urine-pick.on { color: #E8E6E0; border-color: #17A2B8; background: rgba(23,162,184,.12); }
+  .officer-row { display: flex; align-items: center; gap: 8px; padding: 8px 10px; margin-bottom: 6px; border: 1px solid #33393F; border-radius: 6px; background: #12151A; font-size: 15px; }
+  .officer-row .officer-row-name { flex: 1; min-width: 0; }
+  .officer-row .btn, .officer-row .btn-danger-outline { width: auto; flex: none; padding: 5px 12px; margin: 0; }
   .case-row:hover { background: #1E232A; }
   .case-row button.load { background: none; border: none; text-align: left; flex: 1; cursor: pointer; font-size: 15px; color: #E8E6E0; padding: 2px; }
   .note { font-size: 13.5px; color: #9B968D; line-height: 1.5; margin-top: 10px; }
@@ -232,6 +235,8 @@
             <button type="button" class="btn-danger-outline" id="deleteOfficerPresetBtn" style="display:none">ลบคนนี้ออกจากรายการ</button>
           </div>
           <p class="msg" id="officerPresetMsg" style="margin:6px 0 0"></p>
+          <p class="field-group-label" style="margin-top:12px">รายชื่อในชุดของคุณ</p>
+          <div id="officerRosterList"></div>
         </div>
         <p class="msg" id="officersConfirmMsg"></p>
         <button type="button" class="btn btn-primary modal-done" id="confirmOfficersBtn">ยืนยัน / เริ่มใช้งาน</button>
@@ -1967,6 +1972,34 @@ function renderOfficerRosterSelect(selectedIndex) {
     officerRoster.map((o, i) => `<option value="${i}">${escapeXml(officerLabel(o))}</option>`).join('');
   sel.value = selectedIndex === undefined || selectedIndex === null ? '' : String(selectedIndex);
   document.getElementById('deleteOfficerPresetBtn').style.display = sel.value === '' ? 'none' : '';
+  renderOfficerRosterList();
+}
+// รายการชื่อทั้งหมดพร้อมปุ่ม ใช้/ลบ ทุกแถว (ไม่ต้องเลือกจาก dropdown ก่อนถึงจะลบได้)
+function renderOfficerRosterList() {
+  const out = document.getElementById('officerRosterList');
+  if (!officerRoster.length) { out.innerHTML = '<p class="note" style="margin-top:0">ยังไม่มีใครในรายการ — กรอกด้านบนแล้วกด "บันทึกคนนี้ไว้ในรายการ"</p>'; return; }
+  out.innerHTML = officerRoster.map((o, i) => `
+    <div class="officer-row">
+      <div class="officer-row-name">${escapeXml(officerLabel(o))}</div>
+      <button type="button" class="btn btn-ghost btn-sm" data-ouse="${i}">ใช้</button>
+      <button type="button" class="btn-danger-outline" data-odel="${i}">ลบ</button>
+    </div>`).join('');
+  out.querySelectorAll('[data-ouse]').forEach(b => b.addEventListener('click', () => {
+    const i = parseInt(b.dataset.ouse, 10);
+    fillOfficerFields(officerRoster[i]);
+    syncSignerFromOfficer();
+    renderOfficerRosterSelect(i);
+    document.getElementById('officerPresetMsg').textContent = `ใช้ "${officerLabel(officerRoster[i])}" — กด "ยืนยัน / เริ่มใช้งาน" ด้านล่าง`;
+  }));
+  out.querySelectorAll('[data-odel]').forEach(b => b.addEventListener('click', () => deleteOfficerPreset(parseInt(b.dataset.odel, 10))));
+}
+function deleteOfficerPreset(i) {
+  const o = officerRoster[i];
+  if (!o || !confirm(`ลบ "${officerLabel(o)}" ออกจากรายการ?`)) return;
+  officerRoster.splice(i, 1);
+  saveOfficerRoster();
+  renderOfficerRosterSelect();
+  document.getElementById('officerPresetMsg').textContent = `ลบ "${officerLabel(o)}" ออกจากรายการแล้ว (ช่องด้านบนไม่เปลี่ยน ถ้ากำลังใช้คนนี้อยู่ยังใช้ต่อได้)`;
 }
 function officerFromFields() {
   const cardType = v('officer1CardType');
@@ -2015,13 +2048,7 @@ function initOfficerPresets() {
     msg.textContent = `บันทึก "${officerLabel(o)}" ไว้ในรายการของชุดคุณแล้ว (${officerRoster.length} คน)`;
   });
   document.getElementById('deleteOfficerPresetBtn').addEventListener('click', () => {
-    if (sel.value === '') return;
-    const o = officerRoster[parseInt(sel.value, 10)];
-    if (!confirm(`ลบ "${officerLabel(o)}" ออกจากรายการ?`)) return;
-    officerRoster.splice(parseInt(sel.value, 10), 1);
-    saveOfficerRoster();
-    renderOfficerRosterSelect();
-    msg.textContent = `ลบออกจากรายการแล้ว (ช่องด้านบนยังเป็นคนนี้อยู่ ใช้ต่อได้ แค่ไม่อยู่ในรายการ)`;
+    if (sel.value !== '') deleteOfficerPreset(parseInt(sel.value, 10));
   });
 }
 
