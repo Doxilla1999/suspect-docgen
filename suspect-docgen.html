@@ -149,7 +149,7 @@
       <h1>ระบบสร้างเอกสารผู้ต้องหา · สภ.นายายอาม</h1>
       <p>กรอกครั้งเดียว ออกเอกสารได้หลายฉบับ</p>
     </div>
-    <div class="credit-top">BY บังโต KN60 <span title="เวอร์ชันของไฟล์นี้ — ถ้าไม่ตรงกับที่แจ้งไว้ ให้กด Ctrl+F5 โหลดหน้าใหม่" style="opacity:.6;font-size:11px;font-weight:400;margin-left:6px">build 19/09/2569 09:17</span></div>
+    <div class="credit-top">BY บังโต KN60 <span title="เวอร์ชันของไฟล์นี้ — ถ้าไม่ตรงกับที่แจ้งไว้ ให้กด Ctrl+F5 โหลดหน้าใหม่" style="opacity:.6;font-size:11px;font-weight:400;margin-left:6px">build 19/09/2569 16:31</span></div>
     <button type="button" class="header-logout" id="logoutBtn">ออกจากระบบ</button>
   </header>
 
@@ -364,10 +364,7 @@
         <p class="modal-person-tag" id="chargePersonTag"></p>
         <p class="note" style="margin-top:0">ข้อมูลในส่วนนี้เป็น<b>ของแต่ละคน</b> (ข้อหา หมายจับ ของกลาง) — โหมดหลายคนเลือกชื่อจาก dropdown ด้านบนก่อนกรอก ระบบจะใช้ข้อมูลตรงนี้ทำใบปะหน้าส่งศาล ปยส.115 (ของกลางที่ยึด) และข้อความรายงานไลน์ของคนนั้น ๆ</p>
         <button type="button" class="btn btn-ghost btn-sm" id="copyChargeFromPrevBtn" style="display:none;margin-bottom:10px">คัดลอกข้อหา/หมายจับ/ของกลางจากคนก่อนหน้า</button>
-        <label class="f"><span>ประเภทบุคคล (เลือกเพื่อช่วยร่างข้อหา)</span>
-          <select id="chargePreset"><option value="">— เลือกเพื่อร่างให้ —</option></select>
-        </label>
-        <label class="f"><span>ข้อหา</span><textarea id="charge" placeholder="เช่น เสพและครอบครองยาเสพติดให้โทษประเภท 1 (เมทแอมเฟตามีน) โดยผิดกฎหมาย"></textarea></label>
+        <label class="f"><span>ข้อหา (ตามที่หัวหน้าชุดแจ้ง)</span><textarea id="charge" placeholder="เช่น เสพและครอบครองยาเสพติดให้โทษประเภท 1 (เมทแอมเฟตามีน) โดยผิดกฎหมาย"></textarea></label>
         <div class="grid3">
           <label class="f"><span>คดีหมายเลขดำ</span><input id="caseBlackNo"></label>
           <label class="f"><span>คดีหมายเลขแดง</span><input id="caseRedNo"></label>
@@ -824,14 +821,6 @@ document.querySelectorAll('.doc-edit-btn').forEach(btn => btn.addEventListener('
 const STATION_FIELDS = ['stationName','stationDistrict','docNumberPrefix','province','postalCode','officerAffiliation','compilerName','signerRank','signerName','signerPosition'];
 const THAI_MONTHS = ["มกราคม","กุมภาพันธ์","มีนาคม","เมษายน","พฤษภาคม","มิถุนายน","กรกฎาคม","สิงหาคม","กันยายน","ตุลาคม","พฤศจิกายน","ธันวาคม"];
 const THAI_PROVINCES = ["กระบี่","กรุงเทพมหานคร","กาญจนบุรี","กาฬสินธุ์","กำแพงเพชร","ขอนแก่น","จันทบุรี","ฉะเชิงเทรา","ชลบุรี","ชัยนาท","ชัยภูมิ","ชุมพร","เชียงราย","เชียงใหม่","ตรัง","ตราด","ตาก","นครนายก","นครปฐม","นครพนม","นครราชสีมา","นครศรีธรรมราช","นครสวรรค์","นนทบุรี","นราธิวาส","น่าน","บึงกาฬ","บุรีรัมย์","ปทุมธานี","ประจวบคีรีขันธ์","ปราจีนบุรี","ปัตตานี","พระนครศรีอยุธยา","พะเยา","พังงา","พัทลุง","พิจิตร","พิษณุโลก","เพชรบุรี","เพชรบูรณ์","แพร่","ภูเก็ต","มหาสารคาม","มุกดาหาร","แม่ฮ่องสอน","ยโสธร","ยะลา","ร้อยเอ็ด","ระนอง","ระยอง","ราชบุรี","ลพบุรี","ลำปาง","ลำพูน","เลย","ศรีสะเกษ","สกลนคร","สงขลา","สตูล","สมุทรปราการ","สมุทรสงคราม","สมุทรสาคร","สระแก้ว","สระบุรี","สิงห์บุรี","สุโขทัย","สุพรรณบุรี","สุราษฎร์ธานี","สุรินทร์","หนองคาย","หนองบัวลำภู","อ่างทอง","อำนาจเจริญ","อุดรธานี","อุตรดิตถ์","อุทัยธานี","อุบลราชธานี"];
-const CHARGE_PRESETS = [
-  { label: 'เสพยาเสพติด', text: 'เสพและครอบครองยาเสพติดให้โทษในประเภท 1 (เมทแอมเฟตามีน) โดยผิดกฎหมาย' },
-  { label: 'จำหน่ายยาเสพติด', text: 'จำหน่ายโดยไม่ได้รับอนุญาตซึ่งยาเสพติดให้โทษในประเภท 1 (เมทแอมเฟตามีน) อันเป็นการกระทำเพื่อการค้าหรือก่อให้เกิดการแพร่กระจายในกลุ่มประชาชน โดยผิดกฎหมาย' },
-  { label: 'ผู้ถูกออกหมายจับ', text: 'ตามหมายจับของศาล' },
-  { label: 'เล่นการพนัน', text: 'เล่นการพนันโดยไม่ได้รับอนุญาต' },
-  { label: 'เล่นพนันออนไลน์', text: 'เล่นการพนันออนไลน์โดยไม่ได้รับอนุญาต' }
-];
-
 function v(id) { const el = document.getElementById(id); return el ? (el.value || '').trim() : ''; }
 const DATE_FIELDS = ['dobDate', 'warrantDate', 'arrestDate', 'issueDate', 'testDate', 'appointmentDate', 'dopaDate'];
 function initDateSelects() {
@@ -1533,20 +1522,6 @@ function initProvinceSelects() {
   });
   document.getElementById('addrProvince').value = 'จันทบุรี';
 }
-function initChargePresets() {
-  const sel = document.getElementById('chargePreset');
-  CHARGE_PRESETS.forEach((c, i) => {
-    const opt = document.createElement('option');
-    opt.value = String(i); opt.textContent = c.label;
-    sel.appendChild(opt);
-  });
-  sel.addEventListener('change', () => {
-    if (sel.value === '') return;
-    document.getElementById('charge').value = CHARGE_PRESETS[parseInt(sel.value, 10)].text;
-    sel.value = '';
-  });
-}
-
 // ที่อยู่แบบย่อตามที่พิมพ์ในหนังสือส่งตรวจปัสสาวะจริง: "57 ม.4 ต.ช้างข้าม อ.นายายอาม จ.จันทบุรี"
 function composeAddressShort(get = v) {
   const parts = [];
@@ -2243,7 +2218,6 @@ initOfficerPresets();
 initConditionalFields();
 initProvinceSelects();
 initArrestTambonSelect();
-initChargePresets();
 document.getElementById('arrestSaveBtn').addEventListener('click', saveArrestRecord);
 { const savedPin = localStorage.getItem('arrestPin'); if (savedPin) document.getElementById('arrestPin').value = savedPin; }
 document.getElementById('addSuspectRow').addEventListener('click', () => addSuspectRow());
