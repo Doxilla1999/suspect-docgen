@@ -150,7 +150,7 @@
       <h1>ระบบสร้างเอกสารผู้ต้องหา · สภ.นายายอาม</h1>
       <p>กรอกครั้งเดียว ออกเอกสารได้หลายฉบับ</p>
     </div>
-    <div class="credit-top">BY บังโต KN60 <span title="เวอร์ชันของไฟล์นี้ — ถ้าไม่ตรงกับที่แจ้งไว้ ให้กด Ctrl+F5 โหลดหน้าใหม่" style="opacity:.6;font-size:11px;font-weight:400;margin-left:6px">build 20/09/2569 11:45</span></div>
+    <div class="credit-top">BY บังโต KN60 <span title="เวอร์ชันของไฟล์นี้ — ถ้าไม่ตรงกับที่แจ้งไว้ ให้กด Ctrl+F5 โหลดหน้าใหม่" style="opacity:.6;font-size:11px;font-weight:400;margin-left:6px">build 20/09/2569 12:48</span></div>
     <button type="button" class="header-logout" id="logoutBtn">ออกจากระบบ</button>
   </header>
 
@@ -2426,21 +2426,28 @@ function parseWarrantText(raw) {
   // หมายจับเลขที่ = "ที่ 232/2569" ที่ไม่ใช่ส่วนของ "คดีหมายเลข…ที่" หรือ "เลขที่"
   const wno = t.match(/(?<![ก-๙])ที่\s*:?\s*(\d+)\s*\/\s*(\d{4})/);
   if (wno) out.warrantNo = keepStyle(`${wno[1]}/${wno[2]}`);
-  const d = t.match(/วันที่\s*(\d{1,2})\s*เดือน\s*([ก-๙]+)\s*(?:พุทธศักราช|พ\.ศ\.)?\s*(\d{4})/);
+  // วันที่: "วันที่ 23 เดือน มิถุนายน พุทธศักราช 2569" (หน้าหมาย) หรือ "ลงวันที่ 23 มิถุนายน 2569" / "ลงวันที่ 23 มิ.ย. 2569" (แบบพิมพ์เอง)
+  const d = t.match(/(?:ลงวันที่|วันที่)\s*(\d{1,2})\s*(?:เดือน)?\s*([ก-๙.]+?)\s*(?:พุทธศักราช|พ\.ศ\.)?\s*(\d{4})/);
   if (d) {
-    const mi = THAI_MONTHS.indexOf(d[2]);
+    let mi = THAI_MONTHS.indexOf(d[2]);
+    if (mi < 0) mi = THAI_MONTHS_SHORT.indexOf(d[2]);
     if (mi >= 0) { out.warrantDate_day = d[1]; out.warrantDate_month = String(mi); out.warrantDate_year = d[3]; }
   }
-  const ch = t.match(/ต้องหาว่ากระทำความผิดฐาน\s*([\s\S]+?)\s*(?=กรณีมีหลักฐาน|เพราะฉะนั้น|\n\s*\n|$)/);
+  // ข้อหา: หลัง "ต้องหาว่ากระทำความผิดฐาน" (หน้าหมาย) หรือ "ในความผิดฐาน" (แบบพิมพ์เอง) ตัดเครื่องหมายคำพูดหัว-ท้ายทิ้ง
+  const ch = t.match(/(?:ต้องหาว่ากระทำความผิดฐาน|ในความผิดฐาน)\s*([\s\S]+?)\s*(?=กรณีมีหลักฐาน|เพราะฉะนั้น|สิ่งที่ส่งมาด้วย|\n\s*\n|$)/);
   // ข้อความในหมายตัดบรรทัดกลางคำได้ (ไทยไม่เว้นวรรคระหว่างคำ) → ตัวอักษรไทยชนตัวอักษรไทยข้ามบรรทัดให้ต่อกันเลย ที่เหลือแทนด้วยช่องว่าง
-  if (ch) out.charge = keepStyle(ch[1].replace(/([ก-๙])\s*\n\s*([ก-๙])/g, '$1$2').replace(/\s*\n\s*/g, ' ').replace(/\s{2,}/g, ' ').trim());
+  if (ch) {
+    const charge = ch[1].replace(/([ก-๙])\s*\n\s*([ก-๙])/g, '$1$2').replace(/\s*\n\s*/g, ' ').replace(/\s{2,}/g, ' ')
+      .replace(/^[“"'\s]+|[”"'\s]+$/g, '').trim();
+    if (charge) out.charge = keepStyle(charge);
+  }
   return out;
 }
 document.getElementById('warrantPasteBtn').addEventListener('click', () => {
   const msg = document.getElementById('warrantPasteMsg');
   const found = parseWarrantText(document.getElementById('warrantPasteText').value);
   const keys = Object.keys(found);
-  if (!keys.length) { msg.textContent = 'ไม่พบข้อมูลที่จดจำได้ — ต้องมีคำว่า ศาล…, คดีหมายเลขดำที่, ที่ …/…, วันที่ … เดือน … พุทธศักราช …, ต้องหาว่ากระทำความผิดฐาน'; return; }
+  if (!keys.length) { msg.textContent = 'ไม่พบข้อมูลที่จดจำได้ — ต้องมีคำว่า ศาล…, ที่ …/…, คดีหมายเลขดำที่, ลงวันที่ … (วัน เดือน ปี), ในความผิดฐาน/ต้องหาว่ากระทำความผิดฐาน'; return; }
   keys.forEach(k => { const el = document.getElementById(k); if (el) el.value = found[k]; });
   if (found.charge) syncChargeMirror();
   const labels = { courtName: 'ศาล', warrantNo: 'หมายจับเลขที่', caseBlackNo: 'เลขดำ', caseRedNo: 'เลขแดง', warrantDate_day: 'ลงวันที่', charge: 'ข้อหา' };
