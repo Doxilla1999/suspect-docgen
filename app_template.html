@@ -189,6 +189,7 @@
             <input type="checkbox" class="doc-select" value="court_referral">
             <span class="nav-doc-icon">⚖️</span><span class="nav-doc-label">ใบปะหน้าส่งศาล</span>
           </label>
+          <button type="button" class="doc-edit-btn" data-modal="modalCourtReferral">✏ รายละเอียด</button>
         </div>
         <div class="nav-doc" style="--doc-color:#2EA359">
           <label class="nav-doc-main" title="บันทึกยินยอมตรวจโทรศัพท์ ม.80">
@@ -370,18 +371,9 @@
         <button type="button" class="btn btn-ghost btn-sm" id="copyChargeFromPrevBtn" style="display:none;margin-bottom:10px">คัดลอกข้อหา/หมายจับ/ของกลางจากคนก่อนหน้า</button>
         <label class="f"><span>ข้อหา</span><textarea id="charge" placeholder="เช่น เสพและครอบครองยาเสพติดให้โทษประเภท 1 (เมทแอมเฟตามีน) โดยผิดกฎหมาย"></textarea></label>
         <div class="grid3">
-          <label class="f"><span>คดีหมายเลขดำ</span><input id="caseBlackNo"></label>
-          <label class="f"><span>คดีหมายเลขแดง</span><input id="caseRedNo"></label>
-          <label class="f"><span>หมายจับเลขที่</span><input id="warrantNo"></label>
-          <label class="f"><span>ลงวันที่หมายจับ (พ.ศ.)</span>
-            <div class="date3"><input id="warrantDate_day" type="number" min="1" max="31" placeholder="วัน"><select id="warrantDate_month"></select><input id="warrantDate_year" type="number" placeholder="พ.ศ."></div>
-          </label>
-          <label class="f"><span>ศาล</span><input id="courtName" placeholder="ศาลจังหวัดจันทบุรี"></label>
-          <label class="f"><span>วันที่จับกุม (พ.ศ.) — ใช้ในใบปะหน้าส่งศาล</span>
-            <div class="date3"><input id="arrestDate_day" type="number" min="1" max="31" placeholder="วัน"><select id="arrestDate_month"></select><input id="arrestDate_year" type="number" placeholder="พ.ศ."></div>
-          </label>
-          <label class="f"><span>เลขที่หนังสือใบปะหน้าส่งศาล (เลขหลัง / จาก e-Saraban)</span><input id="courtDocNo" placeholder="เว้นว่าง = ใช้เลขที่หนังสือส่งตรวจปัสสาวะ" inputmode="numeric"></label>
+          <label class="f"><span>คดีหมายเลขแดง (ถ้ามี)</span><input id="caseRedNo"></label>
         </div>
+        <p class="note">รายละเอียดหมายจับ/ศาล/เลขหนังสือส่งศาล ย้ายไปอยู่ในป็อบอัพ "ใบปะหน้าส่งศาล" (ติ๊ก ⚖️ หรือกด "รายละเอียด" ด้านซ้าย)</p>
         <p class="field-group-label" style="margin-top:12px">ของกลางของคนนี้ (ถ้ามี)</p>
         <div id="evidenceRows"></div>
         <button type="button" class="btn btn-ghost btn-sm" id="addEvidenceRow">+ เพิ่มของกลาง</button>
@@ -537,6 +529,51 @@
       </div>
       </div>
 
+      <div class="modal-overlay" id="modalCourtReferral">
+      <div class="modal-box">
+        <button type="button" class="modal-close" data-close-modal>&times;</button>
+        <h2>รายละเอียดใบปะหน้าส่งศาล (ส่งตัวผู้ต้องหาตามหมายจับ)</h2>
+        <p class="modal-person-tag"></p>
+        <p class="field-group-label">รายละเอียดหมายจับ (จากหน้าหมายศาล)</p>
+        <div class="grid3">
+          <label class="f"><span>ศาลที่ออกหมาย</span><input id="courtName" placeholder="ศาลจังหวัดจันทบุรี"></label>
+          <label class="f"><span>หมายจับเลขที่</span><input id="warrantNo" placeholder="เช่น 232/2569"></label>
+          <label class="f"><span>คดีหมายเลขดำที่</span><input id="caseBlackNo" placeholder="เช่น ยฝ423/2569"></label>
+          <label class="f"><span>ลงวันที่หมายจับ (พ.ศ.)</span>
+            <div class="date3"><input id="warrantDate_day" type="number" min="1" max="31" placeholder="วัน"><select id="warrantDate_month"></select><input id="warrantDate_year" type="number" placeholder="พ.ศ."></div>
+          </label>
+          <label class="f"><span>สิ่งที่ส่งมาด้วย</span><input id="courtAttachment" placeholder="บันทึกจับกุมตัว จำนวน ๑ ฉบับ"></label>
+        </div>
+        <label class="f"><span>ข้อหาตามหมายจับ — ช่องเดียวกับ "ข้อหา" ในพาแนล พิมพ์ที่ไหนก็ได้</span>
+          <textarea id="chargeCourt" placeholder="เช่น ครอบครองยาเสพติดให้โทษในประเภท 1 โดยไม่ได้รับอนุญาต"></textarea>
+        </label>
+
+        <p class="field-group-label" style="margin-top:14px">ผู้ลงนามหนังสือ (ในเอกสารนี้ใช้ยศ/ตำแหน่งตัวเต็มทั้งหมด)</p>
+        <label class="f"><span>เลือกจากรายชื่อผู้ลงนามที่บันทึกไว้</span>
+          <select id="courtSignerPreset"><option value="">— กรอกเอง / เพิ่มคนใหม่ —</option></select>
+        </label>
+        <div class="grid2">
+          <label class="f"><span>ยศ (ตัวเต็ม)</span><input id="courtSignerRank" placeholder="พันตำรวจโท"></label>
+          <label class="f"><span>ชื่อ-สกุล</span><input id="courtSignerName" placeholder="วรรณวุฒิ แสนเสนยา"></label>
+          <label class="f"><span>ตำแหน่ง บรรทัดที่ 1</span><input id="courtSignerPosition1" placeholder="รองผู้กำกับการสืบสวนปฏิบัติราชการแทน"></label>
+          <label class="f"><span>ตำแหน่ง บรรทัดที่ 2</span><input id="courtSignerPosition2" placeholder="ผู้กำกับการสถานีตำรวจภูธรนายายอาม"></label>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">
+          <button type="button" class="btn btn-ghost btn-sm" id="saveCourtSignerBtn">💾 บันทึกผู้ลงนามนี้ไว้ในรายการ</button>
+        </div>
+        <p class="msg" id="courtSignerMsg" style="margin:6px 0 0"></p>
+        <div id="courtSignerList"></div>
+
+        <p class="field-group-label" style="margin-top:16px">ออกเลขที่หนังสือใน e-Saraban</p>
+        <button type="button" class="btn btn-primary btn-sm" id="copySarabanCourtBtn">คัดลอกข้อมูล + เปิด e-Saraban</button>
+        <p class="note">กดแล้วจะเปิดเว็บ saraban ในแท็บใหม่ → ระบบสารบรรณอิเล็กทรอนิกส์ → ลงทะเบียนรับส่ง → สร้าง/หนังสือส่งภายใน → กดปุ่มลอย "📋 กรอกจาก suspect-docgen" สคริปต์จะกรอก ถึง (ชื่อศาล), เรื่อง (ส่งตัวผู้ต้องหาตามหมายจับของศาล…) และตั้งหมวด/ชั้นความเร็ว/วิธีส่ง เหมือนส่งตรวจปัสสาวะ ตรวจแล้วกด "สร้าง" เอง → ได้เลขแล้วกลับมาใส่ช่องด้านล่างนี้</p>
+        <p class="msg" id="sarabanCourtMsg"></p>
+        <label class="f" style="margin-top:8px"><span>เลขที่หนังสือที่ได้จาก e-Saraban (เฉพาะเลขหลัง /) — ของคนนี้</span><input id="courtDocNo" placeholder="เช่น 1530" inputmode="numeric"></label>
+
+        <button type="button" class="btn btn-primary modal-done" data-close-modal>เสร็จแล้ว</button>
+      </div>
+      </div>
+
       <div class="modal-overlay" id="modalPhoneM80">
       <div class="modal-box">
         <button type="button" class="modal-close" data-close-modal>&times;</button>
@@ -563,7 +600,8 @@
         <div class="grid3">
           <label class="f"><span>ชื่อสถานี</span><input id="stationName" value="สถานีตำรวจภูธรนายายอาม"></label>
           <label class="f"><span>อำเภอที่ตั้งสถานี</span><input id="stationDistrict" value="นายายอาม"></label>
-          <label class="f"><span>เลขที่หนังสือ (ส่วนหน้า คงที่)</span><input id="docNumberPrefix" value="ตช 0013(จบ).3(17).32" placeholder="เช่น ตช 0013(จบ).3(17).32"></label>
+          <label class="f"><span>เลขที่หนังสือ ส่วนหน้า — ส่งตรวจปัสสาวะ</span><input id="docNumberPrefix" value="ตช 0013(จบ).3(17).32" placeholder="เช่น ตช 0013(จบ).3(17).32"></label>
+          <label class="f"><span>เลขที่หนังสือ ส่วนหน้า — ใบปะหน้าส่งศาล</span><input id="courtDocNumberPrefix" value="ตช ๐๐๑๗.๓๒(๑๗).๓๒" placeholder="เช่น ตช ๐๐๑๗.๓๒(๑๗).๓๒"></label>
           <label class="f"><span>จังหวัด</span><input id="province" value="จันทบุรี"></label>
           <label class="f"><span>รหัสไปรษณีย์</span><input id="postalCode" value="๒๒๑๖๐"></label>
           <label class="f"><span>สังกัด (ในแบบ ปยส.115)</span><input id="officerAffiliation" value="ผบก.ภ.จว.จันทบุรี"></label>
@@ -682,9 +720,11 @@ if (!window.storage) {
 function showApp() {
   document.getElementById('loginScreen').style.display = 'none';
   document.getElementById('appRoot').style.display = '';
-  // รายชื่อเจ้าหน้าที่ของบัญชีนี้ (รู้ uid หลังล็อกอินแล้วเท่านั้น)
+  // รายชื่อเจ้าหน้าที่/ผู้ลงนามของบัญชีนี้ (รู้ uid หลังล็อกอินแล้วเท่านั้น)
   loadOfficerRoster();
   renderOfficerRosterSelect();
+  loadCourtSignerRoster();
+  renderCourtSignerRoster();
   updateOfficerSummary();
   openModal('modalOfficers');
 }
@@ -737,6 +777,7 @@ const DOC_INFO = {
 const DOC_MODALS = {
   drug_test_115: 'modalDrugTest115',
   urine_referral: 'modalUrineReferral',
+  court_referral: 'modalCourtReferral',
   phone_consent_m80: 'modalPhoneM80',
   profile_and_photos: 'modalProfilePhotos'
 };
@@ -746,7 +787,7 @@ function openModal(id) {
   el.classList.add('show');
   renderModalPersonTag(el);
   if (id === 'modalUrineReferral') renderUrineQueuePreview();
-  if (id === 'modalProfilePhotos') syncChargeMirror();
+  syncChargeMirror();
   // เปิด ปยส.115 → ถ้ายังไม่ได้กรอกผลการตรวจค้น ให้ดึงของกลางที่เป็นยาเสพติดของคนนี้มาใส่ให้
   if (id === 'modalDrugTest115') document.getElementById('syncSeizedMsg').textContent = syncSeizedFromEvidence(false);
 }
@@ -827,11 +868,12 @@ document.querySelectorAll('.doc-edit-btn').forEach(btn => btn.addEventListener('
   e.stopPropagation();
   openModal(btn.dataset.modal);
 }));
-const STATION_FIELDS = ['stationName','stationDistrict','docNumberPrefix','province','postalCode','officerAffiliation','compilerName','signerRank','signerName','signerPosition'];
+const STATION_FIELDS = ['stationName','stationDistrict','docNumberPrefix','courtDocNumberPrefix','province','postalCode','officerAffiliation','compilerName','signerRank','signerName','signerPosition',
+  'courtSignerRank','courtSignerName','courtSignerPosition1','courtSignerPosition2'];
 const THAI_MONTHS = ["มกราคม","กุมภาพันธ์","มีนาคม","เมษายน","พฤษภาคม","มิถุนายน","กรกฎาคม","สิงหาคม","กันยายน","ตุลาคม","พฤศจิกายน","ธันวาคม"];
 const THAI_PROVINCES = ["กระบี่","กรุงเทพมหานคร","กาญจนบุรี","กาฬสินธุ์","กำแพงเพชร","ขอนแก่น","จันทบุรี","ฉะเชิงเทรา","ชลบุรี","ชัยนาท","ชัยภูมิ","ชุมพร","เชียงราย","เชียงใหม่","ตรัง","ตราด","ตาก","นครนายก","นครปฐม","นครพนม","นครราชสีมา","นครศรีธรรมราช","นครสวรรค์","นนทบุรี","นราธิวาส","น่าน","บึงกาฬ","บุรีรัมย์","ปทุมธานี","ประจวบคีรีขันธ์","ปราจีนบุรี","ปัตตานี","พระนครศรีอยุธยา","พะเยา","พังงา","พัทลุง","พิจิตร","พิษณุโลก","เพชรบุรี","เพชรบูรณ์","แพร่","ภูเก็ต","มหาสารคาม","มุกดาหาร","แม่ฮ่องสอน","ยโสธร","ยะลา","ร้อยเอ็ด","ระนอง","ระยอง","ราชบุรี","ลพบุรี","ลำปาง","ลำพูน","เลย","ศรีสะเกษ","สกลนคร","สงขลา","สตูล","สมุทรปราการ","สมุทรสงคราม","สมุทรสาคร","สระแก้ว","สระบุรี","สิงห์บุรี","สุโขทัย","สุพรรณบุรี","สุราษฎร์ธานี","สุรินทร์","หนองคาย","หนองบัวลำภู","อ่างทอง","อำนาจเจริญ","อุดรธานี","อุตรดิตถ์","อุทัยธานี","อุบลราชธานี"];
 function v(id) { const el = document.getElementById(id); return el ? (el.value || '').trim() : ''; }
-const DATE_FIELDS = ['dobDate', 'warrantDate', 'arrestDate', 'issueDate', 'testDate', 'appointmentDate', 'dopaDate'];
+const DATE_FIELDS = ['dobDate', 'warrantDate', 'issueDate', 'testDate', 'appointmentDate', 'dopaDate'];
 function initDateSelects() {
   DATE_FIELDS.forEach(prefix => {
     const sel = document.getElementById(prefix + '_month');
@@ -848,6 +890,33 @@ function thaiDateParts(prefix) {
 function thaiDate(prefix) {
   const p = thaiDateParts(prefix);
   return p.day ? `${p.day} ${p.month} พ.ศ. ${p.year}` : '';
+}
+function thaiDateNoEra(prefix) {
+  const p = thaiDateParts(prefix);
+  return p.day ? `${p.day} ${p.month} ${p.year}` : '';
+}
+// ยศตำรวจตัวย่อ → ตัวเต็ม (ใบปะหน้าส่งศาลใช้ตัวเต็มทั้งฉบับ) ถ้าไม่รู้จักหรือเป็นตัวเต็มอยู่แล้วคืนค่าเดิม
+const POLICE_RANK_FULL = {
+  'พล.ต.อ.': 'พลตำรวจเอก', 'พล.ต.ท.': 'พลตำรวจโท', 'พล.ต.ต.': 'พลตำรวจตรี',
+  'พ.ต.อ.': 'พันตำรวจเอก', 'พ.ต.ท.': 'พันตำรวจโท', 'พ.ต.ต.': 'พันตำรวจตรี',
+  'ร.ต.อ.': 'ร้อยตำรวจเอก', 'ร.ต.ท.': 'ร้อยตำรวจโท', 'ร.ต.ต.': 'ร้อยตำรวจตรี',
+  'ด.ต.': 'ดาบตำรวจ', 'จ.ส.ต.': 'จ่าสิบตำรวจ',
+  'ส.ต.อ.': 'สิบตำรวจเอก', 'ส.ต.ท.': 'สิบตำรวจโท', 'ส.ต.ต.': 'สิบตำรวจตรี'
+};
+function fullRank(rank) {
+  const key = (rank || '').replace(/\s+/g, '');
+  return POLICE_RANK_FULL[key] || (rank || '');
+}
+// ที่อยู่แบบที่พิมพ์ในใบปะหน้าส่งศาล: "88 หมู่ 11 ตำบลนายายอาม อำเภอนายายอาม จังหวัดจันทบุรี"
+function composeAddressCourt(get = v) {
+  const parts = [];
+  if (get('addrHouseNo')) parts.push(get('addrHouseNo'));
+  if (get('addrMoo')) parts.push(`หมู่ ${get('addrMoo')}`);
+  if (get('addrRoad')) parts.push(`ถนน${get('addrRoad')}`);
+  if (get('addrTambon')) parts.push(`ตำบล${get('addrTambon')}`);
+  if (get('addrAmphoe')) parts.push(`อำเภอ${get('addrAmphoe')}`);
+  if (get('addrProvince')) parts.push(`จังหวัด${get('addrProvince')}`);
+  return parts.join(' ');
 }
 function escapeXml(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
 function escapeXmlRun(s) { return escapeXml(s).replace(/\r\n|\r|\n/g, '</w:t><w:br/><w:t xml:space="preserve">'); }
@@ -917,6 +986,18 @@ function buildTagMap() {
     signer_name: v('signerName') || v('officer1Name'),
     signer_position: v('signerPosition') || v('officer1Position'),
     signer_rank_indent: String(urineRankIndentTwips(v('signerName') || v('officer1Name'), v('signerRank') || v('officer1Rank'))),
+    // ใบปะหน้าส่งศาล: เลขหนังสือคนละชุดกับปัสสาวะ, วันที่ไม่มี พ.ศ., ยศ/ตำแหน่งตัวเต็มทั้งฉบับ, ผู้ลงนามเป็นคนละคนกับหัวหน้าชุด
+    court_doc_number: `${v('courtDocNumberPrefix')}/${toThaiNumeral(v('courtDocNo'))}`,
+    doc_date_no_era: thaiDateNoEra('issueDate'),
+    court_attachment: v('courtAttachment') || 'บันทึกจับกุมตัว จำนวน ๑ ฉบับ',
+    officer1_rank_full: fullRank(v('officer1Rank')),
+    // ตำแหน่งเต็มในรายชื่อมักลงท้ายด้วยชื่อสถานีอยู่แล้ว แต่ฟอร์มนี้ต่อชื่อสถานีเองข้างหลัง จึงตัดออกกันซ้ำ
+    officer1_position_full: (v('officer1SignerPosition') || v('officer1Position')).replace(v('stationName'), '').trim(),
+    court_signer_rank_full: fullRank(v('courtSignerRank')),
+    court_signer_name: v('courtSignerName'),
+    court_signer_position1: v('courtSignerPosition1'),
+    court_signer_position2: v('courtSignerPosition2'),
+    suspect_address_court: composeAddressCourt(),
     record_day: issueParts.day, record_month: issueParts.month, record_year: issueParts.year,
     officer1_rank: v('officer1Rank'), officer1_name: v('officer1Name'), officer1_position: v('officer1Position'),
     officer_affiliation: v('officerAffiliation'),
@@ -941,7 +1022,8 @@ function buildTagMap() {
     other_notes: v('otherNotes'), appointment_date: thaiDate('appointmentDate'),
     appointment_time: v('appointmentTime'), appointment_place: v('appointmentPlace'), court_name: v('courtName'),
     warrant_no: v('warrantNo'), case_black_no: v('caseBlackNo'), case_red_no: v('caseRedNo'),
-    warrant_date: thaiDate('warrantDate'), charge: v('charge'), arrest_date: thaiDate('arrestDate'),
+    // ใบปะหน้าส่งศาลใช้วันที่แบบไม่มี "พ.ศ." ตามฟอร์มจริง (เอกสารอื่นไม่ได้ใช้แท็กนี้)
+    warrant_date: thaiDateNoEra('warrantDate'), charge: v('charge'),
     suspect_nationality: v('nationality'),
     record_place: v('recordPlace') || v('stationName'), record_date: thaiDate('issueDate'),
     phone_brand: v('phoneBrand'), phone_model: v('phoneModel'), phone_color: v('phoneColor'),
@@ -1063,10 +1145,6 @@ async function generateDoc(key, tags, suspectName, opts = {}) {
     const entries = opts.suspectEntries || getSuspectListEntries();
     xmlStr = fillSuspectListBlock(xmlStr, entries);
     tags = { ...tags, test_count: String(entries.length) };
-  }
-  // ใบปะหน้าส่งศาลออกเลขหนังสือแยกรายคน (จาก e-Saraban) — ถ้ากรอกไว้ให้ใช้แทนเลขที่หนังสือกลาง
-  if (key === 'court_referral' && v('courtDocNo')) {
-    tags = { ...tags, doc_number: `${v('docNumberPrefix')}/${v('courtDocNo')}` };
   }
   const filled = xmlStr.replace(/\{([a-zA-Z0-9_]+)\}/g, (m, tag) => (tag in tags) ? tags[tag] : '');
   zip.file(info.xmlPath, filled);
@@ -1354,7 +1432,7 @@ const ALL_FIELD_IDS = ['title','firstName','lastName','nickname','alias','age','
   'friends','hangouts','knownBy','idIssueAmphoe','idIssueProvince',
   'addrHouseNo','addrMoo','addrRoad','addrTambon','addrAmphoe','addrProvince',
   'height','weight','skin','head','hair','face','eyes','nose','ears','beard','marks','accent',
-  'charge','caseBlackNo','caseRedNo','warrantNo','courtName','courtDocNo',
+  'charge','caseBlackNo','caseRedNo','warrantNo','courtName','courtDocNo','courtAttachment',
   'docRunningNo','crimeWeapon','crimeVehicle','crimeAccomplice','crimeDetails','crimeNotes','crimeHistory',
   'idDocType','idOtherDetail','drugType','drugTypeUrine','testResult','searchFound','searchDrugType','seizedAmount',
   'treatmentConsent','officer1CardType','cardNoPpst','cardNoGov','hospitalName',
@@ -1368,11 +1446,11 @@ const PERSON_ONLY_FIELD_IDS = ['title', 'firstName', 'lastName', 'nickname', 'al
   'addrHouseNo', 'addrMoo', 'addrRoad', 'addrTambon', 'addrAmphoe', 'addrProvince',
   'dobDate_day', 'dobDate_month', 'dobDate_year',
   // ข้อหา/หมายจับ/ของกลาง เป็นของแต่ละคน (คนละข้อหากันได้)
-  'charge', 'caseBlackNo', 'caseRedNo', 'warrantNo', 'courtName', 'courtDocNo',
+  'charge', 'caseBlackNo', 'caseRedNo', 'warrantNo', 'courtName', 'courtDocNo', 'courtAttachment',
   'warrantDate_day', 'warrantDate_month', 'warrantDate_year',
   'crimeWeapon', 'crimeVehicle', 'crimeAccomplice', 'crimeDetails', 'crimeNotes', 'crimeHistory'];
 // ช่องที่คัดลอกจากคนก่อนหน้าได้ (ปุ่ม "คัดลอกข้อหา/หมายจับ/ของกลางจากคนก่อนหน้า")
-const CHARGE_FIELD_IDS = ['charge', 'caseBlackNo', 'caseRedNo', 'warrantNo', 'courtName',
+const CHARGE_FIELD_IDS = ['charge', 'caseBlackNo', 'caseRedNo', 'warrantNo', 'courtName', 'courtAttachment',
   'warrantDate_day', 'warrantDate_month', 'warrantDate_year',
   'crimeWeapon', 'crimeVehicle', 'crimeAccomplice', 'crimeDetails', 'crimeNotes', 'crimeHistory'];
 function clearPersonOnlyFields() {
@@ -2226,16 +2304,113 @@ document.getElementById('logoutBtn').addEventListener('click', () => { if (fireb
   a.addEventListener('input', () => { b.value = a.value; });
   b.addEventListener('input', () => { a.value = b.value; });
 })();
-// ข้อหา: ช่องหลักอยู่ในพาแนลข้อหา/หมายจับ/ของกลาง มีสำเนาในป็อบอัพประวัติ 4 ด้าน (ค่าจริงเก็บที่ #charge เท่านั้น)
-function syncChargeMirror() { document.getElementById('chargeProfile').value = v('charge'); }
+// ข้อหา: ช่องหลักอยู่ในพาแนลข้อหา/หมายจับ/ของกลาง มีสำเนาในป็อบอัพประวัติ 4 ด้าน และใบปะหน้าส่งศาล (ค่าจริงเก็บที่ #charge เท่านั้น)
+const CHARGE_MIRROR_IDS = ['chargeProfile', 'chargeCourt'];
+function syncChargeMirror() { CHARGE_MIRROR_IDS.forEach(id => { document.getElementById(id).value = v('charge'); }); }
 (function syncChargeFields() {
-  const a = document.getElementById('charge');
-  const b = document.getElementById('chargeProfile');
-  a.addEventListener('input', () => { b.value = a.value; });
-  b.addEventListener('input', () => { a.value = b.value; });
+  const main = document.getElementById('charge');
+  const mirrors = CHARGE_MIRROR_IDS.map(id => document.getElementById(id));
+  main.addEventListener('input', () => mirrors.forEach(m => { m.value = main.value; }));
+  mirrors.forEach(m => m.addEventListener('input', () => { main.value = m.value; mirrors.forEach(o => { if (o !== m) o.value = m.value; }); }));
 })();
 
+// ---- ผู้ลงนามใบปะหน้าส่งศาล (รอง ผกก. ปฏิบัติราชการแทน ผกก.) — รายชื่อบันทึก/ลบได้ แยกตามบัญชี เหมือนหัวหน้าชุด ----
+const DEFAULT_COURT_SIGNERS = [
+  { rank: 'พันตำรวจโท', name: 'วรรณวุฒิ แสนเสนยา', position1: 'รองผู้กำกับการสืบสวนปฏิบัติราชการแทน', position2: 'ผู้กำกับการสถานีตำรวจภูธรนายายอาม' }
+];
+let courtSignerRoster = [];
+function courtSignerRosterKey() {
+  try { const u = firebase.auth().currentUser; return 'court-signer-roster:' + (u ? u.uid : 'local'); } catch (e) { return 'court-signer-roster:local'; }
+}
+function loadCourtSignerRoster() {
+  try {
+    const raw = localStorage.getItem(courtSignerRosterKey());
+    courtSignerRoster = raw ? JSON.parse(raw) : DEFAULT_COURT_SIGNERS.map(o => ({ ...o }));
+  } catch (e) { courtSignerRoster = DEFAULT_COURT_SIGNERS.map(o => ({ ...o })); }
+}
+function saveCourtSignerRoster() {
+  try { localStorage.setItem(courtSignerRosterKey(), JSON.stringify(courtSignerRoster)); } catch (e) {}
+}
+function courtSignerLabel(o) { return `${o.rank}${o.name} (${o.position1})`; }
+function courtSignerFromFields() {
+  return { rank: v('courtSignerRank'), name: v('courtSignerName'), position1: v('courtSignerPosition1'), position2: v('courtSignerPosition2') };
+}
+function fillCourtSignerFields(o) {
+  document.getElementById('courtSignerRank').value = o.rank || '';
+  document.getElementById('courtSignerName').value = o.name || '';
+  document.getElementById('courtSignerPosition1').value = o.position1 || '';
+  document.getElementById('courtSignerPosition2').value = o.position2 || '';
+  scheduleStationSave();
+}
+function renderCourtSignerRoster(selectedIndex) {
+  const sel = document.getElementById('courtSignerPreset');
+  sel.innerHTML = '<option value="">— กรอกเอง / เพิ่มคนใหม่ —</option>' +
+    courtSignerRoster.map((o, i) => `<option value="${i}">${escapeXml(courtSignerLabel(o))}</option>`).join('');
+  sel.value = selectedIndex === undefined || selectedIndex === null ? '' : String(selectedIndex);
+  const out = document.getElementById('courtSignerList');
+  out.innerHTML = courtSignerRoster.length
+    ? courtSignerRoster.map((o, i) => `
+      <div class="officer-row">
+        <div class="officer-row-name">${escapeXml(courtSignerLabel(o))}</div>
+        <button type="button" class="btn btn-ghost btn-sm" data-cuse="${i}">ใช้</button>
+        <button type="button" class="btn-danger-outline" data-cdel="${i}">ลบ</button>
+      </div>`).join('')
+    : '<p class="note" style="margin-top:0">ยังไม่มีผู้ลงนามในรายการ — กรอกด้านบนแล้วกด "บันทึกผู้ลงนามนี้ไว้ในรายการ"</p>';
+  out.querySelectorAll('[data-cuse]').forEach(b => b.addEventListener('click', () => {
+    const i = parseInt(b.dataset.cuse, 10);
+    fillCourtSignerFields(courtSignerRoster[i]);
+    renderCourtSignerRoster(i);
+    document.getElementById('courtSignerMsg').textContent = `ใช้ "${courtSignerLabel(courtSignerRoster[i])}" เป็นผู้ลงนาม`;
+  }));
+  out.querySelectorAll('[data-cdel]').forEach(b => b.addEventListener('click', () => {
+    const i = parseInt(b.dataset.cdel, 10);
+    const o = courtSignerRoster[i];
+    if (!confirm(`ลบ "${courtSignerLabel(o)}" ออกจากรายการ?`)) return;
+    courtSignerRoster.splice(i, 1);
+    saveCourtSignerRoster();
+    renderCourtSignerRoster();
+    document.getElementById('courtSignerMsg').textContent = `ลบ "${courtSignerLabel(o)}" ออกจากรายการแล้ว`;
+  }));
+}
+function initCourtSigner() {
+  loadCourtSignerRoster();
+  renderCourtSignerRoster();
+  const sel = document.getElementById('courtSignerPreset');
+  const msg = document.getElementById('courtSignerMsg');
+  sel.addEventListener('change', () => {
+    msg.textContent = '';
+    if (sel.value === '') return;
+    fillCourtSignerFields(courtSignerRoster[parseInt(sel.value, 10)]);
+  });
+  document.getElementById('saveCourtSignerBtn').addEventListener('click', () => {
+    const o = courtSignerFromFields();
+    if (!o.rank || !o.name) { msg.textContent = 'กรอกยศ (ตัวเต็ม) และชื่อ-สกุลก่อนบันทึก'; return; }
+    let idx = courtSignerRoster.findIndex(x => x.name === o.name);
+    if (idx >= 0) courtSignerRoster[idx] = o; else { courtSignerRoster.push(o); idx = courtSignerRoster.length - 1; }
+    saveCourtSignerRoster();
+    renderCourtSignerRoster(idx);
+    msg.textContent = `บันทึก "${courtSignerLabel(o)}" ไว้ในรายการแล้ว (${courtSignerRoster.length} คน)`;
+  });
+  // ยังไม่เคยตั้งผู้ลงนาม → ใช้คนแรกในรายการเป็นค่าเริ่มต้น (บันทึกลงตั้งค่าสถานีให้จำไว้)
+  if (!v('courtSignerName') && courtSignerRoster.length) fillCourtSignerFields(courtSignerRoster[0]);
+}
+
+// e-Saraban สำหรับใบปะหน้าส่งศาล: ถึง = ชื่อศาล, เรื่อง = ส่งตัวผู้ต้องหาตามหมายจับของ<ศาล>, ตั้งค่าอื่นเหมือนปัสสาวะ
+// ใช้ source เดียวกับปัสสาวะ เพราะสคริปต์ Tampermonkey ที่ติดตั้งอยู่แยกตาม source นี้ (ขั้นตอนกรอกเหมือนกันทุกประการ)
+document.getElementById('copySarabanCourtBtn').addEventListener('click', async () => {
+  const msg = document.getElementById('sarabanCourtMsg');
+  const court = v('courtName');
+  if (!court) { msg.textContent = 'กรอกชื่อศาลก่อน (ใช้เป็น "ถึง" และ "เรื่อง")'; return; }
+  const payload = { source: 'suspect-docgen-saraban-urine', kind: 'court', to: court, subject: `ส่งตัวผู้ต้องหาตามหมายจับของ${court}` };
+  try {
+    await navigator.clipboard.writeText(JSON.stringify(payload));
+    window.open('https://saraban.police.go.th/rtpmenu/default.asp', '_blank');
+    msg.textContent = `คัดลอกแล้ว (ถึง ${court} / เรื่อง ${payload.subject}) เปิด e-Saraban ให้ในแท็บใหม่ — เข้าหน้าสร้างหนังสือแล้วกดปุ่มลอย`;
+  } catch (e) { msg.textContent = 'คัดลอกไม่สำเร็จ: ' + e.message; }
+});
+
 initOfficerPresets();
+initCourtSigner();
 initConditionalFields();
 initProvinceSelects();
 initArrestTambonSelect();
