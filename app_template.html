@@ -531,6 +531,11 @@
         <button type="button" class="modal-close" data-close-modal>&times;</button>
         <h2>รายละเอียดใบปะหน้าส่งศาล (ส่งตัวผู้ต้องหาตามหมายจับ)</h2>
         <p class="modal-person-tag"></p>
+        <div class="panel" style="background:#1E1A10;border-color:#6B5626;margin-bottom:10px">
+          <textarea id="warrantPasteText" rows="4" placeholder="วางข้อความจากหมายจับทั้งก้อนตรงนี้ (คัดลอกจากไฟล์หมาย/ระบบศาล หรือ OCR) เช่น&#10;คดีหมายเลขดำที่ ยฝ๔๒๓/๒๕๖๙ ... ศาลจังหวัดจันทบุรี ที่ ๒๓๒/๒๕๖๙ วันที่ ๒๓ เดือน มิถุนายน พุทธศักราช ๒๕๖๙ ... ในความเรื่องนี้ต้องหาว่ากระทำความผิดฐาน ครอบครองยาเสพติดให้โทษ..."></textarea>
+          <button type="button" class="btn btn-primary btn-sm" id="warrantPasteBtn" style="margin-top:8px">แยกข้อมูลจากหมายจับกรอกให้อัตโนมัติ</button>
+          <p class="note" id="warrantPasteMsg" style="margin-top:6px">ระบบจะจับ ศาล / หมายจับเลขที่ / คดีหมายเลขดำ-แดง / ลงวันที่ / ข้อหา จากข้อความ (เลขไทยแปลงเป็นอารบิกให้) แล้วกรอกช่องด้านล่าง ตรวจซ้ำก่อนใช้</p>
+        </div>
         <p class="field-group-label">รายละเอียดหมายจับ — คัดจากหน้าหมายจับของศาล (ตำแหน่งบนหมายอยู่ในวงเล็บ)</p>
         <div class="grid3">
           <label class="f"><span>ศาลที่ออกหมาย (ชื่อศาลใต้ตราครุฑ)</span><input id="courtName" placeholder="ศาลจังหวัดจันทบุรี"></label>
@@ -540,8 +545,8 @@
           <label class="f"><span>ลงวันที่หมายจับ (วันที่/เดือน/พุทธศักราช ใต้ชื่อศาล)</span>
             <div class="date3"><input id="warrantDate_day" type="number" min="1" max="31" placeholder="วัน"><select id="warrantDate_month"></select><input id="warrantDate_year" type="number" placeholder="พ.ศ."></div>
           </label>
-          <label class="f"><span>สิ่งที่ส่งมาด้วย</span><input id="courtAttachment" placeholder="บันทึกจับกุมตัว จำนวน ๑ ฉบับ"></label>
         </div>
+        <p class="note">สิ่งที่ส่งมาด้วยในหนังสือตายตัว "บันทึกจับกุมตัว จำนวน ๑ ฉบับ"</p>
         <label class="f"><span>ข้อหาตามหมายจับ (บรรทัด "ในความเรื่องนี้ต้องหาว่ากระทำความผิดฐาน") — ช่องเดียวกับ "ข้อหา" ในพาแนล</span>
           <textarea id="chargeCourt" placeholder="เช่น ครอบครองยาเสพติดให้โทษในประเภท 1 โดยไม่ได้รับอนุญาต"></textarea>
         </label>
@@ -987,7 +992,6 @@ function buildTagMap() {
     // ใบปะหน้าส่งศาล: เลขหนังสือคนละชุดกับปัสสาวะ, วันที่ไม่มี พ.ศ., ยศ/ตำแหน่งตัวเต็มทั้งฉบับ, ผู้ลงนามเป็นคนละคนกับหัวหน้าชุด
     court_doc_number: `${v('courtDocNumberPrefix')}/${toThaiNumeral(v('courtDocNo'))}`,
     doc_date_no_era: thaiDateNoEra('issueDate'),
-    court_attachment: v('courtAttachment') || 'บันทึกจับกุมตัว จำนวน ๑ ฉบับ',
     // หมายจับบางฉบับไม่มีเลขแดง → ใส่ท่อน "คดีหมายเลขแดงที่ …" เฉพาะเมื่อกรอก
     case_red_clause: v('caseRedNo') ? ` คดีหมายเลขแดงที่ ${v('caseRedNo')}` : '',
     officer1_rank_full: fullRank(v('officer1Rank')),
@@ -1432,7 +1436,7 @@ const ALL_FIELD_IDS = ['title','firstName','lastName','nickname','alias','age','
   'friends','hangouts','knownBy','idIssueAmphoe','idIssueProvince',
   'addrHouseNo','addrMoo','addrRoad','addrTambon','addrAmphoe','addrProvince',
   'height','weight','skin','head','hair','face','eyes','nose','ears','beard','marks','accent',
-  'charge','caseBlackNo','caseRedNo','warrantNo','courtName','courtDocNo','courtAttachment',
+  'charge','caseBlackNo','caseRedNo','warrantNo','courtName','courtDocNo',
   'docRunningNo','crimeWeapon','crimeVehicle','crimeAccomplice','crimeDetails','crimeNotes','crimeHistory',
   'idDocType','idOtherDetail','drugType','drugTypeUrine','testResult','searchFound','searchDrugType','seizedAmount',
   'treatmentConsent','officer1CardType','cardNoPpst','cardNoGov','hospitalName',
@@ -1446,11 +1450,11 @@ const PERSON_ONLY_FIELD_IDS = ['title', 'firstName', 'lastName', 'nickname', 'al
   'addrHouseNo', 'addrMoo', 'addrRoad', 'addrTambon', 'addrAmphoe', 'addrProvince',
   'dobDate_day', 'dobDate_month', 'dobDate_year',
   // ข้อหา/หมายจับ/ของกลาง เป็นของแต่ละคน (คนละข้อหากันได้)
-  'charge', 'caseBlackNo', 'caseRedNo', 'warrantNo', 'courtName', 'courtDocNo', 'courtAttachment',
+  'charge', 'caseBlackNo', 'caseRedNo', 'warrantNo', 'courtName', 'courtDocNo',
   'warrantDate_day', 'warrantDate_month', 'warrantDate_year',
   'crimeWeapon', 'crimeVehicle', 'crimeAccomplice', 'crimeDetails', 'crimeNotes', 'crimeHistory'];
 // ช่องที่คัดลอกจากคนก่อนหน้าได้ (ปุ่ม "คัดลอกข้อหา/หมายจับ/ของกลางจากคนก่อนหน้า")
-const CHARGE_FIELD_IDS = ['charge', 'caseBlackNo', 'caseRedNo', 'warrantNo', 'courtName', 'courtAttachment',
+const CHARGE_FIELD_IDS = ['charge', 'caseBlackNo', 'caseRedNo', 'warrantNo', 'courtName',
   'warrantDate_day', 'warrantDate_month', 'warrantDate_year',
   'crimeWeapon', 'crimeVehicle', 'crimeAccomplice', 'crimeDetails', 'crimeNotes', 'crimeHistory'];
 function clearPersonOnlyFields() {
@@ -2394,6 +2398,47 @@ function initCourtSigner() {
   // ยังไม่เคยตั้งผู้ลงนาม → ใช้คนแรกในรายการเป็นค่าเริ่มต้น (บันทึกลงตั้งค่าสถานีให้จำไว้)
   if (!v('courtSignerName') && courtSignerRoster.length) fillCourtSignerFields(courtSignerRoster[0]);
 }
+
+// ---- แยกข้อมูลจากข้อความหมายจับทั้งก้อน (เฉพาะช่องของใบปะหน้าส่งศาล ไม่ยุ่งกับตัวแยกอื่น) ----
+function thaiDigitsToArabic(s) { return s.replace(/[๐-๙]/g, d => String.fromCharCode(d.charCodeAt(0) - 0x0E50 + 48)); }
+function parseWarrantText(raw) {
+  // เลขไทย→อารบิก, ตัดเส้นประ "......" ที่มากับฟอร์ม/OCR, ยุบช่องว่างซ้ำ
+  const t = thaiDigitsToArabic(raw).replace(/[.]{3,}/g, ' ').replace(/[ \t]+/g, ' ');
+  const out = {};
+  const court = t.match(/(ศาล(?:จังหวัด|แขวง|อาญา|เยาวชนและครอบครัว|ทหาร)[ก-๙]*)/);
+  if (court) out.courtName = court[1];
+  const caseNo = label => {
+    // คำนำหน้าเลขคดี เช่น ยฝ, อ., ผบ. (มีจุดได้)
+    const m = t.match(new RegExp(label + '\\s*:?\\s*([ก-๙A-Za-z.]{0,5})\\s*(\\d+)\\s*\\/\\s*(\\d{4})'));
+    return m ? `${m[1]}${m[2]}/${m[3]}` : '';
+  };
+  const black = caseNo('คดีหมายเลขดำที่');
+  if (black) out.caseBlackNo = black;
+  const red = caseNo('คดีหมายเลขแดงที่');
+  if (red) out.caseRedNo = red;
+  // หมายจับเลขที่ = "ที่ 232/2569" ที่ไม่ใช่ส่วนของ "คดีหมายเลข…ที่" หรือ "เลขที่"
+  const wno = t.match(/(?<![ก-๙])ที่\s*:?\s*(\d+)\s*\/\s*(\d{4})/);
+  if (wno) out.warrantNo = `${wno[1]}/${wno[2]}`;
+  const d = t.match(/วันที่\s*(\d{1,2})\s*เดือน\s*([ก-๙]+)\s*(?:พุทธศักราช|พ\.ศ\.)?\s*(\d{4})/);
+  if (d) {
+    const mi = THAI_MONTHS.indexOf(d[2]);
+    if (mi >= 0) { out.warrantDate_day = d[1]; out.warrantDate_month = String(mi); out.warrantDate_year = d[3]; }
+  }
+  const ch = t.match(/ต้องหาว่ากระทำความผิดฐาน\s*([\s\S]+?)\s*(?=กรณีมีหลักฐาน|เพราะฉะนั้น|\n\s*\n|$)/);
+  // ข้อความในหมายตัดบรรทัดกลางคำได้ (ไทยไม่เว้นวรรคระหว่างคำ) → ตัวอักษรไทยชนตัวอักษรไทยข้ามบรรทัดให้ต่อกันเลย ที่เหลือแทนด้วยช่องว่าง
+  if (ch) out.charge = ch[1].replace(/([ก-๙])\s*\n\s*([ก-๙])/g, '$1$2').replace(/\s*\n\s*/g, ' ').replace(/\s{2,}/g, ' ').trim();
+  return out;
+}
+document.getElementById('warrantPasteBtn').addEventListener('click', () => {
+  const msg = document.getElementById('warrantPasteMsg');
+  const found = parseWarrantText(document.getElementById('warrantPasteText').value);
+  const keys = Object.keys(found);
+  if (!keys.length) { msg.textContent = 'ไม่พบข้อมูลที่จดจำได้ — ต้องมีคำว่า ศาล…, คดีหมายเลขดำที่, ที่ …/…, วันที่ … เดือน … พุทธศักราช …, ต้องหาว่ากระทำความผิดฐาน'; return; }
+  keys.forEach(k => { const el = document.getElementById(k); if (el) el.value = found[k]; });
+  if (found.charge) syncChargeMirror();
+  const labels = { courtName: 'ศาล', warrantNo: 'หมายจับเลขที่', caseBlackNo: 'เลขดำ', caseRedNo: 'เลขแดง', warrantDate_day: 'ลงวันที่', charge: 'ข้อหา' };
+  msg.textContent = 'กรอกให้แล้ว: ' + keys.filter(k => labels[k]).map(k => labels[k]).join(', ') + ' — ตรวจสอบก่อนใช้';
+});
 
 // e-Saraban สำหรับใบปะหน้าส่งศาล: ถึง = ชื่อศาล, เรื่อง = ส่งตัวผู้ต้องหาตามหมายจับของ<ศาล>, ตั้งค่าอื่นเหมือนปัสสาวะ
 // ใช้ source เดียวกับปัสสาวะ เพราะสคริปต์ Tampermonkey ที่ติดตั้งอยู่แยกตาม source นี้ (ขั้นตอนกรอกเหมือนกันทุกประการ)

@@ -225,7 +225,7 @@ def build_court_referral():
     attach_p = copy.deepcopy(p[5]._p)
     p[5]._p.addnext(attach_p)
     attach = Paragraph(attach_p, p[5]._parent)
-    set_runs(attach, {0: "สิ่งที่ส่งมาด้วย", 2: "{court_attachment}"})
+    set_runs(attach, {0: "สิ่งที่ส่งมาด้วย", 2: "บันทึกจับกุมตัว จำนวน ๑ ฉบับ"})  # ตายตัวตามฟอร์ม
     attach.paragraph_format.space_before = 0
     p = doc.paragraphs  # ดัชนีหลังจากนี้เลื่อนไป 1
 
