@@ -150,7 +150,7 @@
       <h1>ระบบสร้างเอกสารผู้ต้องหา · สภ.นายายอาม</h1>
       <p>กรอกครั้งเดียว ออกเอกสารได้หลายฉบับ</p>
     </div>
-    <div class="credit-top">BY บังโต KN60 <span title="เวอร์ชันของไฟล์นี้ — ถ้าไม่ตรงกับที่แจ้งไว้ ให้กด Ctrl+F5 โหลดหน้าใหม่" style="opacity:.6;font-size:11px;font-weight:400;margin-left:6px">build 20/09/2569 11:40</span></div>
+    <div class="credit-top">BY บังโต KN60 <span title="เวอร์ชันของไฟล์นี้ — ถ้าไม่ตรงกับที่แจ้งไว้ ให้กด Ctrl+F5 โหลดหน้าใหม่" style="opacity:.6;font-size:11px;font-weight:400;margin-left:6px">build 20/09/2569 11:45</span></div>
     <button type="button" class="header-logout" id="logoutBtn">ออกจากระบบ</button>
   </header>
 
@@ -534,7 +534,7 @@
         <div class="panel" style="background:#1E1A10;border-color:#6B5626;margin-bottom:10px">
           <textarea id="warrantPasteText" rows="4" placeholder="วางข้อความจากหมายจับทั้งก้อนตรงนี้ (คัดลอกจากไฟล์หมาย/ระบบศาล หรือ OCR) เช่น&#10;คดีหมายเลขดำที่ ยฝ๔๒๓/๒๕๖๙ ... ศาลจังหวัดจันทบุรี ที่ ๒๓๒/๒๕๖๙ วันที่ ๒๓ เดือน มิถุนายน พุทธศักราช ๒๕๖๙ ... ในความเรื่องนี้ต้องหาว่ากระทำความผิดฐาน ครอบครองยาเสพติดให้โทษ..."></textarea>
           <button type="button" class="btn btn-primary btn-sm" id="warrantPasteBtn" style="margin-top:8px">แยกข้อมูลจากหมายจับกรอกให้อัตโนมัติ</button>
-          <p class="note" id="warrantPasteMsg" style="margin-top:6px">ระบบจะจับ ศาล / หมายจับเลขที่ / คดีหมายเลขดำ-แดง / ลงวันที่ / ข้อหา จากข้อความ (เลขไทยแปลงเป็นอารบิกให้) แล้วกรอกช่องด้านล่าง ตรวจซ้ำก่อนใช้</p>
+          <p class="note" id="warrantPasteMsg" style="margin-top:6px">ระบบจะจับ ศาล / หมายจับเลขที่ / คดีหมายเลขดำ-แดง / ลงวันที่ / ข้อหา จากข้อความแล้วกรอกช่องด้านล่าง (เลขไทยคงไว้ตามหมาย) ตรวจซ้ำก่อนใช้ — ในหนังสือตัวเลขทุกตัวจะออกเป็นเลขไทยเสมอ</p>
         </div>
         <p class="field-group-label">รายละเอียดหมายจับ — คัดจากหน้าหมายจับของศาล (ตำแหน่งบนหมายอยู่ในวงเล็บ)</p>
         <div class="grid3">
@@ -1149,6 +1149,10 @@ async function generateDoc(key, tags, suspectName, opts = {}) {
     const entries = opts.suspectEntries || getSuspectListEntries();
     xmlStr = fillSuspectListBlock(xmlStr, entries);
     tags = { ...tags, test_count: String(entries.length) };
+  }
+  // ใบปะหน้าส่งศาลเป็นเลขไทยทั้งฉบับ — แปลงตัวเลขทุกค่าที่กรอกให้ ไม่พึ่งฟอนต์ IT๙ ของเครื่องที่เปิด
+  if (key === 'court_referral') {
+    tags = Object.fromEntries(Object.entries(tags).map(([k, val]) => [k, toThaiNumeral(String(val == null ? '' : val))]));
   }
   const filled = xmlStr.replace(/\{([a-zA-Z0-9_]+)\}/g, (m, tag) => (tag in tags) ? tags[tag] : '');
   zip.file(info.xmlPath, filled);
@@ -2402,15 +2406,18 @@ function initCourtSigner() {
 // ---- แยกข้อมูลจากข้อความหมายจับทั้งก้อน (เฉพาะช่องของใบปะหน้าส่งศาล ไม่ยุ่งกับตัวแยกอื่น) ----
 function thaiDigitsToArabic(s) { return s.replace(/[๐-๙]/g, d => String.fromCharCode(d.charCodeAt(0) - 0x0E50 + 48)); }
 function parseWarrantText(raw) {
-  // เลขไทย→อารบิก, ตัดเส้นประ "......" ที่มากับฟอร์ม/OCR, ยุบช่องว่างซ้ำ
+  // จับรูปแบบด้วยเลขอารบิก (regex \d) แต่ค่าที่กรอกลงช่องข้อความคงเป็นเลขไทยตามหมาย ถ้าต้นทางเป็นเลขไทย
+  // ตัดเส้นประ "......" ที่มากับฟอร์ม/OCR, ยุบช่องว่างซ้ำ
   const t = thaiDigitsToArabic(raw).replace(/[.]{3,}/g, ' ').replace(/[ \t]+/g, ' ');
+  const thaiSource = /[๐-๙]/.test(raw);
+  const keepStyle = s => thaiSource ? toThaiNumeral(s) : s;
   const out = {};
   const court = t.match(/(ศาล(?:จังหวัด|แขวง|อาญา|เยาวชนและครอบครัว|ทหาร)[ก-๙]*)/);
   if (court) out.courtName = court[1];
   const caseNo = label => {
     // คำนำหน้าเลขคดี เช่น ยฝ, อ., ผบ. (มีจุดได้)
     const m = t.match(new RegExp(label + '\\s*:?\\s*([ก-๙A-Za-z.]{0,5})\\s*(\\d+)\\s*\\/\\s*(\\d{4})'));
-    return m ? `${m[1]}${m[2]}/${m[3]}` : '';
+    return m ? keepStyle(`${m[1]}${m[2]}/${m[3]}`) : '';
   };
   const black = caseNo('คดีหมายเลขดำที่');
   if (black) out.caseBlackNo = black;
@@ -2418,7 +2425,7 @@ function parseWarrantText(raw) {
   if (red) out.caseRedNo = red;
   // หมายจับเลขที่ = "ที่ 232/2569" ที่ไม่ใช่ส่วนของ "คดีหมายเลข…ที่" หรือ "เลขที่"
   const wno = t.match(/(?<![ก-๙])ที่\s*:?\s*(\d+)\s*\/\s*(\d{4})/);
-  if (wno) out.warrantNo = `${wno[1]}/${wno[2]}`;
+  if (wno) out.warrantNo = keepStyle(`${wno[1]}/${wno[2]}`);
   const d = t.match(/วันที่\s*(\d{1,2})\s*เดือน\s*([ก-๙]+)\s*(?:พุทธศักราช|พ\.ศ\.)?\s*(\d{4})/);
   if (d) {
     const mi = THAI_MONTHS.indexOf(d[2]);
@@ -2426,7 +2433,7 @@ function parseWarrantText(raw) {
   }
   const ch = t.match(/ต้องหาว่ากระทำความผิดฐาน\s*([\s\S]+?)\s*(?=กรณีมีหลักฐาน|เพราะฉะนั้น|\n\s*\n|$)/);
   // ข้อความในหมายตัดบรรทัดกลางคำได้ (ไทยไม่เว้นวรรคระหว่างคำ) → ตัวอักษรไทยชนตัวอักษรไทยข้ามบรรทัดให้ต่อกันเลย ที่เหลือแทนด้วยช่องว่าง
-  if (ch) out.charge = ch[1].replace(/([ก-๙])\s*\n\s*([ก-๙])/g, '$1$2').replace(/\s*\n\s*/g, ' ').replace(/\s{2,}/g, ' ').trim();
+  if (ch) out.charge = keepStyle(ch[1].replace(/([ก-๙])\s*\n\s*([ก-๙])/g, '$1$2').replace(/\s*\n\s*/g, ' ').replace(/\s{2,}/g, ' ').trim());
   return out;
 }
 document.getElementById('warrantPasteBtn').addEventListener('click', () => {
