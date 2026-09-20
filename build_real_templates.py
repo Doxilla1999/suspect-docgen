@@ -4,13 +4,11 @@
 แล้วแทนที่เฉพาะ "ข้อความในช่องที่ต้องกรอก" ด้วยแท็ก ทำให้ฟอนต์/ระยะ/ระยะบรรทัด/ตาราง
 ของฟอร์มเดิมคงอยู่ครบ เวลา export ออกมาฟอร์มจึงไม่ขยับ
 """
-import copy
 import os
 from docx import Document
 from docx.enum.text import WD_TAB_ALIGNMENT
 from docx.oxml.ns import qn
 from docx.shared import Cm
-from docx.text.paragraph import Paragraph
 
 # ตำแหน่งบล็อกหัวจดหมายด้านขวา (ชื่อสถานี / จังหวัด) วัดจากขอบซ้ายของพื้นที่พิมพ์
 LETTERHEAD_TAB = Cm(10)
@@ -216,26 +214,19 @@ def build_court_referral():
     set_runs(p[4], {3: "{court_name}"})
 
     # [5] อ้างถึง ... — run0 "อ้างถึง" เป็นตัวหนา (คงไว้) เนื้อความอยู่ run2 เป็นตัวปกติ
-    # ฟอร์มเดิมพิมพ์ "สิ่งที่ส่งมาด้วย" ต่อท้ายในย่อหน้าเดียวกันโดยไม่ขึ้นบรรทัดใหม่ แยกให้ขึ้นบรรทัดใหม่
-    # (ต้องเป็นย่อหน้าใหม่ ไม่ใช่ line break — ย่อหน้านี้จัดแบบ thaiDistribute ถ้าใช้ line break Word จะยืดตัวอักษรบรรทัดก่อนตัด)
+    # "สิ่งที่ส่งมาด้วย" ต่อท้ายในย่อหน้าเดียวกันเป็นตัวปกติ ตามฟอร์มจริงของสถานี (ผู้ใช้ยืนยันแล้ว ไม่ต้องแยกบรรทัด)
     # {case_red_clause} = " คดีหมายเลขแดงที่ …" เฉพาะเมื่อหมายจับมีเลขแดง (บางหมายไม่มี) แอปเป็นคนประกอบให้
     set_runs(p[5], {2: "จับตามหมายจับของ{court_name} ที่ {warrant_no} คดีหมายเลขดำที่ {case_black_no}{case_red_clause} "
-                       "ลงวันที่ {warrant_date} ในความผิดฐาน “{charge}”"})
+                       "ลงวันที่ {warrant_date} ในความผิดฐาน “{charge}”สิ่งที่ส่งมาด้วย  บันทึกจับกุมตัว จำนวน ๑ ฉบับ"})
     clear_runs(p[5], range(3, len(p[5].runs)))
-    attach_p = copy.deepcopy(p[5]._p)
-    p[5]._p.addnext(attach_p)
-    attach = Paragraph(attach_p, p[5]._parent)
-    set_runs(attach, {0: "สิ่งที่ส่งมาด้วย", 2: "บันทึกจับกุมตัว จำนวน ๑ ฉบับ"})  # ตายตัวตามฟอร์ม
-    attach.paragraph_format.space_before = 0
-    p = doc.paragraphs  # ดัชนีหลังจากนี้เลื่อนไป 1
 
-    # [7] รายละเอียดหมายศาล (วันแรกคือวันที่ศาลออกหมาย = ลงวันที่หมายจับ)
-    flatten(p[7],
+    # [6] รายละเอียดหมายศาล (วันแรกคือวันที่ศาลออกหมาย = ลงวันที่หมายจับ)
+    flatten(p[6],
             "ด้วยเมื่อวันที่ {warrant_date} {court_name} ที่ {warrant_no} คดีหมายเลขดำที่ {case_black_no}{case_red_clause} "
             "ลงวันที่ {warrant_date} ในความผิดฐาน {charge}นั้น")
 
-    # [8] ผู้ต้องหา + ผู้นำตัวส่งศาล — ฟอร์มนี้ใช้ยศ/ตำแหน่งตัวเต็มทั้งหมด
-    flatten(p[8],
+    # [7] ผู้ต้องหา + ผู้นำตัวส่งศาล — ฟอร์มนี้ใช้ยศ/ตำแหน่งตัวเต็มทั้งหมด
+    flatten(p[7],
             "{station_name} จังหวัด{province} ขอเรียนว่า ได้ทำการจับกุม {suspect_title}{suspect_name_with_nick} "
             "อายุ {suspect_age} ปี สัญชาติ {suspect_nationality} หมายเลขประจำตัวประชาชน {suspect_id_number} "
             "ที่อยู่ {suspect_address_court} จึงมอบหมายให้ {officer1_rank_full}{officer1_name} {officer1_position_full} "
@@ -243,13 +234,13 @@ def build_court_referral():
             "มาส่งตัวที่{court_name} เพื่อดำเนินการต่อไป พร้อมนี้ ได้แนบบันทึกการจับกุมตัว มาพร้อมนี้ด้วยแล้ว จำนวน ๑ ฉบับ")
 
     # ผู้ลงนาม (รอง ผกก. ปฏิบัติราชการแทน ผกก.) — คงการเคาะวรรคจัดตำแหน่งของฟอร์มเดิมไว้
-    replace_across_runs(p[13], "พันตำรวจโท", "{court_signer_rank_full}")
-    replace_across_runs(p[15], "วรรณวุฒิ แสนเสนยา", "{court_signer_name}")
-    replace_across_runs(p[16], "รองผู้กำกับการสืบสวนปฏิบัติราชการแทน", "{court_signer_position1}")
-    replace_across_runs(p[17], "ผู้กำกับการสถานีตำรวจภูธรนายายอาม", "{court_signer_position2}")
+    replace_across_runs(p[12], "พันตำรวจโท", "{court_signer_rank_full}")
+    replace_across_runs(p[14], "วรรณวุฒิ แสนเสนยา", "{court_signer_name}")
+    replace_across_runs(p[15], "รองผู้กำกับการสืบสวนปฏิบัติราชการแทน", "{court_signer_position1}")
+    replace_across_runs(p[16], "ผู้กำกับการสถานีตำรวจภูธรนายายอาม", "{court_signer_position2}")
 
     # ท้ายกระดาษ
-    flatten(p[22], "{station_name} จังหวัด{province}")
+    flatten(p[21], "{station_name} จังหวัด{province}")
 
     doc.save(OUT + "court_referral_template.docx")
     print("built court_referral_template.docx from real form")
