@@ -218,7 +218,8 @@ def build_court_referral():
     # [5] อ้างถึง ... — run0 "อ้างถึง" เป็นตัวหนา (คงไว้) เนื้อความอยู่ run2 เป็นตัวปกติ
     # ฟอร์มเดิมพิมพ์ "สิ่งที่ส่งมาด้วย" ต่อท้ายในย่อหน้าเดียวกันโดยไม่ขึ้นบรรทัดใหม่ แยกให้ขึ้นบรรทัดใหม่
     # (ต้องเป็นย่อหน้าใหม่ ไม่ใช่ line break — ย่อหน้านี้จัดแบบ thaiDistribute ถ้าใช้ line break Word จะยืดตัวอักษรบรรทัดก่อนตัด)
-    set_runs(p[5], {2: "จับตามหมายจับของ{court_name} ที่ {warrant_no} คดีหมายเลขดำที่ {case_black_no} "
+    # {case_red_clause} = " คดีหมายเลขแดงที่ …" เฉพาะเมื่อหมายจับมีเลขแดง (บางหมายไม่มี) แอปเป็นคนประกอบให้
+    set_runs(p[5], {2: "จับตามหมายจับของ{court_name} ที่ {warrant_no} คดีหมายเลขดำที่ {case_black_no}{case_red_clause} "
                        "ลงวันที่ {warrant_date} ในความผิดฐาน “{charge}”"})
     clear_runs(p[5], range(3, len(p[5].runs)))
     attach_p = copy.deepcopy(p[5]._p)
@@ -230,7 +231,7 @@ def build_court_referral():
 
     # [7] รายละเอียดหมายศาล (วันแรกคือวันที่ศาลออกหมาย = ลงวันที่หมายจับ)
     flatten(p[7],
-            "ด้วยเมื่อวันที่ {warrant_date} {court_name} ที่ {warrant_no} คดีหมายเลขดำที่ {case_black_no} "
+            "ด้วยเมื่อวันที่ {warrant_date} {court_name} ที่ {warrant_no} คดีหมายเลขดำที่ {case_black_no}{case_red_clause} "
             "ลงวันที่ {warrant_date} ในความผิดฐาน {charge}นั้น")
 
     # [8] ผู้ต้องหา + ผู้นำตัวส่งศาล — ฟอร์มนี้ใช้ยศ/ตำแหน่งตัวเต็มทั้งหมด

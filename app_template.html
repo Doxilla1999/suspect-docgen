@@ -370,10 +370,7 @@
         <p class="note" style="margin-top:0">ข้อมูลในส่วนนี้เป็น<b>ของแต่ละคน</b> (ข้อหา หมายจับ ของกลาง) — โหมดหลายคนเลือกชื่อจาก dropdown ด้านบนก่อนกรอก ระบบจะใช้ข้อมูลตรงนี้ทำใบปะหน้าส่งศาล ปยส.115 (ของกลางที่ยึด) และข้อความรายงานไลน์ของคนนั้น ๆ</p>
         <button type="button" class="btn btn-ghost btn-sm" id="copyChargeFromPrevBtn" style="display:none;margin-bottom:10px">คัดลอกข้อหา/หมายจับ/ของกลางจากคนก่อนหน้า</button>
         <label class="f"><span>ข้อหา</span><textarea id="charge" placeholder="เช่น เสพและครอบครองยาเสพติดให้โทษประเภท 1 (เมทแอมเฟตามีน) โดยผิดกฎหมาย"></textarea></label>
-        <div class="grid3">
-          <label class="f"><span>คดีหมายเลขแดง (ถ้ามี)</span><input id="caseRedNo"></label>
-        </div>
-        <p class="note">รายละเอียดหมายจับ/ศาล/เลขหนังสือส่งศาล ย้ายไปอยู่ในป็อบอัพ "ใบปะหน้าส่งศาล" (ติ๊ก ⚖️ หรือกด "รายละเอียด" ด้านซ้าย)</p>
+        <p class="note">รายละเอียดหมายจับ/ศาล/เลขคดี/เลขหนังสือส่งศาล อยู่ในป็อบอัพ "ใบปะหน้าส่งศาล" (ติ๊ก ⚖️ หรือกด "รายละเอียด" ด้านซ้าย)</p>
         <p class="field-group-label" style="margin-top:12px">ของกลางของคนนี้ (ถ้ามี)</p>
         <div id="evidenceRows"></div>
         <button type="button" class="btn btn-ghost btn-sm" id="addEvidenceRow">+ เพิ่มของกลาง</button>
@@ -539,6 +536,7 @@
           <label class="f"><span>ศาลที่ออกหมาย (ชื่อศาลใต้ตราครุฑ)</span><input id="courtName" placeholder="ศาลจังหวัดจันทบุรี"></label>
           <label class="f"><span>หมายจับเลขที่ (ช่อง "ที่" ด้านซ้าย)</span><input id="warrantNo" placeholder="เช่น 232/2569"></label>
           <label class="f"><span>คดีหมายเลขดำที่ (มุมขวาบน)</span><input id="caseBlackNo" placeholder="เช่น ยฝ423/2569"></label>
+          <label class="f"><span>คดีหมายเลขแดงที่ (มุมขวาบน — บางหมายไม่มี เว้นว่างได้)</span><input id="caseRedNo" placeholder="ถ้าไม่มี เว้นว่าง"></label>
           <label class="f"><span>ลงวันที่หมายจับ (วันที่/เดือน/พุทธศักราช ใต้ชื่อศาล)</span>
             <div class="date3"><input id="warrantDate_day" type="number" min="1" max="31" placeholder="วัน"><select id="warrantDate_month"></select><input id="warrantDate_year" type="number" placeholder="พ.ศ."></div>
           </label>
@@ -990,6 +988,8 @@ function buildTagMap() {
     court_doc_number: `${v('courtDocNumberPrefix')}/${toThaiNumeral(v('courtDocNo'))}`,
     doc_date_no_era: thaiDateNoEra('issueDate'),
     court_attachment: v('courtAttachment') || 'บันทึกจับกุมตัว จำนวน ๑ ฉบับ',
+    // หมายจับบางฉบับไม่มีเลขแดง → ใส่ท่อน "คดีหมายเลขแดงที่ …" เฉพาะเมื่อกรอก
+    case_red_clause: v('caseRedNo') ? ` คดีหมายเลขแดงที่ ${v('caseRedNo')}` : '',
     officer1_rank_full: fullRank(v('officer1Rank')),
     // ตำแหน่งเต็มในรายชื่อมักลงท้ายด้วยชื่อสถานีอยู่แล้ว แต่ฟอร์มนี้ต่อชื่อสถานีเองข้างหลัง จึงตัดออกกันซ้ำ
     officer1_position_full: (v('officer1SignerPosition') || v('officer1Position')).replace(v('stationName'), '').trim(),
