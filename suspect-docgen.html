@@ -150,7 +150,7 @@
       <h1>ระบบสร้างเอกสารผู้ต้องหา · สภ.นายายอาม</h1>
       <p>กรอกครั้งเดียว ออกเอกสารได้หลายฉบับ</p>
     </div>
-    <div class="credit-top">BY บังโต KN60 <span title="เวอร์ชันของไฟล์นี้ — ถ้าไม่ตรงกับที่แจ้งไว้ ให้กด Ctrl+F5 โหลดหน้าใหม่" style="opacity:.6;font-size:11px;font-weight:400;margin-left:6px">build 20/09/2569 11:19</span></div>
+    <div class="credit-top">BY บังโต KN60 <span title="เวอร์ชันของไฟล์นี้ — ถ้าไม่ตรงกับที่แจ้งไว้ ให้กด Ctrl+F5 โหลดหน้าใหม่" style="opacity:.6;font-size:11px;font-weight:400;margin-left:6px">build 20/09/2569 11:24</span></div>
     <button type="button" class="header-logout" id="logoutBtn">ออกจากระบบ</button>
   </header>
 
@@ -534,17 +534,17 @@
         <button type="button" class="modal-close" data-close-modal>&times;</button>
         <h2>รายละเอียดใบปะหน้าส่งศาล (ส่งตัวผู้ต้องหาตามหมายจับ)</h2>
         <p class="modal-person-tag"></p>
-        <p class="field-group-label">รายละเอียดหมายจับ (จากหน้าหมายศาล)</p>
+        <p class="field-group-label">รายละเอียดหมายจับ — คัดจากหน้าหมายจับของศาล (ตำแหน่งบนหมายอยู่ในวงเล็บ)</p>
         <div class="grid3">
-          <label class="f"><span>ศาลที่ออกหมาย</span><input id="courtName" placeholder="ศาลจังหวัดจันทบุรี"></label>
-          <label class="f"><span>หมายจับเลขที่</span><input id="warrantNo" placeholder="เช่น 232/2569"></label>
-          <label class="f"><span>คดีหมายเลขดำที่</span><input id="caseBlackNo" placeholder="เช่น ยฝ423/2569"></label>
-          <label class="f"><span>ลงวันที่หมายจับ (พ.ศ.)</span>
+          <label class="f"><span>ศาลที่ออกหมาย (ชื่อศาลใต้ตราครุฑ)</span><input id="courtName" placeholder="ศาลจังหวัดจันทบุรี"></label>
+          <label class="f"><span>หมายจับเลขที่ (ช่อง "ที่" ด้านซ้าย)</span><input id="warrantNo" placeholder="เช่น 232/2569"></label>
+          <label class="f"><span>คดีหมายเลขดำที่ (มุมขวาบน)</span><input id="caseBlackNo" placeholder="เช่น ยฝ423/2569"></label>
+          <label class="f"><span>ลงวันที่หมายจับ (วันที่/เดือน/พุทธศักราช ใต้ชื่อศาล)</span>
             <div class="date3"><input id="warrantDate_day" type="number" min="1" max="31" placeholder="วัน"><select id="warrantDate_month"></select><input id="warrantDate_year" type="number" placeholder="พ.ศ."></div>
           </label>
           <label class="f"><span>สิ่งที่ส่งมาด้วย</span><input id="courtAttachment" placeholder="บันทึกจับกุมตัว จำนวน ๑ ฉบับ"></label>
         </div>
-        <label class="f"><span>ข้อหาตามหมายจับ — ช่องเดียวกับ "ข้อหา" ในพาแนล พิมพ์ที่ไหนก็ได้</span>
+        <label class="f"><span>ข้อหาตามหมายจับ (บรรทัด "ในความเรื่องนี้ต้องหาว่ากระทำความผิดฐาน") — ช่องเดียวกับ "ข้อหา" ในพาแนล</span>
           <textarea id="chargeCourt" placeholder="เช่น ครอบครองยาเสพติดให้โทษในประเภท 1 โดยไม่ได้รับอนุญาต"></textarea>
         </label>
 
