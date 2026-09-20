@@ -185,9 +185,9 @@
           <button type="button" class="doc-edit-btn" data-modal="modalProfilePhotos">✏ รายละเอียด</button>
         </div>
         <div class="nav-doc" style="--doc-color:#B68D40">
-          <label class="nav-doc-main" title="ใบปะหน้าส่งศาล">
+          <label class="nav-doc-main" title="ส่งตัวผู้ต้องหาตามหมายจับของศาล">
             <input type="checkbox" class="doc-select" value="court_referral">
-            <span class="nav-doc-icon">⚖️</span><span class="nav-doc-label">ใบปะหน้าส่งศาล</span>
+            <span class="nav-doc-icon">⚖️</span><span class="nav-doc-label">ส่งตัวผู้ต้องหาตามหมายจับของศาล</span>
           </label>
           <button type="button" class="doc-edit-btn" data-modal="modalCourtReferral">✏ รายละเอียด</button>
         </div>
@@ -367,10 +367,10 @@
       <details class="panel" data-module="docgen" open id="chargePanel">
         <summary>ข้อหา / หมายจับ / ของกลาง (รายคน)</summary>
         <p class="modal-person-tag" id="chargePersonTag"></p>
-        <p class="note" style="margin-top:0">ข้อมูลในส่วนนี้เป็น<b>ของแต่ละคน</b> (ข้อหา หมายจับ ของกลาง) — โหมดหลายคนเลือกชื่อจาก dropdown ด้านบนก่อนกรอก ระบบจะใช้ข้อมูลตรงนี้ทำใบปะหน้าส่งศาล ปยส.115 (ของกลางที่ยึด) และข้อความรายงานไลน์ของคนนั้น ๆ</p>
+        <p class="note" style="margin-top:0">ข้อมูลในส่วนนี้เป็น<b>ของแต่ละคน</b> (ข้อหา หมายจับ ของกลาง) — โหมดหลายคนเลือกชื่อจาก dropdown ด้านบนก่อนกรอก ระบบจะใช้ข้อมูลตรงนี้ทำหนังสือส่งตัวผู้ต้องหาตามหมายจับของศาล ปยส.115 (ของกลางที่ยึด) และข้อความรายงานไลน์ของคนนั้น ๆ</p>
         <button type="button" class="btn btn-ghost btn-sm" id="copyChargeFromPrevBtn" style="display:none;margin-bottom:10px">คัดลอกข้อหา/หมายจับ/ของกลางจากคนก่อนหน้า</button>
         <label class="f"><span>ข้อหา</span><textarea id="charge" placeholder="เช่น เสพและครอบครองยาเสพติดให้โทษประเภท 1 (เมทแอมเฟตามีน) โดยผิดกฎหมาย"></textarea></label>
-        <p class="note">รายละเอียดหมายจับ/ศาล/เลขคดี/เลขหนังสือส่งศาล อยู่ในป็อบอัพ "ใบปะหน้าส่งศาล" (ติ๊ก ⚖️ หรือกด "รายละเอียด" ด้านซ้าย)</p>
+        <p class="note">รายละเอียดหมายจับ/ศาล/เลขคดี/เลขหนังสือส่งศาล อยู่ในป็อบอัพ "ส่งตัวผู้ต้องหาตามหมายจับของศาล" (ติ๊ก ⚖️ หรือกด "รายละเอียด" ด้านซ้าย)</p>
         <p class="field-group-label" style="margin-top:12px">ของกลางของคนนี้ (ถ้ามี)</p>
         <div id="evidenceRows"></div>
         <button type="button" class="btn btn-ghost btn-sm" id="addEvidenceRow">+ เพิ่มของกลาง</button>
@@ -529,7 +529,7 @@
       <div class="modal-overlay" id="modalCourtReferral">
       <div class="modal-box">
         <button type="button" class="modal-close" data-close-modal>&times;</button>
-        <h2>รายละเอียดใบปะหน้าส่งศาล (ส่งตัวผู้ต้องหาตามหมายจับ)</h2>
+        <h2>รายละเอียดหนังสือส่งตัวผู้ต้องหาตามหมายจับของศาล</h2>
         <p class="modal-person-tag"></p>
         <div class="panel" style="background:#1E1A10;border-color:#6B5626;margin-bottom:10px">
           <textarea id="warrantPasteText" rows="4" placeholder="วางข้อความจากหมายจับทั้งก้อนตรงนี้ (คัดลอกจากไฟล์หมาย/ระบบศาล หรือ OCR) เช่น&#10;คดีหมายเลขดำที่ ยฝ๔๒๓/๒๕๖๙ ... ศาลจังหวัดจันทบุรี ที่ ๒๓๒/๒๕๖๙ วันที่ ๒๓ เดือน มิถุนายน พุทธศักราช ๒๕๖๙ ... ในความเรื่องนี้ต้องหาว่ากระทำความผิดฐาน ครอบครองยาเสพติดให้โทษ..."></textarea>
@@ -604,7 +604,7 @@
           <label class="f"><span>ชื่อสถานี</span><input id="stationName" value="สถานีตำรวจภูธรนายายอาม"></label>
           <label class="f"><span>อำเภอที่ตั้งสถานี</span><input id="stationDistrict" value="นายายอาม"></label>
           <label class="f"><span>เลขที่หนังสือ ส่วนหน้า — ส่งตรวจปัสสาวะ</span><input id="docNumberPrefix" value="ตช 0013(จบ).3(17).32" placeholder="เช่น ตช 0013(จบ).3(17).32"></label>
-          <label class="f"><span>เลขที่หนังสือ ส่วนหน้า — ใบปะหน้าส่งศาล</span><input id="courtDocNumberPrefix" value="ตช ๐๐๑๗.๓๒(๑๗).๓๒" placeholder="เช่น ตช ๐๐๑๗.๓๒(๑๗).๓๒"></label>
+          <label class="f"><span>เลขที่หนังสือ ส่วนหน้า — ส่งตัวผู้ต้องหาตามหมายจับของศาล</span><input id="courtDocNumberPrefix" value="ตช ๐๐๑๗.๓๒(๑๗).๓๒" placeholder="เช่น ตช ๐๐๑๗.๓๒(๑๗).๓๒"></label>
           <label class="f"><span>จังหวัด</span><input id="province" value="จันทบุรี"></label>
           <label class="f"><span>รหัสไปรษณีย์</span><input id="postalCode" value="๒๒๑๖๐"></label>
           <label class="f"><span>สังกัด (ในแบบ ปยส.115)</span><input id="officerAffiliation" value="ผบก.ภ.จว.จันทบุรี"></label>
@@ -773,7 +773,7 @@ const TEMPLATES = {
 const DOC_INFO = {
   drug_test_115: { file: 'docx', xmlPath: 'word/document.xml', label: 'ปยส.115', prefix: 'ปยส115' },
   urine_referral: { file: 'docx', xmlPath: 'word/document.xml', label: 'ส่งตรวจปัสสาวะ', prefix: 'สงตรวจปสสาวะ' },
-  court_referral: { file: 'docx', xmlPath: 'word/document.xml', label: 'ใบปะหน้าส่งศาล', prefix: 'ใบปะหนาสงศาล' },
+  court_referral: { file: 'docx', xmlPath: 'word/document.xml', label: 'ส่งตัวผู้ต้องหาตามหมายจับของศาล', prefix: 'สงตวตามหมายจบ' },
   phone_consent_m80: { file: 'docx', xmlPath: 'word/document.xml', label: 'บันทึกยินยอมตรวจโทรศัพท์ ม.80', prefix: 'ม80' },
   profile_and_photos: { file: 'docx', xmlPath: 'word/document.xml', label: 'ประวัติบุคคล 4 ด้าน + ภาพประกอบ (2 หน้า)', prefix: 'ประวติ4ดาน', hasPhotos: true }
 };
@@ -833,7 +833,7 @@ document.getElementById('copyChargeFromPrevBtn').addEventListener('click', () =>
   CHARGE_FIELD_IDS.forEach(id => { const el = document.getElementById(id); if (el && src.snapshot[id] !== undefined) el.value = src.snapshot[id]; });
   resetEvidenceRows(src.snapshot.evidence);
   syncChargeMirror();
-  document.getElementById('queueMsg').textContent = `คัดลอกข้อหา/หมายจับ/ของกลางจาก "${src.name}" มาให้แล้ว (เลขที่หนังสือใบปะหน้าศาลไม่คัดลอก)`;
+  document.getElementById('queueMsg').textContent = `คัดลอกข้อหา/หมายจับ/ของกลางจาก "${src.name}" มาให้แล้ว (เลขที่หนังสือส่งตัวตามหมายจับไม่คัดลอก)`;
 });
 ['firstName', 'lastName'].forEach(id => document.getElementById(id).addEventListener('input', () => renderModalPersonTag(document.getElementById('chargePanel'))));
 document.addEventListener('change', e => {
@@ -1217,7 +1217,7 @@ const DOC_SHORT = {
   drug_test_115: { icon: '💊', label: 'ปยส.115' },
   urine_referral: { icon: '🧪', label: 'ปัสสาวะ' },
   profile_and_photos: { icon: '📸', label: '4 ด้าน' },
-  court_referral: { icon: '⚖️', label: 'ปะหน้าศาล' },
+  court_referral: { icon: '⚖️', label: 'ส่งตัวตามหมายจับ' },
   phone_consent_m80: { icon: '📱', label: 'ม.80' }
 };
 function renderQueue() {
