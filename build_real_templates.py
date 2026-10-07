@@ -1,0 +1,379 @@
+"""แปลงไฟล์ฟอร์มจริงของสถานี (forms/*.docx) ให้เป็นแม่แบบที่มีแท็ก {...} โดยไม่แตะเลย์เอาต์เดิม
+
+ต่างจาก generate_templates.py ที่ "สร้างเอกสารขึ้นมาใหม่" ทั้งฉบับ — สคริปต์นี้เปิดไฟล์ฟอร์มจริง
+แล้วแทนที่เฉพาะ "ข้อความในช่องที่ต้องกรอก" ด้วยแท็ก ทำให้ฟอนต์/ระยะ/ระยะบรรทัด/ตาราง
+ของฟอร์มเดิมคงอยู่ครบ เวลา export ออกมาฟอร์มจึงไม่ขยับ
+"""
+import copy
+import os
+import re
+from docx import Document
+from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_TAB_ALIGNMENT
+from docx.opc.constants import RELATIONSHIP_TYPE as RT
+from docx.oxml.ns import qn
+from docx.shared import Cm
+from docx.text.paragraph import Paragraph
+
+# ตำแหน่งบล็อกหัวจดหมายด้านขวา (ชื่อสถานี / จังหวัด) วัดจากขอบซ้ายของพื้นที่พิมพ์
+LETTERHEAD_TAB = Cm(10)
+
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+# ไฟล์ฟอร์มจริงมีข้อมูลคนจริง (ชื่อ เลขบัตร ที่อยู่ ลายเซ็น) — เก็บไว้นอกโฟลเดอร์ repo เสมอ ห้ามย้ายเข้ามา
+# ค่าเริ่มต้น: โฟลเดอร์ suspect-docgen-private/forms ข้าง ๆ repo  (เปลี่ยนได้ด้วยตัวแปร SDG_FORMS)
+FORMS = os.environ.get("SDG_FORMS") or os.path.join(os.path.dirname(SCRIPT_DIR), "suspect-docgen-private", "forms")
+FORMS = os.path.join(FORMS, "")
+OUT = os.path.join(SCRIPT_DIR, "build") + os.sep
+
+
+def grab(para, pattern):
+    """ดึงข้อความเดิมในฟอร์ม (เช่นชื่อ/เลขบัตรของคนในฟอร์มตัวอย่าง) ด้วย regex ตอนสร้างแม่แบบ
+    — โค้ดนี้อยู่บน GitHub สาธารณะ จึงห้ามเขียนข้อมูลคนจริงลงไปตรง ๆ เป็นข้อความที่ใช้ค้นหา"""
+    m = re.search(pattern, para.text)
+    if not m:
+        raise ValueError(f"หา {pattern!r} ไม่เจอในย่อหน้า: {para.text[:60]!r}…")
+    return m.group(1)
+
+
+TITLE_PREFIX = re.compile(r"^(?:นางสาว|นาง|นาย|น\.ส\.)\s*")
+RANK_PREFIX = re.compile(r"^(?:[ก-ฮ]{1,3}\.)+\s*")
+
+
+def set_runs(para, spans):
+    """เขียนข้อความลง run ตามดัชนีที่ระบุ แล้วล้าง run ที่เหลือในกลุ่มเดียวกัน
+
+    spans: dict {run_index: text} — run ที่ไม่ได้ระบุจะถูกปล่อยไว้เหมือนเดิม
+    ใช้วิธีนี้เพื่อคงรูปแบบ (ตัวหนา/ฟอนต์/แท็บ) ของ run ที่ไม่เกี่ยวข้องไว้
+    """
+    for idx, text in spans.items():
+        para.runs[idx].text = text
+
+
+def clear_runs(para, indexes):
+    for idx in indexes:
+        para.runs[idx].text = ""
+
+
+def flatten(para, text):
+    """ยุบทุก run ในย่อหน้าให้เหลือ run แรกอันเดียวแล้วใส่ข้อความใหม่
+
+    ใช้กับย่อหน้าที่ทุก run มีรูปแบบเดียวกันอยู่แล้ว ข้อดีคือแท็กจะไม่ถูก Word
+    ตัดคร่อมหลาย run ซึ่งทำให้แทนที่ข้อความตอนสร้างเอกสารไม่สำเร็จ
+    """
+    para.runs[0].text = text
+    for r in para.runs[1:]:
+        r.text = ""
+
+
+def replace_across_runs(para, old, new):
+    """แทนที่ข้อความในย่อหน้า แม้ Word จะตัดข้อความนั้นคร่อมหลาย run
+
+    คงรูปแบบของ run แรกที่ทับกับข้อความเดิมไว้ (ตัวหนา/ฟอนต์) แล้วล้างส่วนที่ทับใน run ถัดๆ ไป
+    ทำให้แท็กที่ใส่เข้าไปอยู่ใน run เดียว ไม่ถูกตัดคร่อมตอนแทนค่าในเว็บแอป
+    """
+    runs = para.runs
+    full = "".join(r.text for r in runs)
+    idx = full.find(old)
+    if idx < 0:
+        raise ValueError(f"ไม่พบข้อความ {old!r} ในย่อหน้า: {full!r}")
+    start, end = idx, idx + len(old)
+    pos = 0
+    replaced = False
+    for r in runs:
+        r_start, r_end = pos, pos + len(r.text)
+        pos = r_end
+        if r_end <= start or r_start >= end:
+            continue
+        head = r.text[:max(0, start - r_start)]
+        tail = r.text[max(0, end - r_start):] if r_end > end else ""
+        if not replaced:
+            r.text = head + new + tail
+            replaced = True
+        else:
+            r.text = head + tail
+
+
+def build_drug_test_115():
+    doc = Document(FORMS + "drug_test_115_original.docx")
+    p = doc.paragraphs
+
+    # ข้อมูลคนในฟอร์มตัวอย่าง ดึงจากตัวฟอร์มเอง (ไม่เขียนไว้ในโค้ด)
+    officer = grab(p[5], r"ข้าพเจ้า\s*(.+?)\s+ตำแหน่ง")          # ยศ+ชื่อเจ้าหน้าที่
+    officer_name = RANK_PREFIX.sub("", officer)
+    officer_pos = grab(p[5], r"ตำแหน่ง\s*(.+?)\s*$")
+    card_no = grab(p[7], r"เลขที่\s*(\S+)\s*หรือ")
+    suspect = grab(p[10], r"สอบถาม\s*(.+?)\s+อายุ")               # คำนำหน้า+ชื่อผู้ถูกตรวจ
+    suspect_name = TITLE_PREFIX.sub("", suspect)
+    age = grab(p[10], r"(อายุ\s*\d+\s*ปี)")
+    id_no = grab(p[12], r"เลขที่\s*(\d[\d ]*\d)")
+    addr = grab(p[13], r"ที่อยู่\s*(.+?)\s*$")
+    addr_now = grab(p[14], r"\)\s*(.+?)\s+หมายเลขโทรศัพท์")
+
+    # (ดัชนีย่อหน้า, ข้อความเดิมในฟอร์ม, แท็กที่ใส่แทน)
+    subs = [
+        (3, "สถานีตำรวจภูธรนายายอาม", "{station_name}"),
+        (4, "16 เดือน กันยายน พ.ศ. 2569", "{record_day} เดือน {record_month} พ.ศ. {record_year}"),
+        (5, officer, "{officer1_rank}{officer1_name}"),
+        (5, officer_pos, "{officer1_position}"),
+        (6, "ผบก.ภ.จว.จันทบุรี", "{officer_affiliation}"),
+        (7, "☑", "{cb_card_ppst}"),
+        (7, card_no, "{card_no_ppst}"),
+        (8, "☐", "{cb_card_gov}"),
+        (8, "เลขที่", "เลขที่ {card_no_gov}"),
+        (10, suspect, "{suspect_title}{suspect_full_name}"),
+        (10, age, "อายุ {suspect_age} ปี"),
+        (11, "☑ บัตรประชาชน", "{cb_id_card} บัตรประชาชน"),
+        (11, "☐ บัตรคนซึ่งไม่มีสัญชาติไทย", "{cb_id_alien} บัตรคนซึ่งไม่มีสัญชาติไทย"),
+        (11, "☐ หนังสือเดินทาง", "{cb_id_passport} หนังสือเดินทาง"),
+        (11, "☐ เอกสารอื่นที่ราชการออกให้ ระบุ", "{cb_id_other} เอกสารอื่นที่ราชการออกให้ ระบุ {id_other_detail}"),
+        (12, id_no, "{suspect_id_number}"),
+        (13, addr, "{suspect_address}"),
+        (14, addr_now, "{suspect_current_address}"),
+        (14, "หมายเลขโทรศัพท์", "หมายเลขโทรศัพท์ {suspect_phone}"),
+        (16, "☑", "{cb_test_pos}"),
+        (16, "เมทแอมเฟตามีน", "{drug_type}"),
+        (17, "☐", "{cb_test_neg}"),
+        (19, "☑", "{cb_search_none}"),
+        (20, "☐", "{cb_search_found}"),
+        (20, "ประเภท/ชนิด  ปริมาณ", "ประเภท/ชนิด {search_drug_type} ปริมาณ {search_amount}"),
+        (24, "☐", "{cb_pb1}"),
+        (25, "☐", "{cb_pb2}"),
+        (26, "☐", "{cb_pb3}"),
+        (27, "☑", "{cb_pb4}"),
+        (29, "อาชีพ", "อาชีพ {suspect_occupation}"),
+        (29, "รายได้โดยประมาณ", "รายได้โดยประมาณ {suspect_income}"),
+        (32, suspect_name, "{suspect_full_name}"),
+        (33, "☐ ขอลงนามสมัครใจ", "{cb_consent_yes} ขอลงนามสมัครใจ"),
+        (33, "☑ ขอลงนามไม่สมัครใจ", "{cb_consent_no} ขอลงนามไม่สมัครใจ"),
+        (42, "ในวันที่  เวลา  น.", "ในวันที่ {appointment_date} เวลา {appointment_time} น."),
+        (43, "ณ สถานที่", "ณ สถานที่ {appointment_place}"),
+        (53, suspect_name, "{suspect_full_name}"),
+        (55, "ร.ต.อ.", "{officer1_rank}"),
+        (56, officer_name, "{officer1_name}"),
+        (59, suspect_name, "{suspect_full_name}"),
+    ]
+    for idx, old, new in subs:
+        replace_across_runs(p[idx], old, new)
+
+    doc.save(OUT + "drug_test_115_template.docx")
+    print("built drug_test_115_template.docx from real form")
+
+
+def build_urine_referral():
+    doc = Document(FORMS + "urine_referral_original.docx")
+    p = doc.paragraphs
+
+    # [2] ที่ <เลขหนังสือ> --tab--> <ชื่อสถานี>
+    # เลขที่หนังสือยาวไม่เท่ากันทุกวัน (ออกเลขจากระบบอื่นแล้วมากรอก) ฟอร์มเดิมใช้เคาะเว้นวรรค
+    # จัดตำแหน่ง ชื่อสถานีจึงเลื่อนตามความยาวเลข เปลี่ยนมาใช้ tab stop ตายตัวแทน
+    p[2].paragraph_format.tab_stops.add_tab_stop(LETTERHEAD_TAB, WD_TAB_ALIGNMENT.LEFT)
+    set_runs(p[2], {3: "{doc_number}", 14: "{station_name}"})
+    clear_runs(p[2], [4, 5, 6, 7, 8, 10, 11, 12, 13])  # เหลือ run9 ที่เป็นแท็บเดียว
+
+    # [3] จังหวัด.... รหัสไปรษณีย์ — ใช้ tab stop เดียวกันให้ตรงกับชื่อสถานีเสมอ
+    p[3].paragraph_format.tab_stops.add_tab_stop(LETTERHEAD_TAB, WD_TAB_ALIGNMENT.LEFT)
+    set_runs(p[3], {0: "\t", 1: "จังหวัด{province}", 2: "  {postal_code}"})
+
+    # [4] วันที่ออกหนังสือ
+    set_runs(p[4], {6: "{doc_date}"})
+    clear_runs(p[4], [7, 8, 9, 10])
+
+    # [6] เรียน ผู้อำนวยการ<โรงพยาบาล>
+    set_runs(p[6], {2: "ผู้อำนวยการ{hospital_name}"})
+
+    # [7] ย่อหน้าเนื้อความ (ทุก run รูปแบบเดียวกัน ยุบเหลือ run เดียวได้)
+    flatten(p[7],
+            "เนื่องด้วย {station_name} ขอส่งตรวจยืนยัน{drug_type} สารเสพติดในปัสสาวะ "
+            "ในขั้นที่สองด้วยหลักการทางวิทยาศาสตร์ เพื่อเป็นการดำเนินการตามแนวทางการตรวจพิสูจน์"
+            "หาสารเสพติดในปัสสาวะตามพระราชบัญญัติฟื้นฟูสมรรถภาพผู้ติดยาเสพติด พ.ศ. ๒๕๔๕ "
+            "ที่ห้องเคมีคลินิกและพิษวิทยา กลุ่มงานพยาธิวิทยาคลินิก {hospital_name} {province} "
+            "ในวันที่ {test_date} เป็นจำนวน {test_count} ราย  ดังมีรายชื่อต่อไปนี้")
+
+    # [9] รายชื่อผู้ถูกส่งตรวจ — เหลือย่อหน้าเดียวเป็นต้นแบบ ตอนสร้างเอกสารจะโคลนตามจำนวนคน
+    flatten(p[9], "{suspect_list_block}")
+
+    # [10] ตัวอย่างรายชื่อคนที่สองในฟอร์มเดิม ลบทิ้ง
+    p[10]._element.getparent().remove(p[10]._element)
+
+    # [18] บรรทัดยศเหนือวงเล็บ (ที่ว่างด้านขวาของยศไว้เซ็นชื่อ) — ต้องชิดซ้ายให้ตรงขอบซ้ายของวงเล็บ
+    # บรรทัดชื่อจัดกึ่งกลาง ขอบซ้ายจึงขึ้นกับความยาวชื่อ → ให้แอปคำนวณระยะเยื้อง {signer_rank_indent} (twips) ตอน export
+    rank_run = p[18].add_run("{signer_rank}")
+    rank_run.font.name = p[19].runs[2].font.name
+    rank_pPr = p[18]._p.get_or_add_pPr()
+    rank_ind = rank_pPr.find(qn("w:ind"))
+    rank_ind.attrib.pop(qn("w:firstLine"), None)
+    rank_ind.set(qn("w:left"), "{signer_rank_indent}")
+    rank_pPr.find(qn("w:jc")).set(qn("w:val"), "left")
+
+    # [19] ( ชื่อผู้ลงนาม )  /  [20] ตำแหน่งผู้ลงนาม
+    set_runs(p[19], {2: "{signer_name} "})
+    clear_runs(p[19], [3, 4])
+    flatten(p[20], "{signer_position}")
+
+    # ตารางท้ายเอกสาร ฝั่ง "สำหรับการรับ-ส่งตัวอย่าง" — ผู้ส่ง/วันที่/เวลา ที่นำส่งตัวอย่าง
+    rows = doc.tables[0].rows
+    rows[1].cells[0].paragraphs[0].runs[0].text = "ผู้ส่ง {signer_rank}{signer_name}"
+    rows[3].cells[0].paragraphs[0].runs[1].text = "  {sample_send_date}"
+    rows[4].cells[0].paragraphs[0].runs[1].text = "   {sample_send_time}   "
+
+    doc.save(OUT + "urine_referral_template.docx")
+    print("built urine_referral_template.docx from real form")
+
+
+# ใบปะหน้าส่งศาล: ขอบซ้ายกระดาษ 1701 twips (3 ซม.) บล็อกชื่อสถานีในฟอร์มจริงเริ่มประมาณ 10.9 ซม. จากขอบพิมพ์
+COURT_LETTERHEAD_TAB = Cm(10.9)
+
+
+def build_court_referral():
+    doc = Document(FORMS + "court_referral_original.docx")
+    p = doc.paragraphs
+
+    # [0] ที่ <เลขหนังสือ> --tab--> <ชื่อสถานี>  (ฟอร์มเดิมใช้แท็บ 5 ตัว + เคาะวรรค เปลี่ยนเป็น tab stop ตายตัว)
+    p[0].paragraph_format.tab_stops.add_tab_stop(COURT_LETTERHEAD_TAB, WD_TAB_ALIGNMENT.LEFT)
+    set_runs(p[0], {3: "{court_doc_number}", 4: "", 5: "\t", 11: "{station_name}"})
+    clear_runs(p[0], [6, 7, 8, 9, 10])
+
+    # [1] จังหวัด.... รหัสไปรษณีย์ — tab stop เดียวกัน
+    p[1].paragraph_format.tab_stops.add_tab_stop(COURT_LETTERHEAD_TAB, WD_TAB_ALIGNMENT.LEFT)
+    set_runs(p[1], {0: "\t", 6: "จังหวัด{province}  {postal_code}"})
+    clear_runs(p[1], [1, 2, 3, 4, 5])
+
+    # [2] วันที่ออกหนังสือ (ฟอร์มนี้ไม่มีคำว่า พ.ศ.) คงแท็บ 6 ตัวเดิมไว้
+    set_runs(p[2], {6: " {doc_date_no_era}"})
+    clear_runs(p[2], [7, 8, 9, 10])
+
+    # [3] เรื่อง / [4] เรียน — ชื่อศาลเปลี่ยนตามที่กรอก
+    set_runs(p[3], {2: "ส่งตัวผู้ต้องหาตามหมายจับของ{court_name}"})
+    set_runs(p[4], {3: "{court_name}"})
+
+    # [5] อ้างถึง ... — run0 "อ้างถึง" เป็นตัวหนา (คงไว้) เนื้อความอยู่ run2 เป็นตัวปกติ
+    # "สิ่งที่ส่งมาด้วย" ต่อท้ายในย่อหน้าเดียวกันเป็นตัวปกติ ตามฟอร์มจริงของสถานี (ผู้ใช้ยืนยันแล้ว ไม่ต้องแยกบรรทัด)
+    # {case_red_clause} = " คดีหมายเลขแดงที่ …" เฉพาะเมื่อหมายจับมีเลขแดง (บางหมายไม่มี) แอปเป็นคนประกอบให้
+    set_runs(p[5], {2: "จับตามหมายจับของ{court_name} ที่ {warrant_no} คดีหมายเลขดำที่ {case_black_no}{case_red_clause} "
+                       "ลงวันที่ {warrant_date} ในความผิดฐาน “{charge}”สิ่งที่ส่งมาด้วย  บันทึกจับกุมตัว จำนวน ๑ ฉบับ"})
+    clear_runs(p[5], range(3, len(p[5].runs)))
+
+    # [6] รายละเอียดหมายศาล (วันแรกคือวันที่ศาลออกหมาย = ลงวันที่หมายจับ)
+    flatten(p[6],
+            "ด้วยเมื่อวันที่ {warrant_date} {court_name} ที่ {warrant_no} คดีหมายเลขดำที่ {case_black_no}{case_red_clause} "
+            "ลงวันที่ {warrant_date} ในความผิดฐาน {charge}นั้น")
+
+    # [7] ผู้ต้องหา + ผู้นำตัวส่งศาล — ฟอร์มนี้ใช้ยศ/ตำแหน่งตัวเต็มทั้งหมด
+    flatten(p[7],
+            "{station_name} จังหวัด{province} ขอเรียนว่า ได้ทำการจับกุม {suspect_title}{suspect_name_with_nick} "
+            "อายุ {suspect_age} ปี สัญชาติ {suspect_nationality} หมายเลขประจำตัวประชาชน {suspect_id_number} "
+            "ที่อยู่ {suspect_address_court} จึงมอบหมายให้ {officer1_rank_full}{officer1_name} {officer1_position_full} "
+            "{station_name} จังหวัด{province} พร้อมพวก เป็นผู้นำตัว{suspect_title}{suspect_name_with_nick} "
+            "มาส่งตัวที่{court_name} เพื่อดำเนินการต่อไป พร้อมนี้ ได้แนบบันทึกการจับกุมตัว มาพร้อมนี้ด้วยแล้ว จำนวน ๑ ฉบับ")
+
+    # ผู้ลงนาม (รอง ผกก. ปฏิบัติราชการแทน ผกก.) — คงการเคาะวรรคจัดตำแหน่งของฟอร์มเดิมไว้
+    replace_across_runs(p[12], "พันตำรวจโท", "{court_signer_rank_full}")
+    replace_across_runs(p[14], grab(p[14], r"\(\s*(.+?)\s*\)"), "{court_signer_name}")
+    replace_across_runs(p[15], "รองผู้กำกับการสืบสวนปฏิบัติราชการแทน", "{court_signer_position1}")
+    replace_across_runs(p[16], "ผู้กำกับการสถานีตำรวจภูธรนายายอาม", "{court_signer_position2}")
+
+    # ท้ายกระดาษ
+    flatten(p[21], "{station_name} จังหวัด{province}")
+
+    doc.save(OUT + "court_referral_template.docx")
+    print("built court_referral_template.docx from real form")
+
+
+def build_online_report():
+    """บันทึกข้อความ 'รายงานการสืบสวนแจ้งความออนไลน์' — ใช้ไฟล์จริงเป็นแม่แบบเพื่อให้ได้ตราครุฑ
+    ฟอนต์ และระยะขอบตามต้นฉบับ แอปเป็นคนประกอบเนื้อความแต่ละย่อหน้าแล้วส่งมาเป็นแท็ก"""
+    doc = Document(FORMS + "online_report_original.docx")
+
+    # ไฟล์ต้นฉบับมีรูป "ลายเซ็นจริง" ของเจ้าหน้าที่ฝังอยู่ (w:drawing ลอยอยู่เหนือบรรทัดลงชื่อ)
+    # ต้องเอาออกจากแม่แบบ ไม่งั้นทุกฉบับที่ระบบสร้างจะมีลายเซ็นคนนั้นติดไปด้วย
+    # ตราครุฑเป็น VML object (w:object/v:imagedata) คนละชนิดกัน จึงไม่ถูกลบไปด้วย
+    removed = 0
+    for drawing in doc.element.body.findall('.//' + qn('w:drawing')):
+        run = drawing.getparent()
+        run.getparent().remove(run)
+        removed += 1
+    print(f"  (เอารูปลายเซ็นออก {removed} รูป)")
+    # ลบ w:drawing แล้ว ตัวไฟล์รูปยังค้างอยู่ในแพ็กเกจเพราะความสัมพันธ์ (rId) ยังชี้อยู่ — ต้องตัดทิ้งด้วย
+    # ไม่งั้นรูปลายเซ็นจริงจะติดไปกับแม่แบบที่เผยแพร่บนเว็บ (แค่มองไม่เห็นในเอกสาร)
+    body_xml = doc.element.xml
+    for rId, rel in list(doc.part.rels.items()):
+        if rel.reltype == RT.IMAGE and f'"{rId}"' not in body_xml:
+            doc.part.rels.pop(rId)
+            print(f"  (ตัดไฟล์รูปที่ไม่มีใครใช้ทิ้ง: {rel.target_ref})")
+
+    # ไฟล์ต้นฉบับมี section break ค้างอยู่ และ section ท้ายเป็นกระดาษ Letter ขอบบน 0
+    # ทำให้มีหน้าเปล่าต่อท้ายเสมอ — รวมเหลือ section เดียวโดยใช้ค่าหน้ากระดาษ (A4 + ท้ายกระดาษ) ของ section แรก
+    body = doc.element.body
+    inline_sectprs = body.findall('.//' + qn('w:pPr') + '/' + qn('w:sectPr'))
+    if inline_sectprs:
+        first = inline_sectprs[0]
+        body_sectpr = body.find(qn('w:sectPr'))
+        if body_sectpr is not None:
+            body.replace(body_sectpr, copy.deepcopy(first))
+        first.getparent().remove(first)
+
+    p = doc.paragraphs
+
+    # [2] ส่วนราชการ ... โทร. ...
+    flatten(p[2], "ส่วนราชการ  {memo_unit}             โทร. {memo_phone}")
+
+    # [3] ที่ ... <tab> วันที่ ...  (คงแท็บจัดตำแหน่งเดิมไว้)
+    set_runs(p[3], {0: "ที่  {memo_doc_no}", 3: "\t          วันที่  {memo_date}"})
+    clear_runs(p[3], range(4, len(p[3].runs)))
+
+    # [4] เรื่อง / [5] ประเภท / [6] เรียน
+    set_runs(p[4], {1: "รายงานการสืบสวนแจ้งความออนไลน์ ", 3: "เลขรับแจ้งความออนไลน์  ", 4: "{case_no}"})
+    clear_runs(p[4], [2])
+    set_runs(p[5], {1: "{case_type}"})
+    flatten(p[6], "เรียน   {memo_to}")
+
+    # [7] ย่อหน้าเนื้อความหลัก (เกริ่น + ข้อมูลผู้แจ้ง + บัญชีต้นทาง) เป็นย่อหน้าเดียวตามต้นฉบับ
+    flatten(p[7], " ด้วยเมื่อวันที่ {report_short_date} เวลาประมาณ {report_time} น. "
+                  "ได้มีผู้แจ้งแจ้งความร้องทุกข์ผ่านระบบรับแจ้งความออนไลน์ ประเภท {case_type} "
+                  "{complainant_para} {source_para}")
+    # [8] รายการบัญชีปลายทาง / [9] ผลตรวจทะเบียนราษฎร / [10] ย่อหน้าปิด
+    flatten(p[8], "{dest_block}")
+    # ย่อหน้าที่มีหลายบรรทัดในแท็กเดียว (ขึ้นบรรทัดด้วย line break) ต้องไม่จัดชิดขอบ
+    # ไม่งั้น Word จะยืดตัวอักษรบรรทัดก่อน break จนห่างผิดปกติ
+    p[8].alignment = WD_ALIGN_PARAGRAPH.LEFT
+    flatten(p[9], "{identify_para}")
+    # รายชื่อที่ตรวจทะเบียนราษฎรแล้ว — ฟอร์มต้นฉบับ (เคสระบุไม่ได้) ไม่มีย่อหน้านี้ จึงโคลนเพิ่ม
+    list_p = copy.deepcopy(p[9]._p)
+    p[9]._p.addnext(list_p)
+    list_para = Paragraph(list_p, p[9]._parent)
+    flatten(list_para, "{identify_list}")
+    list_para.paragraph_format.first_line_indent = Cm(0)
+    list_para.alignment = WD_ALIGN_PARAGRAPH.LEFT
+    p = doc.paragraphs  # ดัชนีหลังจากนี้เลื่อนไป 1
+    flatten(p[11], "{closing_para}")
+    # ฟอร์มเดิมเว้นบรรทัดว่างไว้ 3 บรรทัดก่อน "จึงเรียนมาเพื่อโปรดทราบ" — เหลือ 1 พอ
+    # (เนื้อความที่ระบบสร้างยาวกว่าของเดิม ถ้าเว้นเท่าเดิมจะดันหน้าเกินโดยไม่จำเป็น)
+    for idx in (13, 14):
+        p[idx]._p.getparent().remove(p[idx]._p)
+    p = doc.paragraphs
+
+    # ย่อหน้าว่างก่อนบรรทัดยศ = ที่เดิมของรูปลายเซ็นในต้นฉบับ — แอปแทนแท็กนี้ด้วยรูปลายเซ็นเวรสืบสวน
+    # ที่ผู้ใช้แนบไว้ในเครื่องตัวเอง (ลอยอยู่หลังตัวอักษร ตำแหน่งเดียวกับต้นฉบับ) หรือเว้นว่างถ้าไม่มี
+    assert not p[14].text.strip() and p[15].text.strip().startswith("ร.ต.อ."), "ตำแหน่งย่อหน้าลายเซ็นเปลี่ยน"
+    p[14].add_run("{duty_signature}")
+
+    # ลายเซ็นเวรสืบสวน (คงการเคาะวรรค/แท็บจัดตำแหน่งของต้นฉบับไว้)
+    set_runs(p[15], {0: "{duty_rank}", 1: "", 2: "", 3: "", 4: " "})
+    set_runs(p[16], {2: "{duty_name}"})
+    set_runs(p[17], {4: "{duty_position}"})
+    clear_runs(p[17], [5, 6])
+
+    # ย่อหน้าว่างท้ายไฟล์ทำให้มีหน้าเปล่าเกินมาเวลาเนื้อความยาว — ตัดออก
+    while len(doc.paragraphs) > 1 and not doc.paragraphs[-1].text.strip():
+        last = doc.paragraphs[-1]._p
+        last.getparent().remove(last)
+
+    doc.save(OUT + "online_report_template.docx")
+    print("built online_report_template.docx from real form")
+
+
+if __name__ == "__main__":
+    os.makedirs(OUT, exist_ok=True)
+    build_urine_referral()
+    build_drug_test_115()
+    build_court_referral()
+    build_online_report()

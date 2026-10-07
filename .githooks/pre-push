@@ -1,0 +1,4 @@
+#!/bin/sh
+# ด่านสุดท้ายก่อนขึ้น GitHub สาธารณะ: ตรวจทุก commit ที่กำลังจะ push (รับรายการ ref จาก stdin)
+# ห้ามข้ามด้วย --no-verify
+exec python "$(git rev-parse --show-toplevel)/.githooks/pii_guard.py" push

@@ -1,0 +1,49 @@
+{
+  "_readme": "รายการสิ่งที่อนุญาตให้ขึ้น GitHub — เพิ่มรายการใหม่ได้ก็ต่อเมื่อตรวจด้วยตาแล้วว่าไม่มีข้อมูลคนจริง (รูปต้องเปิดดูก่อนทุกครั้ง)",
+  "paths": [
+    ".gitignore",
+    ".gitattributes",
+    ".githooks/pre-commit",
+    ".githooks/pre-push",
+    ".githooks/pii_guard.py",
+    ".githooks/pii_allowlist.json",
+    "README.md",
+    "requirements.txt",
+    "app_template.html",
+    "suspect-docgen.html",
+    "index.html",
+    "assemble.py",
+    "build_real_templates.py",
+    "generate_templates.py",
+    "build/*_template.docx",
+    "assets/logo.png",
+    "garuda.png",
+    "placeholders/front.jpg",
+    "placeholders/back.jpg",
+    "placeholders/left.jpg",
+    "placeholders/right.jpg",
+    "google_apps_script/Code.gs",
+    "google_apps_script/README.md",
+    "tampermonkey/README.md",
+    "tampermonkey/*.user.js"
+  ],
+  "paths_denied": [
+    "build/_superseded_*",
+    "forms/*"
+  ],
+  "media_sha256": {
+    "b0591501e3c6d7ea0bb40e9bca2598fc61fae82c2130073411993af00c0fae38": "assets/logo.png — โลโก้ทีมสืบสวน (ตรวจแล้ว 2569-10-07)",
+    "253ee50729dce3dcf40a73e95f47b6a5f956de0083512244e61c820b19ea5c4e": "โลโก้ทีมสืบสวน ขนาดย่อ ฝังใน app_template.html",
+    "f1514a25adf472eaecfe6dfa31d03b0812aab85168af6a7d013dfca3033315ba": "ลายน้ำพื้นหลัง SVG ข้อความ 'บังโต KN60' (ผู้ใช้เลือกแทนชื่อจริง)",
+    "6a337aa653009fe66b226a5b7d297d3ab4a03105ca9de09a5a188cea97f45301": "garuda.png — ตราครุฑ",
+    "6145fef179655a345954ded5ffbc5e088f4f4dd98c696db8dc5f175ab16afb8a": "ตราครุฑ ในแม่แบบส่งตรวจปัสสาวะ/ส่งศาล",
+    "4d06a2b88b09fd8a636dcaeca85b352604747e88916c15515ac8b6fdae6825f0": "ตราครุฑ (wmf) ในแม่แบบรับแจ้งความออนไลน์",
+    "4562e3269641ebff315eef36fb23fd0e02d9da2fe0c684b2a9c603eb992a335d": "ตราครุฑ (MS Draw OLE object) ในแม่แบบรับแจ้งความออนไลน์",
+    "7aec6c828e6dcc2e78f18d031f86cb57446f8e368d682c99b09275d390440298": "placeholders/front.jpg — กรอบเปล่า FRONT",
+    "d4c734664804e2400cb9ae89638c51278f476e0c78343d1a45230b2eee555596": "placeholders/back.jpg — กรอบเปล่า BACK",
+    "440158840cd3e06a2669df601edede4b8d9a52d501ba8b62e73f8a5f1448007a": "placeholders/left.jpg — กรอบเปล่า LEFT",
+    "916c2a4bf60c0f25eeb676c66d675068823514f1908b54172c7aa244d82c2d32": "placeholders/right.jpg — กรอบเปล่า RIGHT"
+  },
+  "allowed_meta": [],
+  "allowed_text": []
+}

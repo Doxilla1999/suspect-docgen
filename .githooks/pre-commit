@@ -1,0 +1,4 @@
+#!/bin/sh
+# ด่านกันข้อมูลส่วนบุคคล: ตรวจทุกไฟล์ที่จะ commit — เจอเลขบัตร/เบอร์โทร/รูปที่ไม่อนุญาต/ไฟล์นอกรายการ จะบล็อก
+# ห้ามข้ามด้วย --no-verify
+exec python "$(git rev-parse --show-toplevel)/.githooks/pii_guard.py" staged
