@@ -65,6 +65,10 @@
   .officer-row .btn, .officer-row .btn-danger-outline { width: auto; flex: none; padding: 5px 12px; margin: 0; }
   .olr-row { border: 1px solid #33393F; border-left: 4px solid #E2685D; border-radius: 8px; padding: 10px 12px; margin-bottom: 10px; background: #14181C; }
   .olr-row .btn-danger-outline { width: auto; margin-top: 4px; padding: 5px 12px; }
+  .phys-chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+  .phys-chip { font-size: 12.5px; line-height: 1.4; padding: 2px 8px; border: 1px solid #33393F; border-radius: 12px; background: #12151A; color: #9AA0A6; cursor: pointer; }
+  .phys-chip:hover { border-color: #6B5626; color: #E8E6E0; }
+  .phys-chip.on { color: #F0D9A0; border-color: #B68D40; background: rgba(182,141,64,.15); }
   .qf-file-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 8px; }
   .qf-file-row .btn { width: auto; flex: none; margin: 0; padding: 7px 14px; }
   .qf-file-row .note { margin: 0; flex: 1; min-width: 200px; }
@@ -168,7 +172,7 @@
       <h1>ระบบสร้างเอกสารผู้ต้องหา · สภ.นายายอาม</h1>
       <p>กรอกครั้งเดียว ออกเอกสารได้หลายฉบับ</p>
     </div>
-    <div class="credit-top">BY บังโต KN60 <span title="เวอร์ชันของไฟล์นี้ — ถ้าไม่ตรงกับที่แจ้งไว้ ให้กด Ctrl+F5 โหลดหน้าใหม่" style="opacity:.6;font-size:11px;font-weight:400;margin-left:6px">build 09/10/2569 15:20</span></div>
+    <div class="credit-top">BY บังโต KN60 <span title="เวอร์ชันของไฟล์นี้ — ถ้าไม่ตรงกับที่แจ้งไว้ ให้กด Ctrl+F5 โหลดหน้าใหม่" style="opacity:.6;font-size:11px;font-weight:400;margin-left:6px">build 09/10/2569 15:59</span></div>
     <button type="button" class="header-logout" id="logoutBtn">ออกจากระบบ</button>
   </header>
 
@@ -353,6 +357,7 @@
         <label class="f"><span>ข้อหา — ช่องเดียวกับในพาแนล "ข้อหา / หมายจับ / ของกลาง" พิมพ์ที่ไหนก็ได้</span>
           <textarea id="chargeProfile" placeholder="เช่น เสพและครอบครองยาเสพติดให้โทษประเภท 1 (เมทแอมเฟตามีน) โดยผิดกฎหมาย"></textarea>
         </label>
+        <p class="note" style="margin:10px 0 0">ศีรษะ / รูปหน้า / คิ้ว,ตา / จมูก / ใบหู — ตัวเลือกตาม "ภาพแสดงลักษณะตำหนิรูปพรรณของบุคคล" (กองทะเบียนประวัติอาชญากร) กดได้หลายคำ กดซ้ำเพื่อเอาออก หรือพิมพ์เองก็ได้</p>
         <div class="grid3">
           <label class="f"><span>ความสูง (ซม.)</span><input id="height"></label>
           <label class="f"><span>น้ำหนัก (กก.)</span><input id="weight"></label>
@@ -368,13 +373,13 @@
           <label class="f"><span>สำเนียง</span><input id="accent" list="accentList" placeholder="เลือกหรือพิมพ์เอง"></label>
         </div>
         <datalist id="skinList"><option value="ขาว"></option><option value="ขาวเหลือง"></option><option value="เหลือง"></option><option value="ดำแดง"></option><option value="ดำ"></option><option value="คล้ำ"></option></datalist>
-        <datalist id="headList"><option value="กลม"></option><option value="รี"></option><option value="แหลม"></option><option value="ปกติ"></option></datalist>
+        <datalist id="headList"></datalist>
         <datalist id="hairList"><option value="สั้น"></option><option value="ยาว"></option><option value="หยิก"></option><option value="ตรง"></option><option value="โกนศีรษะ"></option><option value="ล้าน"></option></datalist>
-        <datalist id="faceList"><option value="กลม"></option><option value="รี"></option><option value="เหลี่ยม"></option><option value="ยาว"></option></datalist>
+        <datalist id="faceList"></datalist>
         <datalist id="accentList"><option value="ภาคกลาง"></option><option value="ภาคเหนือ"></option><option value="ภาคอีสาน"></option><option value="ภาคใต้"></option><option value="ภาคตะวันออก"></option><option value="ต่างประเทศ"></option></datalist>
-        <datalist id="eyesList"><option value="โล่ง"></option><option value="ตาชั้นเดียว"></option><option value="ตาสองชั้น"></option><option value="ตาโต"></option><option value="ตาเล็ก"></option><option value="คิ้วหนา"></option><option value="คิ้วบาง"></option></datalist>
-        <datalist id="noseList"><option value="โด่ง"></option><option value="แบน"></option><option value="สันตรง"></option><option value="โต"></option><option value="เล็ก"></option></datalist>
-        <datalist id="earsList"><option value="กาง"></option><option value="แนบ"></option><option value="เล็ก"></option><option value="ใหญ่"></option></datalist>
+        <datalist id="eyesList"></datalist>
+        <datalist id="noseList"></datalist>
+        <datalist id="earsList"></datalist>
         <p class="field-group-label" style="margin-top:16px">ภาพประกอบ 4 ด้าน (หน้าตรง/หลัง/ซ้าย/ขวา)</p>
         <div class="grid2">
           <label class="f"><span>หน้าตรง</span><input type="file" id="photoFront" accept="image/*"></label>
@@ -967,7 +972,47 @@ function openModal(id) {
   syncChargeMirror();
   // เปิด ปยส.115 → ถ้ายังไม่ได้กรอกผลการตรวจค้น ให้ดึงของกลางที่เป็นยาเสพติดของคนนี้มาใส่ให้
   if (id === 'modalDrugTest115') document.getElementById('syncSeizedMsg').textContent = syncSeizedFromEvidence(false);
+  refreshPhysChips();  // ค่ารูปพรรณอาจถูกเปลี่ยนจากการสลับคน/โหลดเคส → อัปเดตปุ่มที่ติดอยู่
 }
+// ---- ตัวเลือกรูปพรรณตาม "ภาพแสดงลักษณะตำหนิรูปพรรณของบุคคล" (กองทะเบียนประวัติอาชญากร สพฐ.ตร.) ----
+// ใช้หัวข้อเดิมของฟอร์ม (ไม่มีหน้าผาก/ปาก/คาง แยก) — กดเลือกได้หลายคำ ต่อกันด้วยเว้นวรรค กดซ้ำเพื่อเอาออก
+const PHYS_CHART_TERMS = {
+  head: ['ปกติ', 'ทุ่งหมาหลง', 'ดงช้างข้าม', 'ง่ามเทโพ', 'ชะโดตีแปลง', 'แร้งกระพือปีก', 'ฉีกหางฟาด', 'ราชคลึงเครา'],
+  face: ['กลม', 'รูปไข่', 'สี่เหลี่ยม', 'สี่เหลี่ยมยาว', 'สามเหลี่ยม', 'สามเหลี่ยมยาว', 'แหลมหลิม'],
+  eyes: ['ตาสองชั้น', 'ตาชั้นเดียว', 'ตากลม', 'ตาพองโต', 'ตาลึก', 'ตาถั่ว', 'ตาเข', 'ตาเหล่', 'ตาเอก', 'คิ้วหนา', 'คิ้วบาง'],
+  nose: ['จมูกแคบ', 'จมูกกว้าง', 'จมูกชมพู่', 'สันจมูกสั้น', 'สันจมูกโค้งเหลี่ยม', 'สันจมูกโค้งกลม', 'สันจมูกงอน', 'ฐานจมูกรุ้ม', 'ฐานจมูกราบ', 'ฐานจมูกเชิด'],
+  ears: ['หูสามเหลี่ยม', 'หูสี่เหลี่ยม', 'หูกลม', 'หูกะหล่ำปลี', 'หูกาง', 'หูลีบ', 'ติ่งย้อย', 'ติ่งราบ']
+};
+function physTokens(id) { return v(id).split(/\s+/).filter(Boolean); }
+function refreshPhysChips() {
+  document.querySelectorAll('.phys-chips').forEach(box => {
+    const tokens = physTokens(box.dataset.for);
+    box.querySelectorAll('.phys-chip').forEach(c => c.classList.toggle('on', tokens.includes(c.dataset.term)));
+  });
+}
+(function initPhysChips() {
+  Object.entries(PHYS_CHART_TERMS).forEach(([id, terms]) => {
+    const input = document.getElementById(id);
+    const list = document.getElementById(input.getAttribute('list'));
+    if (list) list.innerHTML = terms.map(t => `<option value="${escapeXml(t)}"></option>`).join('');
+    const box = document.createElement('div');
+    box.className = 'phys-chips';
+    box.dataset.for = id;
+    box.innerHTML = terms.map(t => `<button type="button" class="phys-chip" data-term="${escapeXml(t)}">${escapeXml(t)}</button>`).join('');
+    input.insertAdjacentElement('afterend', box);
+    box.addEventListener('click', e => {
+      const chip = e.target.closest('.phys-chip');
+      if (!chip) return;
+      e.preventDefault();
+      const tokens = physTokens(id);
+      const i = tokens.indexOf(chip.dataset.term);
+      if (i >= 0) tokens.splice(i, 1); else tokens.push(chip.dataset.term);
+      input.value = tokens.join(' ');
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    input.addEventListener('input', refreshPhysChips);
+  });
+})();
 document.getElementById('syncSeizedFromEvidenceBtn').addEventListener('click', () => {
   document.getElementById('syncSeizedMsg').textContent = syncSeizedFromEvidence(true);
 });
