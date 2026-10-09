@@ -65,6 +65,10 @@
   .officer-row .btn, .officer-row .btn-danger-outline { width: auto; flex: none; padding: 5px 12px; margin: 0; }
   .olr-row { border: 1px solid #33393F; border-left: 4px solid #E2685D; border-radius: 8px; padding: 10px 12px; margin-bottom: 10px; background: #14181C; }
   .olr-row .btn-danger-outline { width: auto; margin-top: 4px; padding: 5px 12px; }
+  .qf-file-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 8px; }
+  .qf-file-row .btn { width: auto; flex: none; margin: 0; padding: 7px 14px; }
+  .qf-file-row .note { margin: 0; flex: 1; min-width: 200px; }
+  #quickFillPanel.dragover { outline: 2px dashed #B68D40; outline-offset: -6px; }
   .m22-box { margin: 4px 0 8px; padding: 8px 10px; border: 1px dashed #33393F; border-radius: 8px; }
   .m22-box summary { cursor: pointer; font-size: 14px; color: #C9C5BC; }
   .olr-duty-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 6px; }
@@ -164,7 +168,7 @@
       <h1>ระบบสร้างเอกสารผู้ต้องหา · สภ.นายายอาม</h1>
       <p>กรอกครั้งเดียว ออกเอกสารได้หลายฉบับ</p>
     </div>
-    <div class="credit-top">BY บังโต KN60 <span title="เวอร์ชันของไฟล์นี้ — ถ้าไม่ตรงกับที่แจ้งไว้ ให้กด Ctrl+F5 โหลดหน้าใหม่" style="opacity:.6;font-size:11px;font-weight:400;margin-left:6px">build 07/10/2569 14:45</span></div>
+    <div class="credit-top">BY บังโต KN60 <span title="เวอร์ชันของไฟล์นี้ — ถ้าไม่ตรงกับที่แจ้งไว้ ให้กด Ctrl+F5 โหลดหน้าใหม่" style="opacity:.6;font-size:11px;font-weight:400;margin-left:6px">build 09/10/2569 15:10</span></div>
     <button type="button" class="header-logout" id="logoutBtn">ออกจากระบบ</button>
   </header>
 
@@ -266,10 +270,15 @@
         <button type="button" class="mode-btn" data-mode="batch">👥 หลายคน</button>
       </div>
 
-      <div class="panel" data-module="docgen" style="background:#1E1A10;border-color:#6B5626">
+      <div class="panel" data-module="docgen" id="quickFillPanel" style="background:#1E1A10;border-color:#6B5626">
         <h2>วางข้อมูลเพื่อกรอกอัตโนมัติ</h2>
         <textarea id="quickFillText" rows="3" placeholder="วางข้อมูลผู้ต้องหาตรงนี้ เช่น &quot;นายสมชายหรือแดง ใจดี เลขบัตรประชาชน 1234567890123 อายุ 30 ปี ที่อยู่ บ้านเลขที่ 99 ม.5 ต.นายายอาม อ.นายายอาม จ.จันทบุรี&quot; (ตัวอย่างนี้เป็นชื่อสมมุติ ใช้เป็นแบบฟอร์มเท่านั้น)"></textarea>
         <button type="button" class="btn btn-primary btn-sm" id="quickFillBtn" style="margin-top:8px">แยกข้อมูลกรอกฟอร์มให้อัตโนมัติ</button>
+        <div class="qf-file-row">
+          <button type="button" class="btn btn-ghost btn-sm" id="quickFillXlsxBtn">📄 เลือกไฟล์ Excel ทะเบียนราษฎร</button>
+          <span class="note">เลือกได้หลายไฟล์พร้อมกัน (1 ไฟล์ = 1 คน → เข้าคิวโหมดหลายคนให้เอง) หรือลากไฟล์มาวางในกรอบนี้</span>
+        </div>
+        <input type="file" id="quickFillXlsx" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" multiple style="display:none">
         <p class="note" id="quickFillMsg" style="margin-top:6px">ระบบจะพยายามจับ ชื่อ-สกุล/<b style="color:#B68D40">เลขบัตรประชาชน</b>/<b style="color:#B68D40">อายุ</b>/<b style="color:#B68D40">บ้านเลขที่</b>/<b style="color:#B68D40">หมู่ที่</b>/<b style="color:#B68D40">ต.</b>/<b style="color:#B68D40">อ.</b>/<b style="color:#B68D40">จ.</b>/เบอร์โทร/อาชีพ จากข้อความที่วาง ต้องมีคำเหล่านี้นำหน้าข้อมูลถึงจะจับได้ — ชื่อเล่นใส่ได้ทั้ง "นายสมชายหรือแดง ใจดี" และ "นายสมชาย ใจดี หรือแดง" เลขบัตรจะเว้นวรรคหรือไม่ก็ได้ ที่อยู่พิมพ์ "ที่อยู่ 99 ม.5" หรือ "บ้านเลขที่ 99 ม.5" ก็ได้ กรอกได้ไม่ครบทุกครั้ง ควรตรวจสอบซ้ำก่อนสร้างเอกสารเสมอ</p>
         <details style="margin-top:8px">
           <summary style="cursor:pointer;color:#B68D40;font-size:13px;font-weight:600">ดูตัวอย่างข้อความที่ใช้ได้เพิ่มเติม</summary>
@@ -2433,48 +2442,54 @@ function applyQuickFill(filled) {
   Object.keys(filled).forEach(key => { const el = document.getElementById(key); if (el) el.value = filled[key]; });
 }
 const PERSON_LINE_RE = /(นางสาว|นาง|นาย)\s*[ก-๙A-Za-z]+\s+[ก-๙A-Za-z]+/;
+// เพิ่มหลายคนเข้าคิวในครั้งเดียว — ใช้ทั้งข้อความหลายบรรทัด และไฟล์ Excel ทะเบียนราษฎรหลายไฟล์
+// filledList: [{ id ช่องในฟอร์ม: ค่า }] ต่อคน / คืนค่า false ถ้ายังไม่ได้ติ๊กเอกสาร (แจ้งผู้ใช้ใน msg แล้ว)
+function addFilledPersonsToQueue(filledList, msg, retryHint) {
+  const { set } = computeChecklist();
+  if (set.size === 0) {
+    msg.textContent = `พบข้อมูล ${filledList.length} คน — ติ๊กเอกสารที่ต้องการในช่อง "เอกสารที่ต้องการสร้าง" ก่อน (จะใช้ชุดเดียวกันทุกคน) แล้ว${retryHint}เพื่อเพิ่มเข้าคิวอัตโนมัติ`;
+    return false;
+  }
+  const wantsPhotos = set.has('profile_and_photos');
+  const docs = [...set].filter(k => k !== 'profile_and_photos');
+  // ข้อหา/หมายจับ/ของกลางที่กรอกไว้ก่อน ใช้เป็นค่าตั้งต้นให้ทุกคน (ข้อมูลของแต่ละคนจะทับค่าตั้งต้นนี้)
+  const sharedCharge = {};
+  CHARGE_FIELD_IDS.forEach(id => { sharedCharge[id] = v(id); });
+  const sharedEvidence = getEvidenceRows();
+  const hasSharedCharge = Object.values(sharedCharge).some(Boolean) || sharedEvidence.length > 0;
+  let added = 0;
+  filledList.forEach(filled => {
+    if (!filled.firstName) return;
+    clearPersonOnlyFields();
+    CHARGE_FIELD_IDS.forEach(id => { const el = document.getElementById(id); if (el) el.value = sharedCharge[id]; });
+    if (sharedEvidence.length) resetEvidenceRows(sharedEvidence);
+    applyQuickFill(filled);
+    const name = `${v('firstName')} ${v('lastName')}`.trim();
+    if (!name || docs.length === 0) return;
+    const snap = collectFormSnapshot();
+    snap.selectedDocs = docs;
+    docQueue.push({ name, snapshot: snap, docLabels: docs.map(k => DOC_INFO[k].label), photos: null });
+    added++;
+  });
+  editingQueueIndex = null;
+  clearPersonOnlyFields();
+  renderQueue();
+  setPersonMode('batch');
+  msg.textContent = `เพิ่มเข้าคิวแล้ว ${added} คน จาก ${filledList.length} คนที่พบ` +
+    (hasSharedCharge ? ' — ข้อหา/หมายจับ/ของกลางที่กรอกไว้ก่อนถูกใส่ให้ทุกคนแล้ว เลือกชื่อแล้วแก้รายคนได้' : ' — ข้อหา/ของกลางยังว่าง เลือกชื่อจาก dropdown "สำหรับ:" ในพาแนล "ข้อหา / หมายจับ / ของกลาง" แล้วกรอกรายคน') +
+    (wantsPhotos ? ' — ข้าม "ประวัติบุคคล 4 ด้าน" ไว้ เพราะต้องอัปโหลดรูปเอง เลือกชื่อแล้วอัปโหลดรูปทีละคนได้' : '') +
+    ' ตรวจสอบข้อมูลในคิวอีกครั้งก่อนกด "สร้างเอกสารทั้งหมดในคิว"';
+  return true;
+}
 document.getElementById('quickFillBtn').addEventListener('click', () => {
   const text = document.getElementById('quickFillText').value;
   const msg = document.getElementById('quickFillMsg');
   const personLines = text.split('\n').map(l => l.trim()).filter(l => PERSON_LINE_RE.test(l));
 
   if (personLines.length >= 2) {
-    const { set } = computeChecklist();
-    if (set.size === 0) {
-      msg.textContent = `พบข้อมูล ${personLines.length} คนในข้อความนี้ — ติ๊กเอกสารที่ต้องการในช่อง "เอกสารที่ต้องการสร้าง" ก่อน (จะใช้ชุดเดียวกันทุกคน) แล้วกดปุ่มนี้อีกครั้งเพื่อเพิ่มเข้าคิวอัตโนมัติ`;
-      return;
+    if (addFilledPersonsToQueue(personLines.map(parseQuickFillText), msg, 'กดปุ่มนี้อีกครั้ง')) {
+      document.getElementById('quickFillText').value = '';
     }
-    const wantsPhotos = set.has('profile_and_photos');
-    const docs = [...set].filter(k => k !== 'profile_and_photos');
-    // ข้อหา/หมายจับ/ของกลางที่กรอกไว้ก่อนวาง ใช้เป็นค่าตั้งต้นให้ทุกคน (ข้อมูลในบรรทัดของแต่ละคนจะทับค่าตั้งต้นนี้)
-    const sharedCharge = {};
-    CHARGE_FIELD_IDS.forEach(id => { sharedCharge[id] = v(id); });
-    const sharedEvidence = getEvidenceRows();
-    const hasSharedCharge = Object.values(sharedCharge).some(Boolean) || sharedEvidence.length > 0;
-    let added = 0;
-    personLines.forEach(line => {
-      const filled = parseQuickFillText(line);
-      if (!filled.firstName) return;
-      clearPersonOnlyFields();
-      CHARGE_FIELD_IDS.forEach(id => { const el = document.getElementById(id); if (el) el.value = sharedCharge[id]; });
-      if (sharedEvidence.length) resetEvidenceRows(sharedEvidence);
-      applyQuickFill(filled);
-      const name = `${v('firstName')} ${v('lastName')}`.trim();
-      if (!name || docs.length === 0) return;
-      const snap = collectFormSnapshot();
-      snap.selectedDocs = docs;
-      docQueue.push({ name, snapshot: snap, docLabels: docs.map(k => DOC_INFO[k].label), photos: null });
-      added++;
-    });
-    editingQueueIndex = null;
-    clearPersonOnlyFields();
-    document.getElementById('quickFillText').value = '';
-    renderQueue();
-    setPersonMode('batch');
-    msg.textContent = `เพิ่มเข้าคิวแล้ว ${added} คน จาก ${personLines.length} คนที่พบ` +
-      (hasSharedCharge ? ' — ข้อหา/หมายจับ/ของกลางที่กรอกไว้ก่อนวางถูกใส่ให้ทุกคนแล้ว เลือกชื่อแล้วแก้รายคนได้' : ' — ข้อหา/ของกลางยังว่าง เลือกชื่อจาก dropdown "สำหรับ:" ในพาแนล "ข้อหา / หมายจับ / ของกลาง" แล้วกรอกรายคน') +
-      (wantsPhotos ? ' — ข้าม "ประวัติบุคคล 4 ด้าน" ไว้ เพราะต้องอัปโหลดรูปเอง เลือกชื่อแล้วอัปโหลดรูปทีละคนได้' : '') +
-      ' ตรวจสอบข้อมูลในคิวอีกครั้งก่อนกด "สร้างเอกสารทั้งหมดในคิว"';
     return;
   }
 
@@ -2485,6 +2500,53 @@ document.getElementById('quickFillBtn').addEventListener('click', () => {
     ? `กรอกให้แล้ว ${count} ช่อง (${Object.keys(filled).join(', ')}) กรุณาเลื่อนขึ้นไปตรวจสอบความถูกต้องอีกครั้งก่อนใช้งาน`
     : 'ไม่พบข้อมูลที่จดจำได้จากข้อความนี้ ลองใส่คำนำหน้าแบบ "เลขบัตรประชาชน", "อายุ", "บ้านเลขที่" ให้ชัดเจน หรือกรอกเองในฟอร์มด้านล่าง';
 });
+
+// ไฟล์ Excel จากระบบทะเบียนราษฎร: 1 คน → กรอกฟอร์มตรงนี้เลย / หลายคน (หลายไฟล์ หรือหลายแถว) → เข้าคิวโหมดหลายคน
+const CIVIL_FIELD_LABELS = [
+  [['title', 'firstName', 'lastName'], 'ชื่อ-สกุล'], [['idNumber'], 'เลขบัตร'], [['age'], 'อายุ'],
+  [['dobDate_day'], 'วันเกิด'], [['nationality'], 'สัญชาติ'],
+  [['addrHouseNo', 'addrMoo', 'addrRoad', 'addrTambon', 'addrAmphoe', 'addrProvince'], 'ที่อยู่'], [['parents'], 'บิดา มารดา']
+];
+async function quickFillFromXlsx(files) {
+  const msg = document.getElementById('quickFillMsg');
+  const people = [], failed = [];
+  msg.textContent = 'กำลังอ่านไฟล์ Excel...';
+  for (const f of files) {
+    if (!/\.xlsx$/i.test(f.name)) { failed.push(`${f.name} (ไม่ใช่ไฟล์ .xlsx)`); continue; }
+    try {
+      const found = (await readCivilRegistryRows(f)).map(civilRowToSuspect).filter(p => p.firstName);
+      if (!found.length) failed.push(`${f.name} (ไม่พบชื่อ-นามสกุล)`);
+      people.push(...found);
+    } catch (e) { failed.push(`${f.name} (${e.message})`); }
+  }
+  const failNote = failed.length ? ` — อ่านไม่ได้ ${failed.length} ไฟล์: ${failed.join(', ')}` : '';
+  if (!people.length) { msg.textContent = 'ไม่พบข้อมูลบุคคลในไฟล์ที่เลือก' + failNote; return; }
+  if (people.length === 1) {
+    applyQuickFill(people[0]);
+    const got = CIVIL_FIELD_LABELS.filter(([ids]) => ids.some(id => people[0][id])).map(([, label]) => label);
+    msg.textContent = `กรอกจากไฟล์ทะเบียนราษฎรแล้ว: ${got.join(', ')} — ชื่อเล่น เบอร์โทร อาชีพ ไม่มีในไฟล์ กรอกเพิ่มเอง แล้วตรวจสอบความถูกต้องอีกครั้ง` + failNote;
+    return;
+  }
+  if (addFilledPersonsToQueue(people, msg, 'เลือกไฟล์อีกครั้ง')) msg.textContent += failNote;
+}
+document.getElementById('quickFillXlsxBtn').addEventListener('click', () => document.getElementById('quickFillXlsx').click());
+document.getElementById('quickFillXlsx').addEventListener('change', async e => {
+  const files = [...e.target.files];
+  e.target.value = '';
+  if (files.length) await quickFillFromXlsx(files);
+});
+(function quickFillDropZone() {
+  const panel = document.getElementById('quickFillPanel');
+  const hasFiles = e => [...(e.dataTransfer && e.dataTransfer.types || [])].includes('Files');
+  panel.addEventListener('dragover', e => { if (!hasFiles(e)) return; e.preventDefault(); panel.classList.add('dragover'); });
+  panel.addEventListener('dragleave', e => { if (!panel.contains(e.relatedTarget)) panel.classList.remove('dragover'); });
+  panel.addEventListener('drop', async e => {
+    if (!hasFiles(e)) return;
+    e.preventDefault();
+    panel.classList.remove('dragover');
+    await quickFillFromXlsx([...e.dataTransfer.files]);
+  });
+})();
 
 document.querySelectorAll('.doc-select').forEach(c => c.addEventListener('change', () => {
   renderChecklist();
@@ -3059,10 +3121,14 @@ function xlsxCellText(c, shared) {
   const v = (c.match(/<v>([^<]*)<\/v>/) || [])[1] || '';
   const inline = (c.match(/<is>[\s\S]*?<t[^>]*>([^<]*)<\/t>/) || [])[1] || '';
   const raw = (t === 's' && v !== '') ? (shared[parseInt(v, 10)] || '') : (inline || v);
-  return raw.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"')
-    .replace(/&apos;/g, "'").replace(/&amp;/g, '&').trim();
+  const text = raw.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'").replace(/&amp;/g, '&').replace(/&nbsp;/g, ' ').trim();
+  // ช่องว่างในไฟล์ทะเบียนราษฎรมาเป็น "&nbsp;-" → ถือว่าไม่มีข้อมูล
+  return /^-+$/.test(text) ? '' : text;
 }
-async function parseCivilRegistryXlsx(file) {
+// อ่านชีตแรก (ชีต "รายละเอียด") ของไฟล์ทะเบียนราษฎร: แถวแรกเป็นหัวคอลัมน์ แถวถัดไปคือคนละแถว
+// คืนค่าเป็นรายการ { ชื่อหัวคอลัมน์: ค่า } หนึ่งรายการต่อคน (ไฟล์ปกติมีคนเดียว)
+async function readCivilRegistryRows(file) {
   const zip = await JSZip.loadAsync(await file.arrayBuffer());
   let shared = [];
   const ss = zip.file('xl/sharedStrings.xml');
@@ -3083,10 +3149,65 @@ async function parseCivilRegistryXlsx(file) {
     return cells;
   });
   if (rows.length < 2) throw new Error('ไฟล์ Excel ไม่มีแถวข้อมูล');
-  // แถวแรกเป็นหัวคอลัมน์ แถวสองเป็นข้อมูลของบุคคล
-  const head = rows[0], data = rows[1], byHeader = {};
-  Object.keys(head).forEach(ref => { if (head[ref]) byHeader[head[ref]] = data[ref] || ''; });
-  const get = (...names) => { for (const n of names) if (byHeader[n]) return byHeader[n]; return ''; };
+  const head = rows[0];
+  return rows.slice(1)
+    .map(data => {
+      const byHeader = {};
+      Object.keys(head).forEach(ref => { if (head[ref]) byHeader[head[ref]] = data[ref] || ''; });
+      return byHeader;
+    })
+    .filter(r => Object.values(r).some(Boolean));
+}
+function civilGetter(byHeader) {
+  return (...names) => { for (const n of names) if (byHeader[n]) return byHeader[n]; return ''; };
+}
+// แถวทะเบียนราษฎร → ช่องในฟอร์มผู้ต้องหา (ใช้ id ของช่องตรง ๆ แบบเดียวกับ parseQuickFillText)
+function civilRowToSuspect(byHeader) {
+  const get = civilGetter(byHeader);
+  const out = {};
+  const name = expandNameTitle(get('ชื่อ-นามสกุล', 'ชื่อ-สกุล', 'ชื่อ - สกุล'));
+  const nm = name.match(/^(นางสาว|นาง|นาย)\s*(\S+)\s+(.+)$/);
+  if (nm) { out.title = nm[1]; out.firstName = nm[2]; out.lastName = nm[3].trim(); }
+  else if (name) {
+    // คำนำหน้าอื่น (เด็กชาย/ยศ ฯลฯ) ไม่มีในตัวเลือก — ใส่ชื่อ-สกุลให้ แล้วผู้ใช้เลือกคำนำหน้าเอง
+    const parts = name.replace(/^(เด็กชาย|เด็กหญิง)/, '').trim().split(/\s+/);
+    out.firstName = parts[0];
+    if (parts.length > 1) out.lastName = parts.slice(1).join(' ');
+  }
+  const id = get('เลขบัตรประชาชน', 'เลขประจำตัวประชาชน').replace(/[^0-9]/g, '');
+  if (id.length === 13) out.idNumber = id;
+  const age = get('อายุ').match(/\d+/);
+  if (age) out.age = age[0];
+  const dob = get('วันเดือนปีเกิด', 'วันเกิด').match(/(\d{1,2})\s+([ก-๙.]+)\s+(\d{4})/);
+  if (dob) {
+    let m = THAI_MONTHS.indexOf(dob[2]);
+    if (m < 0) m = THAI_MONTHS_SHORT.indexOf(dob[2]);
+    if (m >= 0) { out.dobDate_day = String(parseInt(dob[1], 10)); out.dobDate_month = String(m); out.dobDate_year = dob[3]; }
+  }
+  if (get('สัญชาติ')) out.nationality = get('สัญชาติ');
+  // ที่อยู่: "476/1 ม. 8 ต. วังชิ้น อ. วังชิ้น จ. แพร่" — ตำบล/อำเภอ/จังหวัดมีคอลัมน์แยกให้อยู่แล้ว ใช้คอลัมน์ก่อน
+  const addr = get('ที่อยู่');
+  const house = addr.match(/^\s*(?:บ้านเลขที่|เลขที่)?\s*([0-9][0-9\/-]*)/);
+  if (house) out.addrHouseNo = house[1];
+  const moo = addr.match(/(?:หมู่ที่|หมู่|ม\.)\s*(\d+)/);
+  if (moo) out.addrMoo = moo[1];
+  const road = addr.match(/((?:ถนน|ถ\.|ซอย|ซ\.)\s*[^ ]+(?:\s+(?:ถนน|ถ\.|ซอย|ซ\.)\s*[^ ]+)?)/);
+  if (road) out.addrRoad = road[1].replace(/\s+/g, ' ');
+  const tambon = get('ตำบล', 'แขวง') || (addr.match(/(?:ต\.|ตำบล|แขวง)\s*([ก-๙]+)/) || [])[1];
+  if (tambon) out.addrTambon = tambon.replace(/^(ตำบล|ต\.|แขวง)\s*/, '');
+  const amphoe = get('อำเภอ', 'เขต') || (addr.match(/(?:อ\.|อำเภอ|เขต)\s*([ก-๙]+)/) || [])[1];
+  if (amphoe) out.addrAmphoe = amphoe.replace(/^(อำเภอ|อ\.|เขต)\s*/, '');
+  const province = get('จังหวัด') || (addr.match(/(?:จ\.|จังหวัด)\s*([ก-๙]+)/) || [])[1];
+  if (province) out.addrProvince = province.replace(/^(จังหวัด|จ\.)\s*/, '');
+  const father = get('ชื่อบิดา'), mother = get('ชื่อมารดา');
+  if (father || mother) out.parents = [father && `บิดา ${father}`, mother && `มารดา ${mother}`].filter(Boolean).join(' ');
+  return out;
+}
+async function parseCivilRegistryXlsx(file) {
+  // รับแจ้งความออนไลน์: ใช้คนแรกในไฟล์ แปลงเป็นช่องของปลายทาง (ชื่อ/อายุ/เลขบัตร/ที่อยู่)
+  const byHeader = (await readCivilRegistryRows(file))[0];
+  if (!byHeader) throw new Error('ไฟล์ Excel ไม่มีแถวข้อมูล');
+  const get = civilGetter(byHeader);
   const out = {};
   const id = get('เลขบัตรประชาชน', 'เลขประจำตัวประชาชน').replace(/[^0-9]/g, '');
   if (id.length >= 10) out.pId = id;
