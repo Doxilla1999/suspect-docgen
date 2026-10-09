@@ -1882,11 +1882,12 @@ function addSuspectRow(data) {
   container.appendChild(row);
   row.querySelector('.sl-remove').addEventListener('click', () => row.remove());
   row.querySelector('.sl-use-main').addEventListener('click', () => {
-    row.querySelector('.sl-name').value = `${v('firstName')} ${v('lastName')}`.trim();
-    row.querySelector('.sl-id').value = v('idNumber');
-    row.querySelector('.sl-age').value = v('age');
-    row.querySelector('.sl-dob').value = thaiDate('dobDate');
-    row.querySelector('.sl-address').value = composeAddressShort();
+    const e = mainSuspectUrineEntry();
+    row.querySelector('.sl-name').value = e.name;
+    row.querySelector('.sl-id').value = e.id;
+    row.querySelector('.sl-age').value = e.age;
+    row.querySelector('.sl-dob').value = e.dob;
+    row.querySelector('.sl-address').value = e.address;
   });
 }
 function getSuspectListEntries() {
@@ -1899,13 +1900,16 @@ function getSuspectListEntries() {
     address: row.querySelector('.sl-address').value.trim()
   })).filter(e => e.name || e.id || e.age || e.address);
   if (entries.length === 0) {
-    const fallbackName = `${v('firstName')} ${v('lastName')}`.trim();
-    if (fallbackName) {
-      return [{ name: fallbackName, id: v('idNumber'), age: v('age'), dob: thaiDate('dobDate'), address: composeAddressShort() }];
-    }
+    if (`${v('firstName')} ${v('lastName')}`.trim()) return [mainSuspectUrineEntry()];
     return [{ name: '', id: '', age: '', address: '' }];
   }
   return entries;
+}
+// ผู้ต้องหาหลักในฟอร์ม → 1 รายการในหนังสือส่งตรวจ — ใช้ตัวประกอบเดียวกับโหมดหลายคน
+// ชื่อจึงมีคำนำหน้า (+ "หรือชื่อเล่น") เหมือนกันทั้งสองโหมด
+// (อ่านค่าจากช่องในฟอร์มตรง ๆ — ห้ามใช้ collectFormSnapshot เพราะตัวนั้นเรียก getSuspectListEntries วนกลับมา)
+function mainSuspectUrineEntry() {
+  return urineEntryFromSnapshot(new Proxy({}, { get: (_, id) => v(id) }));
 }
 
 function shortThaiDate(prefix) {
