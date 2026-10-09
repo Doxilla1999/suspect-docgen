@@ -65,6 +65,12 @@
   .officer-row .btn, .officer-row .btn-danger-outline { width: auto; flex: none; padding: 5px 12px; margin: 0; }
   .olr-row { border: 1px solid #33393F; border-left: 4px solid #E2685D; border-radius: 8px; padding: 10px 12px; margin-bottom: 10px; background: #14181C; }
   .olr-row .btn-danger-outline { width: auto; margin-top: 4px; padding: 5px 12px; }
+  .face-analyze { margin-top: 12px; padding: 10px; border: 1px dashed #33393F; border-radius: 8px; }
+  .face-analyze .btn { width: auto; margin: 0; }
+  .face-result { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-start; margin-top: 10px; }
+  .face-result canvas { width: 200px; height: 200px; border-radius: 6px; flex: none; background: #111; }
+  .face-result .face-text { flex: 1; min-width: 220px; font-size: 14.5px; line-height: 1.6; color: #E8E6E0; }
+  .face-result .face-text .note { margin: 4px 0 0; }
   .phys-chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
   .phys-chip { font-size: 12.5px; line-height: 1.4; padding: 2px 8px; border: 1px solid #33393F; border-radius: 12px; background: #12151A; color: #9AA0A6; cursor: pointer; }
   .phys-chip:hover { border-color: #6B5626; color: #E8E6E0; }
@@ -388,6 +394,11 @@
           <label class="f"><span>ด้านขวา</span><input type="file" id="photoRight" accept="image/*"></label>
         </div>
         <p class="note" style="margin-top:6px">ต้องอัปโหลดครบทั้ง 4 รูปจึงจะสร้างเอกสารนี้ได้ รูปจะไม่ถูกบันทึกไว้ในระบบ ต้องเลือกใหม่ทุกครั้งที่สร้างเอกสาร</p>
+        <div class="face-analyze">
+          <button type="button" class="btn btn-ghost btn-sm" id="faceAnalyzeBtn">🔍 วิเคราะห์ใบหน้าจากรูปหน้าตรง (ประมวลผลในเครื่อง)</button>
+          <p class="note" style="margin:6px 0 0">วัดสัดส่วนใบหน้าแล้วเทียบกับ "ภาพแสดงลักษณะตำหนิรูปพรรณของบุคคล" เพื่อเดา <b>รูปหน้า</b> และดูความกว้าง<b>จมูก</b> แล้วเติมลงช่องให้ — <b>รูปไม่ถูกส่งออกนอกเครื่อง</b> (ครั้งแรกต้องดาวน์โหลดตัวตรวจจับใบหน้าประมาณ 17 MB ครั้งต่อไปไม่ต้อง) ผลเป็นการเดาจากสัดส่วน ต้องตรวจกับตัวจริงทุกครั้ง</p>
+          <div id="faceAnalyzeOut"></div>
+        </div>
         <button type="button" class="btn btn-primary modal-done" data-close-modal>เสร็จแล้ว</button>
       </div>
       </div>
@@ -1013,6 +1024,153 @@ function refreshPhysChips() {
     input.addEventListener('input', refreshPhysChips);
   });
 })();
+
+// ---- วิเคราะห์ใบหน้าจากรูปหน้าตรง (ในเครื่อง ด้วย MediaPipe Face Landmarker) ----
+// ดาวน์โหลดแค่ตัวโปรแกรม/โมเดลจาก CDN ครั้งแรก รูปประมวลผลในเบราว์เซอร์ ไม่ถูกส่งออกไปไหน
+const MP_VISION = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@1.1.0';
+const MP_FACE_MODEL = 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task';
+// ค่าอ้างอิง: วัดจากหน้าแถวบนของ "ภาพแสดงลักษณะตำหนิรูปพรรณของบุคคล" (กองทะเบียนประวัติอาชญากร)
+// elong = ยาวหน้าผาก-คาง (จุด 10-152) / กว้างโหนกแก้ม (234-454), jaw = กว้างมุมกราม (172-397) / โหนกแก้ม,
+// fore = กว้างหน้าผาก (54-284) / โหนกแก้ม — วัดผ่านขั้นตอนเดียวกับรูปจริง (findFaceInPhoto) ที่ 4 ขนาดแล้วเฉลี่ย
+// (แต่ละแบบต่างกันไม่เกิน 0.009) เทียบตัวเองแล้วตอบถูกครบ 7 แบบ
+const FACE_SHAPE_REFS = [
+  { term: 'กลม', elong: 1.077, jaw: 0.811, fore: 0.833 },
+  { term: 'รูปไข่', elong: 1.141, jaw: 0.797, fore: 0.858 },
+  { term: 'สี่เหลี่ยม', elong: 1.099, jaw: 0.824, fore: 0.838 },
+  { term: 'สี่เหลี่ยมยาว', elong: 1.159, jaw: 0.813, fore: 0.878 },
+  { term: 'สามเหลี่ยม', elong: 1.135, jaw: 0.780, fore: 0.871 },
+  { term: 'สามเหลี่ยมยาว', elong: 1.195, jaw: 0.785, fore: 0.862 },
+  { term: 'แหลมหลิม', elong: 1.045, jaw: 0.832, fore: 0.813 }
+];
+const FACE_SHAPE_SCALE = { elong: 0.047, jaw: 0.018, fore: 0.021 };  // ส่วนเบี่ยงเบนของ 7 แบบในแผ่น ใช้ปรับน้ำหนักแต่ละค่า
+// จมูก: กว้างปีกจมูก (129-358) / ระยะหัวตาสองข้าง (133-362) — 7 หน้าในแผ่นเฉลี่ย 1.186 (SD 0.042) เกิน ±1.5 SD จึงเติม
+const NOSE_WIDE_ABOVE = 1.25, NOSE_NARROW_BELOW = 1.12;
+let faceLandmarkerPromise = null;
+function loadFaceLandmarker() {
+  if (!faceLandmarkerPromise) {
+    faceLandmarkerPromise = (async () => {
+      const mp = await import(`${MP_VISION}/vision_bundle.mjs`);
+      const fileset = await mp.FilesetResolver.forVisionTasks(`${MP_VISION}/wasm`);
+      const fl = await mp.FaceLandmarker.createFromOptions(fileset, {
+        baseOptions: { modelAssetPath: MP_FACE_MODEL }, runningMode: 'IMAGE', numFaces: 1,
+        minFaceDetectionConfidence: 0.3, minFacePresenceConfidence: 0.3
+      });
+      return { fl, oval: mp.FaceLandmarker.FACE_LANDMARKS_FACE_OVAL };
+    })().catch(e => { faceLandmarkerPromise = null; throw e; });
+  }
+  return faceLandmarkerPromise;
+}
+function detectOnCrop(fl, img, sx, sy, sw, sh, outSize) {
+  const k = outSize / Math.max(sw, sh);
+  const c = document.createElement('canvas');
+  c.width = Math.round(sw * k); c.height = Math.round(sh * k);
+  const g = c.getContext('2d');
+  g.fillStyle = '#808080'; g.fillRect(0, 0, c.width, c.height);
+  g.drawImage(img, sx, sy, sw, sh, 0, 0, c.width, c.height);
+  const lm = fl.detect(c).faceLandmarks[0];
+  return lm ? { lm, canvas: c, box: [sx, sy, sw, sh] } : null;
+}
+// รูปเต็มตัวหน้าจะเล็ก ตัวตรวจจับมองไม่เห็น → ลองทั้งรูปก่อน แล้วไล่ตัดช่องส่วนบนของรูปมาขยาย
+// เจอแล้วตัดรอบหน้า (กว้าง 2.4 เท่าของหน้า) ขยายเป็น 960px วัดซ้ำอีกรอบให้จุดบนหน้าละเอียด
+function findFaceInPhoto(fl, img) {
+  const W = img.naturalWidth, H = img.naturalHeight;
+  let hit = detectOnCrop(fl, img, 0, 0, W, H, 640);
+  for (const frac of [0.5, 0.35, 0.25]) {
+    if (hit) break;
+    const s = Math.round(Math.min(W, H) * frac), step = Math.round(s / 2);
+    for (let y = 0; y + s <= H * 0.75 && !hit; y += step)
+      for (let x = 0; x + s <= W && !hit; x += step) hit = detectOnCrop(fl, img, x, y, s, s, 640);
+  }
+  if (!hit) return null;
+  const [bx, by, bw, bh] = hit.box;
+  const xs = hit.lm.map(p => bx + p.x * bw), ys = hit.lm.map(p => by + p.y * bh);
+  const fw = Math.max(...xs) - Math.min(...xs);
+  const cx = (Math.max(...xs) + Math.min(...xs)) / 2, cy = (Math.max(...ys) + Math.min(...ys)) / 2;
+  const s = fw * 2.4;
+  return detectOnCrop(fl, img, cx - s / 2, cy - s / 2, s, s, 960) || hit;
+}
+function faceShapeMetrics(lm, w, h) {
+  const d = (a, b) => Math.hypot((lm[a].x - lm[b].x) * w, (lm[a].y - lm[b].y) * h);
+  const cheek = d(234, 454);
+  return {
+    elong: d(10, 152) / cheek, jaw: d(172, 397) / cheek, fore: d(54, 284) / cheek,
+    nose: d(129, 358) / d(133, 362),
+    // หันหน้า: ปลายจมูก (1) อยู่ห่างขอบแก้มสองข้างไม่เท่ากัน = หันข้าง
+    yaw: (Math.abs(lm[1].x - lm[234].x) - Math.abs(lm[1].x - lm[454].x)) / Math.abs(lm[454].x - lm[234].x)
+  };
+}
+function classifyFaceShape(m) {
+  return FACE_SHAPE_REFS.map(r => ({
+    term: r.term,
+    dist: Math.hypot((m.elong - r.elong) / FACE_SHAPE_SCALE.elong, (m.jaw - r.jaw) / FACE_SHAPE_SCALE.jaw, (m.fore - r.fore) / FACE_SHAPE_SCALE.fore)
+  })).sort((a, b) => a.dist - b.dist);
+}
+// ใส่คำลงช่องแทนคำในกลุ่มเดียวกันที่มีอยู่ (เช่น เปลี่ยนรูปหน้าเดิมเป็นรูปหน้าใหม่) คำอื่นที่พิมพ์ไว้คงเดิม
+function setPhysTerm(id, term, group) {
+  const input = document.getElementById(id);
+  input.value = [term, ...physTokens(id).filter(t => !group.includes(t) && t !== term)].join(' ');
+  input.dispatchEvent(new Event('input', { bubbles: true }));
+}
+function drawFacePreview(hit, oval) {
+  const out = document.createElement('canvas');
+  out.width = out.height = 400;
+  const g = out.getContext('2d');
+  g.drawImage(hit.canvas, 0, 0, 400, 400);
+  const P = i => [hit.lm[i].x * 400, hit.lm[i].y * 400];
+  g.lineWidth = 2; g.strokeStyle = 'rgba(182,141,64,.9)';
+  (oval || []).forEach(({ start, end }) => { g.beginPath(); g.moveTo(...P(start)); g.lineTo(...P(end)); g.stroke(); });
+  [[10, 152, '#6FDB93'], [234, 454, '#17A2B8'], [172, 397, '#E2685D'], [54, 284, '#F0D9A0']].forEach(([a, b, col]) => {
+    g.strokeStyle = col; g.setLineDash([6, 4]); g.beginPath(); g.moveTo(...P(a)); g.lineTo(...P(b)); g.stroke();
+  });
+  g.setLineDash([]);
+  return out;
+}
+document.getElementById('faceAnalyzeBtn').addEventListener('click', async () => {
+  const out = document.getElementById('faceAnalyzeOut');
+  const file = document.getElementById('photoFront').files[0];
+  if (!file) { out.innerHTML = '<p class="msg">เลือกรูป "หน้าตรง" ก่อน แล้วกดอีกครั้ง</p>'; return; }
+  const btn = document.getElementById('faceAnalyzeBtn');
+  btn.disabled = true;
+  try {
+    out.innerHTML = `<p class="note">${faceLandmarkerPromise ? 'กำลังวิเคราะห์...' : 'กำลังโหลดตัวตรวจจับใบหน้า (ครั้งแรกประมาณ 17 MB)...'}</p>`;
+    const { fl, oval } = await loadFaceLandmarker();
+    out.innerHTML = '<p class="note">กำลังหาใบหน้าในรูป...</p>';
+    const img = await loadImageFile(file);
+    const hit = findFaceInPhoto(fl, img);
+    if (!hit) { out.innerHTML = '<p class="msg">ไม่พบใบหน้าในรูปนี้ — ใช้รูปหน้าตรงที่เห็นหน้าชัด ไม่สวมหมวก/หน้ากาก</p>'; return; }
+    const m = faceShapeMetrics(hit.lm, hit.canvas.width, hit.canvas.height);
+    if (Math.abs(m.yaw) > 0.25) { out.innerHTML = '<p class="msg">รูปนี้หน้าไม่ตรง (หันข้าง) — ใช้รูปหน้าตรงเท่านั้น</p>'; return; }
+    const ranked = classifyFaceShape(m);
+    const [best, second] = ranked;
+    setPhysTerm('face', best.term, PHYS_CHART_TERMS.face);
+    const close = second.dist < best.dist * 1.25;
+    let noseLine;
+    if (m.nose > NOSE_WIDE_ABOVE || m.nose < NOSE_NARROW_BELOW) {
+      const term = m.nose > NOSE_WIDE_ABOVE ? 'จมูกกว้าง' : 'จมูกแคบ';
+      setPhysTerm('nose', term, ['จมูกกว้าง', 'จมูกแคบ']);
+      noseLine = `จมูก: <b>${term}</b> (เติมแล้ว)`;
+    } else {
+      noseLine = 'จมูก: ความกว้างใกล้ค่าเฉลี่ย — ไม่เติม (ดูสันจมูก/ฐานจมูกจากรูปด้านข้างแล้วกดเลือกเอง)';
+    }
+    out.innerHTML = '';
+    const box = document.createElement('div');
+    box.className = 'face-result';
+    box.appendChild(drawFacePreview(hit, oval));
+    const text = document.createElement('div');
+    text.className = 'face-text';
+    text.innerHTML =
+      `รูปหน้า: <b>${escapeXml(best.term)}</b> (เติมแล้ว) — ${close ? 'ก้ำกึ่งกับ' : 'รองลงมา'} ${escapeXml(second.term)}<br>${noseLine}` +
+      `<p class="note">สัดส่วนที่วัดได้: ยาว/กว้าง ${m.elong.toFixed(2)} · กราม ${m.jaw.toFixed(2)} · หน้าผาก ${m.fore.toFixed(2)} · จมูก ${m.nose.toFixed(2)} ` +
+      `— เส้นประ: <span style="color:#6FDB93">ยาว</span> <span style="color:#17A2B8">โหนกแก้ม</span> <span style="color:#E2685D">กราม</span> <span style="color:#F0D9A0">หน้าผาก</span></p>` +
+      `<p class="note" style="color:#F3B7B0">ผลเป็นการเดาจากสัดส่วนเทียบกับแผ่นภาพมาตรฐาน${close ? ' (ครั้งนี้ก้ำกึ่ง)' : ''} — ตรวจกับตัวจริงก่อนสร้างเอกสาร ผม/ตา/หู/หนวดเครา/สีผิว ยังต้องเลือกเอง</p>`;
+    box.appendChild(text);
+    out.appendChild(box);
+  } catch (e) {
+    out.innerHTML = `<p class="msg">วิเคราะห์ไม่สำเร็จ: ${escapeXml(e.message || String(e))} (ต้องต่ออินเทอร์เน็ตครั้งแรกเพื่อโหลดตัวตรวจจับ)</p>`;
+  } finally {
+    btn.disabled = false;
+  }
+});
 document.getElementById('syncSeizedFromEvidenceBtn').addEventListener('click', () => {
   document.getElementById('syncSeizedMsg').textContent = syncSeizedFromEvidence(true);
 });
