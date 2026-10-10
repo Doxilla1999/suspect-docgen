@@ -65,6 +65,10 @@
   .officer-row .btn, .officer-row .btn-danger-outline { width: auto; flex: none; padding: 5px 12px; margin: 0; }
   .olr-row { border: 1px solid #33393F; border-left: 4px solid #E2685D; border-radius: 8px; padding: 10px 12px; margin-bottom: 10px; background: #14181C; }
   .olr-row .btn-danger-outline { width: auto; margin-top: 4px; padding: 5px 12px; }
+  .storage-meter { font-size: 14px; color: #C9C5BC; line-height: 1.6; }
+  .storage-bar { height: 10px; border-radius: 5px; background: #12151A; border: 1px solid #33393F; overflow: hidden; margin: 4px 0 8px; }
+  .storage-bar > div { height: 100%; background: #2EA359; }
+  .storage-bar.warn > div { background: #E2685D; }
   .face-analyze { margin-top: 12px; padding: 10px; border: 1px dashed #33393F; border-radius: 8px; }
   .face-analyze .btn { width: auto; margin: 0; }
   .face-result { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-start; margin-top: 10px; }
@@ -178,7 +182,7 @@
       <h1>ระบบสร้างเอกสารผู้ต้องหา · สภ.นายายอาม</h1>
       <p>กรอกครั้งเดียว ออกเอกสารได้หลายฉบับ</p>
     </div>
-    <div class="credit-top">BY บังโต KN60 <span title="เวอร์ชันของไฟล์นี้ — ถ้าไม่ตรงกับที่แจ้งไว้ ให้กด Ctrl+F5 โหลดหน้าใหม่" style="opacity:.6;font-size:11px;font-weight:400;margin-left:6px">build 09/10/2569 16:30</span></div>
+    <div class="credit-top">BY บังโต KN60 <span title="เวอร์ชันของไฟล์นี้ — ถ้าไม่ตรงกับที่แจ้งไว้ ให้กด Ctrl+F5 โหลดหน้าใหม่" style="opacity:.6;font-size:11px;font-weight:400;margin-left:6px">build 10/10/2569 13:00</span></div>
     <button type="button" class="header-logout" id="logoutBtn">ออกจากระบบ</button>
   </header>
 
@@ -785,6 +789,9 @@
         </div>
         <input type="file" id="importSettingsFile" accept=".json,application/json" style="display:none">
         <p class="msg" id="settingsBackupMsg"></p>
+        <p class="field-group-label" style="margin-top:14px">พื้นที่จัดเก็บในเครื่องนี้</p>
+        <div id="storageMeter" class="storage-meter"><p class="note" style="margin:0">กำลังตรวจ...</p></div>
+        <button type="button" class="btn btn-ghost btn-sm" id="storageRefreshBtn" style="width:auto;padding:6px 12px">ตรวจพื้นที่อีกครั้ง</button>
       </details>
 
       <p class="note" data-module="docgen">เอกสารทั้งหมดในระบบนี้ใช้ถ้อยคำจากแบบฟอร์มเดิมที่สถานีอัปโหลดมาโดยไม่มีการแก้ไข</p>
@@ -864,7 +871,9 @@
       </div>
       <div class="panel" data-module="docgen">
         <h2>เคสที่บันทึกไว้</h2>
+        <input id="casesSearch" placeholder="ค้นหาชื่อ หรือเลขบัตร" autocomplete="off" style="display:none;margin-bottom:8px">
         <div id="casesOut"></div>
+        <p class="msg" id="casesMsg"></p>
         <button class="btn btn-ghost" id="saveBtn">บันทึกเคสนี้</button>
         <button class="btn btn-ghost" id="newBtn">เริ่มเคสใหม่</button>
       </div>
@@ -894,13 +903,64 @@ if (firebaseConfig.apiKey) {
   firebaseReady = true;
 }
 
-// ตัวเก็บข้อมูลในเครื่อง (หน้าตั้งค่า / เคสที่บันทึกไว้) — โค้ดเดิมเรียก window.storage ซึ่งไม่มีบนเว็บจริง
-// ทำให้ค่าที่ตั้งไว้หายทุกครั้งที่โหลดหน้าใหม่ ตรงนี้ผูกเข้ากับ localStorage ให้ด้วยรูปแบบเดิม ({ value })
+// ตัวเก็บข้อมูลในเครื่อง (ค่าหน่วยงาน / เคสที่บันทึกไว้) — รูปแบบเดิม window.storage.get/set/delete คืน { value }
+// เก็บใน IndexedDB (พื้นที่ระดับ GB) แทน localStorage ที่ได้แค่ 5–10 MB ต่อเว็บ (เต็มเมื่อราว 500–1,000 เคส)
+// ครั้งแรกย้ายข้อมูลเดิม ('sdg:*' ใน localStorage) มาให้เอง ย้ายครบแล้วค่อยลบของเดิม
+// ถ้าเบราว์เซอร์ไม่ให้ใช้ IndexedDB (เช่นโหมดส่วนตัวบางแบบ) ใช้ localStorage เหมือนเดิม
+const KV = (() => {
+  let dbp = null;
+  const open = () => dbp || (dbp = new Promise((resolve, reject) => {
+    if (!window.indexedDB) { reject(new Error('IndexedDB ใช้ไม่ได้')); return; }
+    const req = indexedDB.open('suspect-docgen', 1);
+    req.onupgradeneeded = () => req.result.createObjectStore('kv');
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  }));
+  const run = async (mode, fn) => {
+    const db = await open();
+    return new Promise((resolve, reject) => {
+      const t = db.transaction('kv', mode);
+      const r = fn(t.objectStore('kv'));
+      t.oncomplete = () => resolve(r.result);
+      t.onerror = () => reject(t.error);
+      t.onabort = () => reject(t.error || new Error('บันทึกไม่สำเร็จ'));
+    });
+  };
+  return {
+    open,
+    get: k => run('readonly', s => s.get(k)),
+    set: (k, v) => run('readwrite', s => s.put(v, k)),
+    del: k => run('readwrite', s => s.delete(k)),
+    keys: () => run('readonly', s => s.getAllKeys()),
+    all: () => run('readonly', s => s.getAll())
+  };
+})();
+let storageModePromise = null;
+function storageMode() {
+  return storageModePromise || (storageModePromise = (async () => {
+    try {
+      await KV.open();
+      const old = Object.keys(localStorage).filter(k => k.startsWith('sdg:'));
+      for (const k of old) await KV.set(k.slice(4), localStorage.getItem(k));
+      old.forEach(k => localStorage.removeItem(k));
+      return 'idb';
+    } catch (e) { return 'local'; }
+  })());
+}
 if (!window.storage) {
   window.storage = {
-    async get(key) { const value = localStorage.getItem('sdg:' + key); return value === null ? null : { value }; },
-    async set(key, value) { localStorage.setItem('sdg:' + key, value); return { ok: true }; },
-    async delete(key) { localStorage.removeItem('sdg:' + key); return { ok: true }; }
+    async get(key) {
+      if (await storageMode() === 'idb') { const value = await KV.get(key); return value == null ? null : { value }; }
+      const value = localStorage.getItem('sdg:' + key); return value === null ? null : { value };
+    },
+    async set(key, value) {
+      if (await storageMode() === 'idb') await KV.set(key, value); else localStorage.setItem('sdg:' + key, value);
+      return { ok: true };
+    },
+    async delete(key) {
+      if (await storageMode() === 'idb') await KV.del(key); else localStorage.removeItem('sdg:' + key);
+      return { ok: true };
+    }
   };
 }
 
@@ -1623,7 +1683,7 @@ async function onGenerateAll() {
     await sleep(400);
   }
   msg.textContent = (failed.length ? `สร้างแล้ว ${done} ฉบับ, ผิดพลาด: ${failed.join(', ')}` : `สร้างเอกสารแล้ว ${done} ฉบับ`) + PRINT_CHECK_REMINDER;
-  await saveCurrentCase();
+  if (!await saveCurrentCase()) msg.textContent += ' — ⚠️ แต่บันทึกเคสไว้ในเครื่องไม่สำเร็จ (ดูกรอบ "เคสที่บันทึกไว้")';
 }
 const PRINT_CHECK_REMINDER = ' — ⚠️ เปิดตรวจทุกฉบับใน Word ก่อนสั่งพิมพ์';
 
@@ -1942,43 +2002,120 @@ async function loadCasesIndex() {
     casesIndex = res && res.value ? JSON.parse(res.value) : [];
   } catch (e) { casesIndex = []; }
   renderCasesList();
+  updateStorageMeter();
 }
 async function saveCasesIndex() {
-  try { await window.storage.set('suspect-cases-index', JSON.stringify(casesIndex), false); } catch (e) {}
+  await window.storage.set('suspect-cases-index', JSON.stringify(casesIndex), false);
 }
+function showCasesMsg(text, isError) {
+  const el = document.getElementById('casesMsg');
+  el.textContent = text;
+  el.style.color = isError ? '#E2685D' : '';
+}
+// เคสเยอะ (หลักร้อย-พัน) → แสดงเฉพาะล่าสุด CASES_SHOWN รายการ เคสเก่าหาได้ด้วยช่องค้นหา
+const CASES_SHOWN = 30;
 function renderCasesList() {
   const out = document.getElementById('casesOut');
+  const search = document.getElementById('casesSearch');
+  search.style.display = casesIndex.length > 5 ? '' : 'none';
   if (casesIndex.length === 0) { out.innerHTML = '<p class="note" style="margin-top:0">ยังไม่มีเคสที่บันทึกไว้</p>'; return; }
-  out.innerHTML = casesIndex.map(c => `
+  const q = search.value.replace(/[\s-]/g, '');
+  const list = q ? casesIndex.filter(c => (c.name || '').replace(/\s/g, '').includes(q) || (c.idNumber || '').includes(q)) : casesIndex;
+  const shown = list.slice(0, CASES_SHOWN);
+  out.innerHTML = `<p class="note" style="margin-top:0">ทั้งหมด ${casesIndex.length} เคส` +
+    (q ? ` · ตรงกับที่ค้น ${list.length}` : '') +
+    (list.length > shown.length ? ` · แสดง ${shown.length} รายการล่าสุด พิมพ์ค้นหาเพื่อหาเคสเก่า` : '') + '</p>' +
+    shown.map(c => `
     <div class="case-row">
-      <button class="load" data-id="${c.id}">${c.name || 'ไม่ระบุชื่อ'}<br><span class="mono" style="color:#7A766E">${c.createdAt}</span></button>
-      <button class="btn-danger-outline" data-del="${c.id}">ลบ</button>
+      <button class="load" data-id="${escapeXml(c.id)}">${escapeXml(c.name || 'ไม่ระบุชื่อ')}<br><span class="mono" style="color:#7A766E">${escapeXml(c.createdAt)}</span></button>
+      <button class="btn-danger-outline" data-del="${escapeXml(c.id)}">ลบ</button>
     </div>`).join('');
   out.querySelectorAll('button.load').forEach(b => b.addEventListener('click', () => loadCase(b.dataset.id)));
   out.querySelectorAll('button[data-del]').forEach(b => b.addEventListener('click', () => deleteCase(b.dataset.del)));
 }
+// คืนค่า true เมื่อบันทึกสำเร็จจริง — ถ้าพื้นที่เต็ม/บันทึกไม่ได้ต้องบอกผู้ใช้ ห้ามเงียบ
 async function saveCurrentCase() {
   const snap = collectFormSnapshot();
   const name = `${v('firstName')} ${v('lastName')}`.trim() || 'ไม่ระบุชื่อ';
-  const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
-  const entry = { id, name, createdAt: new Date().toLocaleDateString('th-TH') };
-  casesIndex = [entry, ...casesIndex];
-  await saveCasesIndex();
-  try { await window.storage.set(`suspect-case:${id}`, JSON.stringify(snap), false); } catch (e) {}
+  const idNumber = v('idNumber').replace(/\D/g, '');
+  const createdAt = new Date().toLocaleDateString('th-TH');
+  // คนเดิม (เลขบัตรเดียวกัน หรือชื่อเดียวกันถ้าไม่มีเลขบัตร) วันเดียวกัน = อัปเดตเคสเดิม
+  // (กดสร้างเอกสารซ้ำหลังแก้คำผิด จะไม่เกิดเคสซ้ำ) — คนเดิมต่างวันยังแยกเป็นเคสใหม่ตามปกติ
+  const same = casesIndex.find(c => c.createdAt === createdAt &&
+    (idNumber ? c.idNumber === idNumber : (!c.idNumber && c.name === name)));
+  const id = same ? same.id : Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  const prevIndex = casesIndex;
+  try {
+    await window.storage.set(`suspect-case:${id}`, JSON.stringify(snap), false);  // ข้อมูลก่อน รายการทีหลัง
+    casesIndex = [{ id, name, idNumber, createdAt }, ...casesIndex.filter(c => c.id !== id)];
+    await saveCasesIndex();
+  } catch (e) {
+    casesIndex = prevIndex;
+    renderCasesList();
+    showCasesMsg('⚠️ บันทึกเคสไม่สำเร็จ — พื้นที่เก็บข้อมูลในเบราว์เซอร์อาจเต็ม ลบเคสเก่าที่ไม่ใช้แล้วลองใหม่ (เอกสารที่ดาวน์โหลดไปแล้วไม่กระทบ)', true);
+    return false;
+  }
   renderCasesList();
+  showCasesMsg(same ? `อัปเดตเคส "${name}" ของวันนี้แล้ว` : `บันทึกเคส "${name}" แล้ว`);
+  requestPersistentStorage();
+  updateStorageMeter();
+  return true;
+}
+// ขอให้เบราว์เซอร์ไม่ลบข้อมูลของเว็บนี้เองตอนพื้นที่เครื่องใกล้เต็ม (Chrome อนุมัติเองเงียบ ๆ ตามการใช้งาน)
+function requestPersistentStorage() {
+  try { if (navigator.storage && navigator.storage.persist) navigator.storage.persisted().then(p => p || navigator.storage.persist()); } catch (e) {}
+}
+// localStorage เก็บรายชื่อ/ลายเซ็น/ม.22 (เพดานราว 5 MB) ส่วนเคสอยู่ IndexedDB (เพดานเป็น GB ตามพื้นที่เครื่อง)
+const LOCAL_STORAGE_LIMIT = 5 * 1024 * 1024;
+function localStorageBytes() {
+  let n = 0;
+  try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); n += (k.length + (localStorage.getItem(k) || '').length) * 2; } } catch (e) {}
+  return n;
+}
+function fmtBytes(n) { return n >= 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB'; }
+async function updateStorageMeter() {
+  const box = document.getElementById('storageMeter');
+  if (!box) return;
+  const mode = await storageMode();
+  const est = navigator.storage && navigator.storage.estimate ? await navigator.storage.estimate().catch(() => null) : null;
+  const persisted = navigator.storage && navigator.storage.persisted ? await navigator.storage.persisted().catch(() => false) : false;
+  const local = localStorageBytes();
+  const localPct = local / LOCAL_STORAGE_LIMIT * 100;
+  const casePct = mode === 'idb' && est && est.quota ? est.usage / est.quota * 100 : localPct;
+  const bar = (pct) => `<div class="storage-bar${pct >= 80 ? ' warn' : ''}"><div style="width:${Math.min(100, Math.max(1, pct)).toFixed(1)}%"></div></div>`;
+  let html = `<b>เคสที่บันทึกไว้ ${casesIndex.length} เคส</b> — ` + (mode === 'idb' && est
+    ? `ใช้พื้นที่ ${fmtBytes(est.usage)} จาก ${fmtBytes(est.quota)} (${casePct < 0.1 ? '<0.1' : casePct.toFixed(1)}%)`
+    : `เก็บแบบเดิม (เบราว์เซอร์ไม่ให้ใช้ที่เก็บขนาดใหญ่) ใช้ ${fmtBytes(local)} จากราว 5 MB`);
+  html += bar(casePct);
+  html += `รายชื่อ / ลายเซ็น / การตั้งค่า: ${fmtBytes(local)} จากราว 5 MB (${localPct.toFixed(1)}%)` + bar(localPct);
+  html += `<span class="note">ป้องกันเบราว์เซอร์ลบข้อมูลเองตอนเครื่องเต็ม: ${persisted ? 'เปิดแล้ว ✓' : 'ยังไม่เปิด (เปิดให้อัตโนมัติหลังบันทึกเคส)'}</span>`;
+  if (casePct >= 80 || localPct >= 80) {
+    html += `<p class="print-warning">⚠️ พื้นที่ใกล้เต็ม (${Math.max(casePct, localPct).toFixed(0)}%) — ${localPct >= 80 ? 'ลดขนาด/ลบลายเซ็นที่ไม่ใช้ หรือ' : ''} ลบเคสเก่าที่ไม่ใช้แล้ว และกด "ดาวน์โหลดไฟล์สำรองการตั้งค่า" เก็บไว้ก่อน</p>`;
+    showCasesMsg(`⚠️ พื้นที่เก็บข้อมูลใกล้เต็ม (${Math.max(casePct, localPct).toFixed(0)}%) — ดูรายละเอียดที่หน้า ตั้งค่า`, true);
+  }
+  box.innerHTML = html;
 }
 async function loadCase(id) {
   try {
     const res = await window.storage.get(`suspect-case:${id}`, false);
     if (res && res.value) applyFormSnapshot(JSON.parse(res.value));
-  } catch (e) {}
+    else showCasesMsg('ไม่พบข้อมูลของเคสนี้ในเครื่อง (อาจบันทึกไม่สำเร็จตอนพื้นที่เต็ม)', true);
+  } catch (e) { showCasesMsg('เปิดเคสไม่สำเร็จ: ' + (e.message || e), true); }
 }
 async function deleteCase(id) {
-  casesIndex = casesIndex.filter(c => c.id !== id);
-  await saveCasesIndex();
-  try { await window.storage.delete(`suspect-case:${id}`, false); } catch (e) {}
+  const c = casesIndex.find(x => x.id === id);
+  if (c && !confirm(`ลบเคส "${c.name}" (${c.createdAt})?`)) return;
+  casesIndex = casesIndex.filter(x => x.id !== id);
+  try {
+    await saveCasesIndex();
+    await window.storage.delete(`suspect-case:${id}`, false);
+    showCasesMsg(c ? `ลบเคส "${c.name}" แล้ว` : '');
+  } catch (e) { showCasesMsg('ลบเคสไม่สำเร็จ: ' + (e.message || e), true); }
   renderCasesList();
+  updateStorageMeter();
 }
+document.getElementById('casesSearch').addEventListener('input', renderCasesList);
+document.getElementById('storageRefreshBtn').addEventListener('click', updateStorageMeter);
 
 async function loadStationSettings() {
   try {
