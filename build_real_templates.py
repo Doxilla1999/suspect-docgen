@@ -371,9 +371,84 @@ def build_online_report():
     print("built online_report_template.docx from real form")
 
 
+def expect(para, idx, label):
+    """กันฟอร์มต้นฉบับถูกแก้แล้วดัชนี run เลื่อน — ถ้าป้ายกำกับไม่ตรงให้หยุดสร้างทันที ไม่ใส่แท็กผิดที่"""
+    got = para.runs[idx].text
+    if got.strip() != label:
+        raise ValueError(f"คาดว่า run {idx} คือ {label!r} แต่เจอ {got!r} ในย่อหน้า: {para.text[:60]!r}")
+
+
+def build_phone_consent_m80():
+    """บันทึกความยินยอมให้ถอดข้อมูลในโทรศัพท์มือถือ (ม.80) — ฟอร์มของสถานีแบบจัดช่องด้วยแท็บ (ไม่มีจุดไข่ปลา)
+    ใส่แท็กแทนเฉพาะ run ที่เป็นค่าที่กรอก คงแท็บ/ตัวหนาของป้ายกำกับ/ฟอนต์เดิมไว้
+    (ค่าตัวเลขอยู่ใน run ฟอนต์ TH SarabunIT๙ ซึ่งแสดงเลขอารบิกเป็นเลขไทยให้เอง)"""
+    doc = Document(FORMS + "phone_consent_m80_original.docx")
+    p = doc.paragraphs
+
+    expect(p[3], 8, "สถานที่บันทึก")
+    set_runs(p[3], {10: "{record_place}"})
+
+    expect(p[4], 4, "วันที่"); expect(p[4], 9, "เดือน")
+    set_runs(p[4], {6: "{record_day}", 11: "{record_month}", 18: "{record_year}"})
+
+    # ข้าพเจ้า <แท็บ> คำนำหน้า+ชื่อ-สกุล
+    set_runs(p[5], {2: "{suspect_title}{suspect_full_name}"})
+
+    # อายุ / ที่อยู่ (บ้านเลขที่) / หมู่ที่ / ถนน / ตำบล — ช่องถนนต้นฉบับว่าง (เว้นวรรคก่อน "ตำบล") จึงใส่ค่าไว้ตรงนั้น
+    expect(p[6], 0, "อายุ"); expect(p[6], 5, "ที่อยู่"); expect(p[6], 9, "หมู่ที่")
+    expect(p[6], 13, "ถนน"); expect(p[6], 16, "ตำบล")
+    set_runs(p[6], {2: "{suspect_age}", 7: "{addr_house_no}", 11: "{addr_moo}",
+                    15: "{addr_road} ", 18: "{addr_tambon}"})
+
+    expect(p[7], 0, "อำเภอ"); expect(p[7], 4, "จังหวัด"); expect(p[7], 8, "เลขประจำตัวประชาชน")
+    set_runs(p[7], {2: "{addr_amphoe}", 6: "{addr_province}", 10: "{suspect_id_digits}"})
+
+    expect(p[8], 7, "ยี่ห้อ"); expect(p[8], 11, "รุ่น")
+    set_runs(p[8], {9: "{phone_brand}", 13: "{phone_model}"})
+
+    # สี / เลขอีมี่ — ค่าในต้นฉบับ "เลขอีมี่(1)…,เลขอีมี่(2)…" แอปประกอบเป็น "(1) …, (2) …" ส่งมาทั้งก้อน
+    expect(p[9], 1, "สี"); expect(p[9], 5, "เลขอีมี่")
+    set_runs(p[9], {3: "{phone_color}", 7: "{phone_imei_list}"})
+    clear_runs(p[9], range(8, 16))
+
+    expect(p[10], 5, "ซิม")
+    set_runs(p[10], {3: "{sim_count}"})
+
+    expect(p[11], 4, "ซิมการ์ดหมายเลขโทร"); expect(p[11], 8, "เครือข่าย")
+    set_runs(p[11], {6: "{sim1_number}", 10: "{sim1_network}"})
+    # (๒) ต้นฉบับตั้งย่อหน้า/แท็บไม่เหมือน (๑) พอมีเบอร์จริง เลขจะติดคำว่า "หมายเลขโทร" —
+    # ใช้สำเนาของบรรทัด (๑) แทน ตำแหน่งตรงกันเสมอ แล้วลบบรรทัด (๒) เดิมทิ้ง
+    expect(p[12], 3, "ซิมการ์ดหมายเลขโทร"); expect(p[12], 8, "เครือข่าย")
+    sim2 = Paragraph(copy.deepcopy(p[11]._p), p[11]._parent)
+    expect(sim2, 2, "๑")
+    set_runs(sim2, {2: "๒", 6: "{sim2_number}", 10: "{sim2_network}"})
+    p[11]._p.addnext(sim2._p)
+    p[12]._p.getparent().remove(p[12]._p)
+
+    # ลายมือชื่อผู้ยินยอม: ชื่อ-สกุลในวงเล็บ (ไม่มีคำนำหน้า)
+    set_runs(p[24], {1: "{suspect_full_name}"})
+    # ผู้บันทึก/อ่าน = หัวหน้าชุดที่เลือกตอนเข้าใช้งาน: ยศในบรรทัดลงชื่อ / ชื่อในวงเล็บ / ตำแหน่ง
+    expect(p[27], 1, "ลงชื่อ"); expect(p[27], 10, "บันทึก")
+    set_runs(p[27], {3: "{officer1_rank} "})
+    clear_runs(p[27], range(4, 9))
+    set_runs(p[28], {1: "{officer1_name}"})
+    expect(p[29], 1, "ตำแหน่ง")
+    set_runs(p[29], {3: "{officer1_position}"})
+    clear_runs(p[29], range(4, 10))
+
+    # ย่อหน้าว่างท้ายฟอร์มล้นไปเป็นหน้า 2 ว่าง ๆ (สั่งพิมพ์แล้วได้กระดาษเปล่า) — ตัดออกให้จบในหน้าเดียว
+    while len(doc.paragraphs) > 1 and not doc.paragraphs[-1].text.strip():
+        last = doc.paragraphs[-1]._p
+        last.getparent().remove(last)
+
+    doc.save(OUT + "phone_consent_m80_template.docx")
+    print("built phone_consent_m80_template.docx from real form")
+
+
 if __name__ == "__main__":
     os.makedirs(OUT, exist_ok=True)
     build_urine_referral()
     build_drug_test_115()
     build_court_referral()
     build_online_report()
+    build_phone_consent_m80()

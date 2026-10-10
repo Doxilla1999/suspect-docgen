@@ -390,7 +390,8 @@ add_p(doc, "")
 for label in ["(ลงชื่อ) ............................................. ผู้ยินยอม", "(ลงชื่อ) ............................................. พยาน",
               "(ลงชื่อ) {officer2_rank}{officer2_name} ............................................. บันทึก/อ่าน"]:
     p = doc.add_paragraph(); r = p.add_run(label); set_font(r)
-doc.save(OUT + "phone_consent_m80_template.docx")
+# ม.80 ใช้ฟอร์มจริงของสถานีแล้ว (build_real_templates.py) — แบบที่สร้างเองตรงนี้เก็บไว้เทียบเท่านั้น
+doc.save(OUT + "_superseded_phone_consent_m80_template.docx")
 
 # ---------- 5. arrest report (new, general letter shell) ----------
 doc = base_doc()

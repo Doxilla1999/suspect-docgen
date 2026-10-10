@@ -743,12 +743,14 @@
           <label class="f"><span>สี</span><input id="phoneColor"></label>
           <label class="f"><span>เลขอีมี่ (1)</span><input id="phoneImei1"></label>
           <label class="f"><span>เลขอีมี่ (2)</span><input id="phoneImei2"></label>
-          <label class="f"><span>สถานที่บันทึกยินยอม</span><input id="recordPlace" placeholder="สภ.นายายอาม"></label>
+          <label class="f"><span>สถานที่บันทึกยินยอม</span><input id="recordPlace" placeholder="ว่างไว้ = ชื่อสถานีแบบย่อ เช่น สภ.นายายอาม"></label>
           <label class="f"><span>ซิม (1) หมายเลข</span><input id="sim1Number"></label>
           <label class="f"><span>ซิม (1) เครือข่าย</span><input id="sim1Network"></label>
           <label class="f"><span>ซิม (2) หมายเลข</span><input id="sim2Number"></label>
           <label class="f"><span>ซิม (2) เครือข่าย</span><input id="sim2Network"></label>
+          <label class="f"><span>ใช้ได้กับซิมการ์ดจำนวน (ซิม)</span><input id="simCount" inputmode="numeric" placeholder="ว่างไว้ = นับจากช่องซิมที่กรอก"></label>
         </div>
+        <p class="note">ผู้บันทึก/อ่าน ในฟอร์ม = หัวหน้าชุดที่เลือกตอนเข้าใช้งาน (ยศ ชื่อ ตำแหน่ง) · ช่องที่เว้นว่างจะเป็นจุดไข่ปลาให้เขียนมือ</p>
         <button type="button" class="btn btn-primary modal-done" data-close-modal>เสร็จแล้ว</button>
       </div>
       </div>
@@ -1398,6 +1400,15 @@ function urineRankIndentTwips(signerName, signerRank) {
   const rankWidth = thaiWidthEm(signerRank || '') * 320;
   return Math.max(0, Math.round(center - nameWidth / 2 - rankWidth));
 }
+// เลขบัตร 13 หลักแบบติดกัน (ตัดขีด/เว้นวรรคที่พิมพ์มา) ตามฟอร์ม ม.80 — ไม่ครบ 13 หลักคืนค่าตามที่กรอก
+function thaiIdDigits(raw) {
+  const d = String(raw || '').replace(/\D/g, '');
+  return d.length === 13 ? d : String(raw || '');
+}
+// "สถานีตำรวจภูธรนายายอาม" → "สภ.นายายอาม", "สถานีตำรวจนครบาลลุมพินี" → "สน.ลุมพินี"
+function stationShortName() {
+  return v('stationName').replace(/^สถานีตำรวจภูธร\s*/, 'สภ.').replace(/^สถานีตำรวจนครบาล\s*/, 'สน.');
+}
 function buildTagMap() {
   const title = v('title'), firstName = v('firstName'), lastName = v('lastName');
   const fullName = `${firstName} ${lastName}`.trim();
@@ -1464,10 +1475,16 @@ function buildTagMap() {
     // ใบปะหน้าส่งศาลใช้วันที่แบบไม่มี "พ.ศ." ตามฟอร์มจริง (เอกสารอื่นไม่ได้ใช้แท็กนี้)
     warrant_date: thaiDateNoEra('warrantDate'), charge: v('charge'),
     suspect_nationality: v('nationality'),
-    record_place: v('recordPlace') || v('stationName'), record_date: thaiDate('issueDate'),
+    record_place: v('recordPlace') || stationShortName(), record_date: thaiDate('issueDate'),
     phone_brand: v('phoneBrand'), phone_model: v('phoneModel'), phone_color: v('phoneColor'),
     phone_imei1: v('phoneImei1'), phone_imei2: v('phoneImei2'), sim1_number: v('sim1Number'), sim1_network: v('sim1Network'),
-    sim2_number: v('sim2Number'), sim2_network: v('sim2Network'), officer2_rank: v('officer2Rank'),
+    // ม.80 (ฟอร์มจริง): IMEI 2 ตัวเป็น "(1) …, (2) …" ตัวเดียวใส่เลขเลย / จำนวนซิมนับจากช่องที่กรอกถ้าไม่ได้ระบุ
+    phone_imei_list: v('phoneImei1') && v('phoneImei2') ? `(1) ${v('phoneImei1')}, (2) ${v('phoneImei2')}` : (v('phoneImei1') || v('phoneImei2')),
+    sim_count: v('simCount') || String([v('sim1Number'), v('sim2Number')].filter(Boolean).length || ''),
+    suspect_id_digits: thaiIdDigits(v('idNumber')),
+    // ไม่มีซิมที่ 2 → เว้นที่ว่าง (ไม่ใช่จุดไข่ปลา) กว้างเท่าเบอร์ในบรรทัด (๑) ให้เขียนมือได้ และคำว่า "เครือข่าย" ตรงกับบรรทัดบน
+    sim2_number: v('sim2Number') || ' '.repeat(26), sim2_network: v('sim2Network'),
+    officer2_rank: v('officer2Rank'),
     officer2_name: v('officer2Name'), officer2_position: v('officer2Position'), officer3_rank: v('officer3Rank'),
     officer3_name: v('officer3Name'), officer3_position: v('officer3Position'),
     warrant_reference: v('warrantNo') ? `หมายจับ${v('courtName')} ที่ ${v('warrantNo')} ลงวันที่ ${thaiDate('warrantDate')}` : '-',
