@@ -738,9 +738,10 @@
         <h2>ข้อมูลโทรศัพท์ (ม.80)</h2>
         <p class="modal-person-tag"></p>
         <div class="grid3">
-          <label class="f"><span>ยี่ห้อ</span><input id="phoneBrand"></label>
-          <label class="f"><span>รุ่น</span><input id="phoneModel"></label>
-          <label class="f"><span>สี</span><input id="phoneColor"></label>
+          <label class="f"><span>ยี่ห้อ</span><input id="phoneBrand" list="phoneBrandList" placeholder="พิมพ์ 2–3 ตัว หรือเลือก" autocomplete="off"></label>
+          <label class="f"><span>รุ่น</span><input id="phoneModel" list="phoneModelList" placeholder="เลือกยี่ห้อก่อน แล้วพิมพ์ค้นรุ่น" autocomplete="off"></label>
+          <label class="f"><span>สี</span><input id="phoneColor" list="phoneColorList" placeholder="พิมพ์ หรือเลือก" autocomplete="off"></label>
+          <datalist id="phoneBrandList"></datalist><datalist id="phoneModelList"></datalist><datalist id="phoneColorList"></datalist>
           <label class="f"><span>เลขอีมี่ (1)</span><input id="phoneImei1"></label>
           <label class="f"><span>เลขอีมี่ (2)</span><input id="phoneImei2"></label>
           <label class="f"><span>สถานที่บันทึกยินยอม</span><input id="recordPlace" placeholder="ว่างไว้ = ชื่อสถานีแบบย่อ เช่น สภ.นายายอาม"></label>
@@ -1081,6 +1082,97 @@ function refreshPhysChips() {
       input.dispatchEvent(new Event('input', { bubbles: true }));
     });
     input.addEventListener('input', refreshPhysChips);
+  });
+})();
+
+// ---- ม.80: รายการยี่ห้อ / รุ่น / สี ให้พิมพ์ค้นหรือเลือก (พิมพ์เองได้เสมอ) ----
+// รุ่นมีเป็นพันและออกใหม่ทุกเดือน → ใส่ไว้แค่รุ่นที่เจอบ่อยต่อยี่ห้อ + จำรุ่นที่ผู้ใช้เคยพิมพ์ไว้ในเครื่องนี้
+const PHONE_BRANDS = [
+  ['Apple', 'ไอโฟน iPhone'], ['Samsung', 'ซัมซุง'], ['OPPO', 'ออปโป้'], ['vivo', 'วีโว่'], ['Xiaomi', 'เสียวหมี่'],
+  ['Redmi', 'เรดมี่'], ['POCO', 'โพโค่'], ['realme', 'เรียลมี'], ['Huawei', 'หัวเว่ย'], ['Honor', 'ออนเนอร์'],
+  ['Infinix', 'อินฟินิกซ์'], ['Tecno', 'เทคโน'], ['itel', 'ไอเทล'], ['Nokia', 'โนเกีย'], ['OnePlus', 'วันพลัส'],
+  ['Google', 'Pixel'], ['Motorola', 'โมโตโรล่า'], ['Sony', 'โซนี่'], ['ASUS', 'เอซุส'], ['Nothing', ''], ['ZTE', ''], ['Wiko', 'วีโก']
+];
+const PHONE_MODELS = {
+  apple: ['iPhone 11', 'iPhone 11 Pro Max', 'iPhone 12', 'iPhone 12 Pro', 'iPhone 12 Pro Max', 'iPhone 13', 'iPhone 13 Pro', 'iPhone 13 Pro Max',
+    'iPhone 14', 'iPhone 14 Plus', 'iPhone 14 Pro', 'iPhone 14 Pro Max', 'iPhone 15', 'iPhone 15 Plus', 'iPhone 15 Pro', 'iPhone 15 Pro Max',
+    'iPhone 16', 'iPhone 16 Plus', 'iPhone 16 Pro', 'iPhone 16 Pro Max', 'iPhone 16e', 'iPhone SE'],
+  samsung: ['Galaxy A05', 'Galaxy A05s', 'Galaxy A06', 'Galaxy A15', 'Galaxy A16', 'Galaxy A25', 'Galaxy A35', 'Galaxy A55',
+    'Galaxy A14', 'Galaxy A24', 'Galaxy A34', 'Galaxy A54', 'Galaxy S23', 'Galaxy S24', 'Galaxy S24 Ultra', 'Galaxy S25', 'Galaxy Z Flip6', 'Galaxy Z Fold6'],
+  oppo: ['A18', 'A38', 'A58', 'A60', 'A78', 'A79', 'A3', 'A17', 'A17k', 'A57', 'A77', 'Reno10', 'Reno11', 'Reno11 F', 'Reno12', 'Reno12 F', 'Reno13'],
+  vivo: ['Y03', 'Y04', 'Y17s', 'Y18', 'Y19s', 'Y27', 'Y28', 'Y36', 'Y38', 'Y02', 'Y16', 'Y22', 'V29', 'V30', 'V40'],
+  xiaomi: ['Xiaomi 13T', 'Xiaomi 14T', 'Xiaomi 14', 'Redmi Note 13', 'Redmi 13C', 'Redmi 13'],
+  redmi: ['Redmi A3', 'Redmi 12C', 'Redmi 13C', 'Redmi 14C', 'Redmi 12', 'Redmi 13', 'Redmi Note 12', 'Redmi Note 13', 'Redmi Note 13 Pro', 'Redmi Note 14'],
+  poco: ['POCO C65', 'POCO M6', 'POCO X6', 'POCO X6 Pro', 'POCO F6'],
+  realme: ['C51', 'C53', 'C55', 'C61', 'C63', 'C65', 'C67', 'Note 50', 'Note 60', 'realme 11', 'realme 12', 'realme 13'],
+  huawei: ['nova Y61', 'nova Y71', 'nova Y91', 'nova 11', 'nova 12', 'P60', 'Mate 60'],
+  honor: ['X5', 'X6', 'X7', 'X8', 'X9', 'Honor 90', 'Honor 200'],
+  infinix: ['Smart 7', 'Smart 8', 'Hot 30', 'Hot 30i', 'Hot 40', 'Hot 40i', 'Note 30', 'Note 40'],
+  tecno: ['Spark 10', 'Spark 20', 'Spark Go', 'Pop 7', 'Pop 8', 'Camon 20', 'Camon 30'],
+  itel: ['A05s', 'A60', 'A70', 'P40', 'P55'],
+  nokia: ['105', '106', '110', '150', 'C12', 'C22', 'C32', 'G21', 'G42'],
+  google: ['Pixel 7', 'Pixel 7a', 'Pixel 8', 'Pixel 8a', 'Pixel 9'],
+  oneplus: ['Nord CE3', 'Nord CE4', 'OnePlus 11', 'OnePlus 12']
+};
+const PHONE_COLORS = ['ดำ', 'ขาว', 'เทา', 'เงิน', 'ทอง', 'โรสโกลด์', 'ชมพู', 'แดง', 'ส้ม', 'เหลือง', 'เขียว', 'มิ้นต์', 'ฟ้า', 'น้ำเงิน', 'ม่วง', 'น้ำตาล', 'ครีม', 'ไทเทเนียม'];
+// พิมพ์ชื่อยี่ห้อแบบไหนก็หารุ่นเจอ: "apple" / "iphone" / "ไอโฟน" → apple
+const PHONE_BRAND_ALIASES = { iphone: 'apple', 'ไอโฟน': 'apple', 'แอปเปิ้ล': 'apple', 'ซัมซุง': 'samsung', 'ออปโป้': 'oppo', 'วีโว่': 'vivo',
+  'เสียวหมี่': 'xiaomi', 'เรดมี่': 'redmi', 'เรียลมี': 'realme', 'หัวเว่ย': 'huawei', 'โนเกีย': 'nokia', 'อินฟินิกซ์': 'infinix', pixel: 'google' };
+function phoneBrandKey(brand) {
+  const k = String(brand || '').trim().toLowerCase().replace(/\s+/g, '');
+  return PHONE_BRAND_ALIASES[k] || k;
+}
+const PHONE_MEMORY_KEY = 'm80-phone-memory';
+function loadPhoneMemory() {
+  try { return JSON.parse(localStorage.getItem(PHONE_MEMORY_KEY) || '{}') || {}; } catch (e) { return {}; }
+}
+// จำค่าที่พิมพ์เองซึ่งไม่อยู่ในรายการ (รุ่นแยกตามยี่ห้อ / ยี่ห้อ / สี) ล่าสุดขึ้นก่อน เก็บไม่เกิน 60 ต่อกลุ่ม
+function rememberPhoneValue(group, value) {
+  value = String(value || '').trim();
+  if (!value || value.length > 60) return;
+  const mem = loadPhoneMemory();
+  const list = (mem[group] || []).filter(x => x.toLowerCase() !== value.toLowerCase());
+  mem[group] = [value, ...list].slice(0, 60);
+  try { localStorage.setItem(PHONE_MEMORY_KEY, JSON.stringify(mem)); } catch (e) {}
+}
+function fillDatalist(id, items) {
+  const seen = new Set();
+  document.getElementById(id).innerHTML = items.filter(([val]) => {
+    const k = val.toLowerCase();
+    if (!val || seen.has(k)) return false;
+    seen.add(k); return true;
+  }).map(([val, label]) => `<option value="${escapeXml(val)}"${label ? ` label="${escapeXml(label)}"` : ''}></option>`).join('');
+}
+function renderPhoneLists() {
+  const mem = loadPhoneMemory();
+  fillDatalist('phoneBrandList', [...(mem.brands || []).map(b => [b, 'เคยพิมพ์']), ...PHONE_BRANDS]);
+  fillDatalist('phoneColorList', [...(mem.colors || []).map(c => [c, 'เคยพิมพ์']), ...PHONE_COLORS.map(c => [c])]);
+  const key = phoneBrandKey(v('phoneBrand'));
+  const curated = key ? (PHONE_MODELS[key] || []) : [];
+  const typed = key ? (mem['models:' + key] || []) : [];
+  // ยังไม่เลือกยี่ห้อ: แสดงรุ่นที่เคยพิมพ์ทุกยี่ห้อ
+  const allTyped = key ? [] : Object.keys(mem).filter(g => g.startsWith('models:')).flatMap(g => mem[g]);
+  fillDatalist('phoneModelList', [...typed.map(m => [m, 'เคยพิมพ์']), ...curated.map(m => [m]), ...allTyped.map(m => [m, 'เคยพิมพ์'])]);
+}
+(function initPhoneLists() {
+  renderPhoneLists();
+  const brand = document.getElementById('phoneBrand');
+  brand.addEventListener('input', renderPhoneLists);
+  brand.addEventListener('change', () => {
+    const b = v('phoneBrand');
+    if (b && !PHONE_BRANDS.some(([n, th]) => phoneBrandKey(n) === phoneBrandKey(b) || (th && th.includes(b)))) rememberPhoneValue('brands', b);
+    renderPhoneLists();
+  });
+  document.getElementById('phoneModel').addEventListener('focus', renderPhoneLists);
+  document.getElementById('phoneModel').addEventListener('change', () => {
+    const key = phoneBrandKey(v('phoneBrand')), m = v('phoneModel');
+    if (key && m && !(PHONE_MODELS[key] || []).some(x => x.toLowerCase() === m.toLowerCase())) rememberPhoneValue('models:' + key, m);
+    renderPhoneLists();
+  });
+  document.getElementById('phoneColor').addEventListener('change', () => {
+    const c = v('phoneColor');
+    if (c && !PHONE_COLORS.includes(c)) rememberPhoneValue('colors', c);
+    renderPhoneLists();
   });
 })();
 
