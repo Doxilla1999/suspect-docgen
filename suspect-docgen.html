@@ -182,7 +182,7 @@
       <h1>ระบบสร้างเอกสารผู้ต้องหา · สภ.นายายอาม</h1>
       <p>กรอกครั้งเดียว ออกเอกสารได้หลายฉบับ</p>
     </div>
-    <div class="credit-top">BY บังโต KN60 <span title="เวอร์ชันของไฟล์นี้ — ถ้าไม่ตรงกับที่แจ้งไว้ ให้กด Ctrl+F5 โหลดหน้าใหม่" style="opacity:.6;font-size:11px;font-weight:400;margin-left:6px">build 10/10/2569 13:00</span></div>
+    <div class="credit-top">BY บังโต KN60 <span title="เวอร์ชันของไฟล์นี้ — ถ้าไม่ตรงกับที่แจ้งไว้ ให้กด Ctrl+F5 โหลดหน้าใหม่" style="opacity:.6;font-size:11px;font-weight:400;margin-left:6px">build 10/10/2569 13:34</span></div>
     <button type="button" class="header-logout" id="logoutBtn">ออกจากระบบ</button>
   </header>
 
@@ -367,29 +367,21 @@
         <label class="f"><span>ข้อหา — ช่องเดียวกับในพาแนล "ข้อหา / หมายจับ / ของกลาง" พิมพ์ที่ไหนก็ได้</span>
           <textarea id="chargeProfile" placeholder="เช่น เสพและครอบครองยาเสพติดให้โทษประเภท 1 (เมทแอมเฟตามีน) โดยผิดกฎหมาย"></textarea>
         </label>
-        <p class="note" style="margin:10px 0 0">ศีรษะ / รูปหน้า / คิ้ว,ตา / จมูก / ใบหู — ตัวเลือกตาม "ภาพแสดงลักษณะตำหนิรูปพรรณของบุคคล" (กองทะเบียนประวัติอาชญากร) กดได้หลายคำ กดซ้ำเพื่อเอาออก หรือพิมพ์เองก็ได้</p>
+        <p class="note" style="margin:10px 0 0">กดปุ่มคำใต้ช่องได้หลายคำ กดซ้ำเพื่อเอาออก หรือพิมพ์เองก็ได้ — ศีรษะ / รูปหน้า / คิ้ว,ตา / จมูก / ใบหู ใช้คำตาม "ภาพแสดงลักษณะตำหนิรูปพรรณของบุคคล" (กองทะเบียนประวัติอาชญากร)</p>
         <div class="grid3">
           <label class="f"><span>ความสูง (ซม.)</span><input id="height"></label>
           <label class="f"><span>น้ำหนัก (กก.)</span><input id="weight"></label>
-          <label class="f"><span>สีผิว</span><input id="skin" list="skinList" placeholder="เลือกหรือพิมพ์เอง"></label>
-          <label class="f"><span>ศีรษะ</span><input id="head" list="headList" placeholder="เลือกหรือพิมพ์เอง"></label>
-          <label class="f"><span>ผม</span><input id="hair" list="hairList" placeholder="เลือกหรือพิมพ์เอง"></label>
-          <label class="f"><span>รูปหน้า</span><input id="face" list="faceList" placeholder="เลือกหรือพิมพ์เอง"></label>
-          <label class="f"><span>คิ้ว,ตา</span><input id="eyes" list="eyesList" placeholder="เลือกหรือพิมพ์เอง"></label>
-          <label class="f"><span>จมูก</span><input id="nose" list="noseList" placeholder="เลือกหรือพิมพ์เอง"></label>
-          <label class="f"><span>ใบหู</span><input id="ears" list="earsList" placeholder="เลือกหรือพิมพ์เอง"></label>
+          <label class="f"><span>สีผิว</span><input id="skin" placeholder="กดเลือกด้านล่าง หรือพิมพ์เอง"></label>
+          <label class="f"><span>ศีรษะ</span><input id="head" placeholder="กดเลือกด้านล่าง หรือพิมพ์เอง"></label>
+          <label class="f"><span>ผม</span><input id="hair" placeholder="กดเลือกด้านล่าง หรือพิมพ์เอง"></label>
+          <label class="f"><span>รูปหน้า</span><input id="face" placeholder="กดเลือกด้านล่าง หรือพิมพ์เอง"></label>
+          <label class="f"><span>คิ้ว,ตา</span><input id="eyes" placeholder="กดเลือกด้านล่าง หรือพิมพ์เอง"></label>
+          <label class="f"><span>จมูก</span><input id="nose" placeholder="กดเลือกด้านล่าง หรือพิมพ์เอง"></label>
+          <label class="f"><span>ใบหู</span><input id="ears" placeholder="กดเลือกด้านล่าง หรือพิมพ์เอง"></label>
           <label class="f"><span>หนวดเครา</span><input id="beard"></label>
           <label class="f"><span>ตำหนิ/รอยสัก</span><input id="marks"></label>
-          <label class="f"><span>สำเนียง</span><input id="accent" list="accentList" placeholder="เลือกหรือพิมพ์เอง"></label>
+          <label class="f"><span>สำเนียง</span><input id="accent" placeholder="กดเลือกด้านล่าง หรือพิมพ์เอง"></label>
         </div>
-        <datalist id="skinList"><option value="ขาว"></option><option value="ขาวเหลือง"></option><option value="เหลือง"></option><option value="ดำแดง"></option><option value="ดำ"></option><option value="คล้ำ"></option></datalist>
-        <datalist id="headList"></datalist>
-        <datalist id="hairList"><option value="สั้น"></option><option value="ยาว"></option><option value="หยิก"></option><option value="ตรง"></option><option value="โกนศีรษะ"></option><option value="ล้าน"></option></datalist>
-        <datalist id="faceList"></datalist>
-        <datalist id="accentList"><option value="ภาคกลาง"></option><option value="ภาคเหนือ"></option><option value="ภาคอีสาน"></option><option value="ภาคใต้"></option><option value="ภาคตะวันออก"></option><option value="ต่างประเทศ"></option></datalist>
-        <datalist id="eyesList"></datalist>
-        <datalist id="noseList"></datalist>
-        <datalist id="earsList"></datalist>
         <p class="field-group-label" style="margin-top:16px">ภาพประกอบ 4 ด้าน (หน้าตรง/หลัง/ซ้าย/ขวา)</p>
         <div class="grid2">
           <label class="f"><span>หน้าตรง</span><input type="file" id="photoFront" accept="image/*"></label>
@@ -1054,6 +1046,12 @@ const PHYS_CHART_TERMS = {
   nose: ['จมูกแคบ', 'จมูกกว้าง', 'จมูกชมพู่', 'สันจมูกสั้น', 'สันจมูกโค้งเหลี่ยม', 'สันจมูกโค้งกลม', 'สันจมูกงอน', 'ฐานจมูกรุ้ม', 'ฐานจมูกราบ', 'ฐานจมูกเชิด'],
   ears: ['หูสามเหลี่ยม', 'หูสี่เหลี่ยม', 'หูกลม', 'หูกะหล่ำปลี', 'หูกาง', 'หูลีบ', 'ติ่งย้อย', 'ติ่งราบ']
 };
+// ช่องที่แผ่นภาพมาตรฐานไม่มี — ใช้คำชุดเดิม (เพิ่ม "หยักศก")
+const PHYS_OTHER_TERMS = {
+  skin: ['ขาว', 'ขาวเหลือง', 'เหลือง', 'ดำแดง', 'ดำ', 'คล้ำ'],
+  hair: ['สั้น', 'ยาว', 'หยิก', 'หยักศก', 'ตรง', 'โกนศีรษะ', 'ล้าน'],
+  accent: ['ภาคกลาง', 'ภาคเหนือ', 'ภาคอีสาน', 'ภาคใต้', 'ภาคตะวันออก', 'ต่างประเทศ']
+};
 function physTokens(id) { return v(id).split(/\s+/).filter(Boolean); }
 function refreshPhysChips() {
   document.querySelectorAll('.phys-chips').forEach(box => {
@@ -1061,11 +1059,10 @@ function refreshPhysChips() {
     box.querySelectorAll('.phys-chip').forEach(c => c.classList.toggle('on', tokens.includes(c.dataset.term)));
   });
 }
+// รูปพรรณไม่มี dropdown แล้ว (ผู้ใช้ขอ) — กดปุ่มคำใต้ช่อง หรือพิมพ์เอง
 (function initPhysChips() {
-  Object.entries(PHYS_CHART_TERMS).forEach(([id, terms]) => {
+  Object.entries({ ...PHYS_CHART_TERMS, ...PHYS_OTHER_TERMS }).forEach(([id, terms]) => {
     const input = document.getElementById(id);
-    const list = document.getElementById(input.getAttribute('list'));
-    if (list) list.innerHTML = terms.map(t => `<option value="${escapeXml(t)}"></option>`).join('');
     const box = document.createElement('div');
     box.className = 'phys-chips';
     box.dataset.for = id;
