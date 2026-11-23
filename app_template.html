@@ -777,14 +777,21 @@
       </details>
 
       <details class="panel" data-module="settings" open>
-        <summary>สำรอง / นำเข้าการตั้งค่า (ย้ายเครื่อง)</summary>
-        <p class="note" style="margin-top:0">รวมรายชื่อชุดจับกุม ผู้ลงนามส่งศาล เวรสืบสวน (พร้อมลายเซ็น) เจ้าหน้าที่ ม.22 และค่าหน่วยงานด้านบน ไว้ในไฟล์เดียว — ใช้ย้ายไปเครื่องใหม่ หรือกู้คืนหลังล้างเบราว์เซอร์ (นำเข้าแล้วคนที่ชื่อซ้ำจะถูกอัปเดต คนอื่นในเครื่องยังอยู่)</p>
-        <p class="print-warning">⚠️ ไฟล์นี้มีข้อมูลส่วนบุคคลของเจ้าหน้าที่ (เลขบัตร เบอร์โทร ลายเซ็น) — เก็บไว้กับตัว <b>ห้ามส่งในกลุ่มไลน์ ห้ามอัปโหลดขึ้นเว็บหรือ GitHub</b></p>
+        <summary>สำรอง / นำเข้าข้อมูล (ย้ายเครื่อง)</summary>
+        <p class="note" style="margin-top:0">รวมเคสที่บันทึกไว้ทั้งหมด รายชื่อชุดจับกุม ผู้ลงนามส่งศาล เวรสืบสวน (พร้อมลายเซ็น) เจ้าหน้าที่ ม.22 ค่าหน่วยงานด้านบน และยี่ห้อ/รุ่นโทรศัพท์ที่เคยพิมพ์ ไว้ในไฟล์เดียว — ใช้ย้ายไปเครื่องใหม่ หรือกู้คืนหลังล้างเบราว์เซอร์ (นำเข้าแล้วข้อมูลเดิมในเครื่องยังอยู่ เคสเดียวกันเก็บฉบับที่แก้ล่าสุด)</p>
+        <p class="print-warning">⚠️ ไฟล์นี้มีข้อมูลส่วนบุคคลของผู้ต้องหาและเจ้าหน้าที่ (เลขบัตร ที่อยู่ เบอร์โทร ลายเซ็น) — เก็บไว้กับตัว <b>ห้ามส่งในกลุ่มไลน์ ห้ามอัปโหลดขึ้นเว็บหรือ GitHub</b></p>
+        <label class="olr-sig-inline" style="margin:4px 0 10px"><input type="checkbox" id="backupIncludeCases" checked> รวมเคสที่บันทึกไว้ทั้งหมด (<span id="backupCaseCount">0</span> เคส)</label>
+        <div class="grid2">
+          <label class="f"><span>รหัสผ่านไฟล์สำรอง</span><input type="password" id="backupPassword" autocomplete="new-password"></label>
+          <label class="f"><span>ยืนยันรหัสผ่าน (เฉพาะตอนดาวน์โหลด)</span><input type="password" id="backupPassword2" autocomplete="new-password"></label>
+        </div>
+        <p class="note" style="margin-top:0">ไฟล์ที่มีเคสต้องตั้งรหัสผ่าน ระบบจะเข้ารหัสไฟล์ (AES-256) ใครได้ไฟล์ไปก็อ่านไม่ได้ถ้าไม่รู้รหัส — <b>ลืมรหัส = เปิดไฟล์ไม่ได้อีกเลย</b> ตอนนำเข้าใส่รหัสเดิมในช่องแรก</p>
         <div class="olr-duty-actions">
-          <button type="button" class="btn btn-ghost btn-sm" id="exportSettingsBtn">ดาวน์โหลดไฟล์สำรองการตั้งค่า</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="exportSettingsBtn">ดาวน์โหลดไฟล์สำรอง</button>
           <button type="button" class="btn btn-ghost btn-sm" id="importSettingsBtn">นำเข้าจากไฟล์สำรอง</button>
         </div>
         <input type="file" id="importSettingsFile" accept=".json,application/json" style="display:none">
+        <p class="note" id="lastBackupNote" style="margin:6px 0 0"></p>
         <p class="msg" id="settingsBackupMsg"></p>
         <p class="field-group-label" style="margin-top:14px">พื้นที่จัดเก็บในเครื่องนี้</p>
         <div id="storageMeter" class="storage-meter"><p class="note" style="margin:0">กำลังตรวจ...</p></div>
@@ -2123,6 +2130,9 @@ function showCasesMsg(text, isError) {
 // เคสเยอะ (หลักร้อย-พัน) → แสดงเฉพาะล่าสุด CASES_SHOWN รายการ เคสเก่าหาได้ด้วยช่องค้นหา
 const CASES_SHOWN = 30;
 function renderCasesList() {
+  const cnt = document.getElementById('backupCaseCount');
+  if (cnt) cnt.textContent = casesIndex.length;
+  renderLastBackupNote();
   const out = document.getElementById('casesOut');
   const search = document.getElementById('casesSearch');
   search.style.display = casesIndex.length > 5 ? '' : 'none';
@@ -2155,7 +2165,7 @@ async function saveCurrentCase() {
   const prevIndex = casesIndex;
   try {
     await window.storage.set(`suspect-case:${id}`, JSON.stringify(snap), false);  // ข้อมูลก่อน รายการทีหลัง
-    casesIndex = [{ id, name, idNumber, createdAt }, ...casesIndex.filter(c => c.id !== id)];
+    casesIndex = [{ id, name, idNumber, createdAt, savedAt: Date.now() }, ...casesIndex.filter(c => c.id !== id)];
     await saveCasesIndex();
   } catch (e) {
     casesIndex = prevIndex;
@@ -2198,7 +2208,7 @@ async function updateStorageMeter() {
   html += `รายชื่อ / ลายเซ็น / การตั้งค่า: ${fmtBytes(local)} จากราว 5 MB (${localPct.toFixed(1)}%)` + bar(localPct);
   html += `<span class="note">ป้องกันเบราว์เซอร์ลบข้อมูลเองตอนเครื่องเต็ม: ${persisted ? 'เปิดแล้ว ✓' : 'ยังไม่เปิด (เปิดให้อัตโนมัติหลังบันทึกเคส)'}</span>`;
   if (casePct >= 80 || localPct >= 80) {
-    html += `<p class="print-warning">⚠️ พื้นที่ใกล้เต็ม (${Math.max(casePct, localPct).toFixed(0)}%) — ${localPct >= 80 ? 'ลดขนาด/ลบลายเซ็นที่ไม่ใช้ หรือ' : ''} ลบเคสเก่าที่ไม่ใช้แล้ว และกด "ดาวน์โหลดไฟล์สำรองการตั้งค่า" เก็บไว้ก่อน</p>`;
+    html += `<p class="print-warning">⚠️ พื้นที่ใกล้เต็ม (${Math.max(casePct, localPct).toFixed(0)}%) — ${localPct >= 80 ? 'ลดขนาด/ลบลายเซ็นที่ไม่ใช้ หรือ' : ''} กด "ดาวน์โหลดไฟล์สำรอง" (รวมเคส) เก็บไว้ก่อน แล้วลบเคสเก่าที่ไม่ใช้แล้ว</p>`;
     showCasesMsg(`⚠️ พื้นที่เก็บข้อมูลใกล้เต็ม (${Math.max(casePct, localPct).toFixed(0)}%) — ดูรายละเอียดที่หน้า ตั้งค่า`, true);
   }
   box.innerHTML = html;
@@ -4252,15 +4262,118 @@ Object.values(M22_FIELDS).forEach(id => document.getElementById(id).addEventList
   renderM22Summary();
 }));
 
-// ---- สำรอง / นำเข้าการตั้งค่า: รายชื่อ+ลายเซ็น+ม.22+ค่าหน่วยงาน ของบัญชีนี้ เป็นไฟล์ .json ที่ผู้ใช้เก็บเอง ----
-// (โค้ดไม่มีรายชื่อตั้งต้นของใครแล้ว ไฟล์นี้คือวิธีย้าย/กู้คืนข้อมูลชุดโดยไม่ต้องกรอกใหม่)
-function collectSettingsBackup() {
+// ---- สำรอง / นำเข้าข้อมูล: เคสทั้งหมด + รายชื่อ+ลายเซ็น+ม.22+ค่าหน่วยงาน ของบัญชีนี้ เป็นไฟล์ .json ที่ผู้ใช้เก็บเอง ----
+// (โค้ดไม่มีรายชื่อตั้งต้นของใครแล้ว ไฟล์นี้คือวิธีย้าย/กู้คืนข้อมูลโดยไม่ต้องกรอกใหม่)
+// version 1 = เฉพาะการตั้งค่า (ไฟล์เก่ายังนำเข้าได้) / version 2 = + cases + phoneMemory
+// ไฟล์ที่มีเคส (ข้อมูลผู้ต้องหา) บังคับเข้ารหัส: PBKDF2-SHA256 → AES-256-GCM ด้วย WebCrypto ในเบราว์เซอร์ ไม่มีอะไรออกจากเครื่อง
+async function collectSettingsBackup(includeCases) {
   const station = {};
   STATION_FIELDS.forEach(id => { station[id] = v(id); });
-  return {
-    source: 'suspect-docgen-settings', version: 1, exportedAt: new Date().toISOString(),
-    officerRoster, courtSignerRoster, dutyRoster, m22Officer: readM22Officer(), station
+  const out = {
+    source: 'suspect-docgen-settings', version: 2, exportedAt: new Date().toISOString(),
+    officerRoster, courtSignerRoster, dutyRoster, m22Officer: readM22Officer(), station,
+    phoneMemory: loadPhoneMemory()
   };
+  if (includeCases) {
+    const got = await Promise.all(casesIndex.map(c => window.storage.get(`suspect-case:${c.id}`, false).catch(() => null)));
+    out.cases = [];
+    casesIndex.forEach((c, i) => {
+      try { if (got[i] && got[i].value) out.cases.push({ ...c, data: JSON.parse(got[i].value) }); } catch (e) {}
+    });
+  }
+  return out;
+}
+const BACKUP_KDF_ITER = 310000;
+const BACKUP_ENC_SOURCE = 'suspect-docgen-backup-encrypted';
+function bytesToB64(u8) {
+  let s = '';
+  for (let i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000));
+  return btoa(s);
+}
+function b64ToBytes(s) { return Uint8Array.from(atob(s), ch => ch.charCodeAt(0)); }
+async function backupKey(password, salt, iterations) {
+  if (!window.crypto || !crypto.subtle) throw new Error('เบราว์เซอร์นี้เข้ารหัสไม่ได้ (ต้องเปิดผ่าน https)');
+  const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveKey']);
+  return crypto.subtle.deriveKey({ name: 'PBKDF2', salt, iterations, hash: 'SHA-256' }, base,
+    { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
+}
+async function encryptBackup(obj, password) {
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const key = await backupKey(password, salt, BACKUP_KDF_ITER);
+  const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, new TextEncoder().encode(JSON.stringify(obj)));
+  return { source: BACKUP_ENC_SOURCE, version: 1, kdf: 'PBKDF2-SHA256', iterations: BACKUP_KDF_ITER, cipher: 'AES-256-GCM',
+    salt: bytesToB64(salt), iv: bytesToB64(iv), data: bytesToB64(new Uint8Array(ct)) };
+}
+async function decryptBackup(wrap, password) {
+  const iterations = Number(wrap.iterations) || BACKUP_KDF_ITER;
+  const key = await backupKey(password, b64ToBytes(wrap.salt), iterations);
+  let pt;
+  try { pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: b64ToBytes(wrap.iv) }, key, b64ToBytes(wrap.data)); }
+  catch (e) { throw new Error('รหัสผ่านไม่ถูกต้อง หรือไฟล์เสียหาย'); }
+  return JSON.parse(new TextDecoder().decode(pt));
+}
+// เวลาสร้างเคสจาก id (Date.now().toString(36) + สุ่ม 4 ตัว) — ใช้เรียงเคสเก่าที่ยังไม่มี savedAt
+function caseTime(c) { return c.savedAt || parseInt(String(c.id).slice(0, -4), 36) || 0; }
+// รวมเคสจากไฟล์: id ใหม่ = เพิ่ม / id ซ้ำ = เก็บฉบับที่บันทึกทีหลัง (ไม่รู้เวลา = เก็บของในเครื่อง)
+async function importBackupCases(list) {
+  if (!Array.isArray(list) || !list.length) return null;
+  const local = new Map(casesIndex.map(c => [c.id, c]));
+  const toWrite = [];
+  let skipped = 0;
+  list.forEach(c => {
+    if (!c || typeof c.id !== 'string' || !/^[a-z0-9]{1,40}$/.test(c.id) || !c.data || typeof c.data !== 'object') { skipped++; return; }
+    const mine = local.get(c.id);
+    if (mine && !((c.savedAt || 0) > (mine.savedAt || 0))) { skipped++; return; }
+    toWrite.push(c);
+  });
+  const results = await Promise.allSettled(toWrite.map(c => window.storage.set(`suspect-case:${c.id}`, JSON.stringify(c.data), false)));
+  let added = 0, updated = 0, failed = 0;
+  const merged = new Map(local);
+  toWrite.forEach((c, i) => {
+    if (results[i].status !== 'fulfilled') { failed++; return; }
+    if (local.has(c.id)) updated++; else added++;
+    merged.set(c.id, { id: c.id, name: String(c.name || 'ไม่ระบุชื่อ'), idNumber: String(c.idNumber || '').replace(/\D/g, ''),
+      createdAt: String(c.createdAt || ''), ...(c.savedAt ? { savedAt: Number(c.savedAt) } : {}) });
+  });
+  const prev = casesIndex;
+  casesIndex = [...merged.values()].sort((a, b) => caseTime(b) - caseTime(a));
+  try { await saveCasesIndex(); } catch (e) { casesIndex = prev; throw new Error('พื้นที่เก็บในเบราว์เซอร์เต็ม นำเข้าเคสไม่ได้'); }
+  renderCasesList();
+  updateStorageMeter();
+  if (added || updated) requestPersistentStorage();
+  return { added, updated, skipped, failed };
+}
+function mergePhoneMemory(incoming) {
+  if (!incoming || typeof incoming !== 'object') return;
+  const mem = loadPhoneMemory();
+  Object.entries(incoming).forEach(([g, arr]) => {
+    if (!Array.isArray(arr)) return;
+    const seen = new Set();
+    mem[g] = [...(mem[g] || []), ...arr.filter(x => typeof x === 'string' && x.length <= 60)]
+      .filter(x => { const k = x.toLowerCase(); if (seen.has(k)) return false; seen.add(k); return true; }).slice(0, 60);
+  });
+  try { localStorage.setItem(PHONE_MEMORY_KEY, JSON.stringify(mem)); } catch (e) {}
+  renderPhoneLists();
+}
+// ฟังก์ชัน ไม่ใช่ const: renderCasesList อาจถูกเรียกก่อนบรรทัดนี้ทำงาน
+function lastBackupKey() { return 'last-full-backup'; }
+function renderLastBackupNote() {
+  const el = document.getElementById('lastBackupNote');
+  if (!el) return;
+  let last = null;
+  try { last = JSON.parse(localStorage.getItem(lastBackupKey()) || 'null'); } catch (e) {}
+  const n = casesIndex.length;
+  if (!last || !last.at) {
+    el.innerHTML = n ? `⚠️ ยังไม่เคยสำรองเคส — มี ${n} เคสอยู่ในเครื่องนี้เครื่องเดียว ถ้าเบราว์เซอร์ถูกล้างจะหายหมด` : '';
+    el.style.color = n ? '#E2685D' : '';
+    return;
+  }
+  const days = Math.floor((Date.now() - last.at) / 86400000);
+  const newer = casesIndex.filter(c => caseTime(c) > last.at).length;
+  el.textContent = `สำรองเคสล่าสุด: ${new Date(last.at).toLocaleDateString('th-TH')} (${days ? days + ' วันก่อน' : 'วันนี้'}, ${last.cases} เคส)` +
+    (newer ? ` — หลังจากนั้นมีเคสใหม่/แก้ไข ${newer} เคส ควรสำรองอีกครั้ง` : '');
+  el.style.color = newer && days >= 7 ? '#E2685D' : '';
 }
 // รวมตามชื่อ: ชื่อซ้ำ = อัปเดตจากไฟล์ (ลายเซ็นเดิมยังอยู่ถ้าไฟล์ไม่มี) ชื่อใหม่ = เพิ่มต่อท้าย
 function mergeRosterByName(current, incoming) {
@@ -4273,7 +4386,7 @@ function mergeRosterByName(current, incoming) {
   return out;
 }
 function applySettingsBackup(data) {
-  if (!data || data.source !== 'suspect-docgen-settings') throw new Error('ไม่ใช่ไฟล์สำรองการตั้งค่าของระบบนี้');
+  if (!data || data.source !== 'suspect-docgen-settings') throw new Error('ไม่ใช่ไฟล์สำรองของระบบนี้');
   officerRoster = mergeRosterByName(officerRoster, data.officerRoster);
   saveOfficerRoster();
   renderOfficerRosterSelect();
@@ -4298,24 +4411,64 @@ function applySettingsBackup(data) {
   }
   if (!v('courtSignerName') && courtSignerRoster.length) fillCourtSignerFields(courtSignerRoster[0]);
   renderOlrDutyList();
+  mergePhoneMemory(data.phoneMemory);
   return `ชุดจับกุม ${officerRoster.length} คน, ผู้ลงนามส่งศาล ${courtSignerRoster.length} คน, ` +
     `เวรสืบสวน ${dutyRoster.length} คน (มีลายเซ็น ${dutyRoster.filter(o => o.sig).length})` + (m && m.pid ? ', เจ้าหน้าที่ ม.22' : '');
 }
-document.getElementById('exportSettingsBtn').addEventListener('click', () => {
-  const d = new Date();
-  const stamp = `${d.getFullYear() + 543}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
-  downloadBlob(new Blob([JSON.stringify(collectSettingsBackup(), null, 1)], { type: 'application/json' }), `suspect-docgen-ตั้งค่า-${stamp}.json`);
-  document.getElementById('settingsBackupMsg').textContent = 'ดาวน์โหลดไฟล์สำรองแล้ว — เก็บไว้กับตัว ห้ามส่งต่อหรืออัปโหลดขึ้นเว็บ';
+function setBackupMsg(text, isError) {
+  const el = document.getElementById('settingsBackupMsg');
+  el.textContent = text;
+  el.style.color = isError ? '#E2685D' : '';
+}
+document.getElementById('exportSettingsBtn').addEventListener('click', async () => {
+  const btn = document.getElementById('exportSettingsBtn');
+  const withCases = document.getElementById('backupIncludeCases').checked && casesIndex.length > 0;
+  const pw = document.getElementById('backupPassword').value;
+  const pw2 = document.getElementById('backupPassword2').value;
+  if (withCases && !pw) { setBackupMsg('ไฟล์ที่มีเคสต้องตั้งรหัสผ่าน — ใส่รหัสผ่านทั้ง 2 ช่องก่อน', true); return; }
+  if (pw && pw.length < 6) { setBackupMsg('รหัสผ่านสั้นเกินไป ใช้อย่างน้อย 6 ตัว', true); return; }
+  if (pw && pw !== pw2) { setBackupMsg('รหัสผ่าน 2 ช่องไม่ตรงกัน', true); return; }
+  if (!pw && !confirm('ไม่ได้ตั้งรหัสผ่าน — ใครได้ไฟล์นี้ไปจะเห็นเลขบัตร เบอร์โทร และลายเซ็นเจ้าหน้าที่ ดาวน์โหลดต่อ?')) return;
+  btn.disabled = true;
+  setBackupMsg(withCases ? `กำลังรวม ${casesIndex.length} เคส...` : 'กำลังเตรียมไฟล์...');
+  try {
+    const data = await collectSettingsBackup(withCases);
+    const body = pw ? await encryptBackup(data, pw) : data;
+    const d = new Date();
+    const stamp = `${d.getFullYear() + 543}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
+    const blob = new Blob([JSON.stringify(body, null, pw ? 0 : 1)], { type: 'application/json' });
+    downloadBlob(blob, `suspect-docgen-${withCases ? 'สำรองทั้งหมด' : 'ตั้งค่า'}-${stamp}${pw ? '-เข้ารหัส' : ''}.json`);
+    if (withCases) {
+      try { localStorage.setItem(lastBackupKey(), JSON.stringify({ at: Date.now(), cases: data.cases.length })); } catch (e) {}
+      renderLastBackupNote();
+    }
+    document.getElementById('backupPassword2').value = '';
+    setBackupMsg(`ดาวน์โหลดไฟล์สำรองแล้ว (${withCases ? data.cases.length + ' เคส + ' : ''}การตั้งค่า, ${fmtBytes(blob.size)})` +
+      (pw ? ' — เข้ารหัสแล้ว จำรหัสผ่านไว้ให้ดี' : ' — เก็บไว้กับตัว ห้ามส่งต่อหรืออัปโหลดขึ้นเว็บ'));
+  } catch (err) { setBackupMsg('สร้างไฟล์สำรองไม่สำเร็จ: ' + (err.message || err), true); }
+  btn.disabled = false;
 });
 document.getElementById('importSettingsBtn').addEventListener('click', () => document.getElementById('importSettingsFile').click());
 document.getElementById('importSettingsFile').addEventListener('change', async e => {
   const file = e.target.files[0];
   e.target.value = '';
   if (!file) return;
-  const msg = document.getElementById('settingsBackupMsg');
   try {
-    msg.textContent = 'นำเข้าแล้ว: ' + applySettingsBackup(JSON.parse(await file.text()));
-  } catch (err) { msg.textContent = 'นำเข้าไม่สำเร็จ: ' + err.message; }
+    let data;
+    try { data = JSON.parse(await file.text()); } catch (e) { throw new Error('ไฟล์นี้ไม่ใช่ไฟล์สำรอง (.json) หรือไฟล์เสียหาย'); }
+    if (data && data.source === BACKUP_ENC_SOURCE) {
+      const pw = document.getElementById('backupPassword').value;
+      if (!pw) { setBackupMsg('ไฟล์นี้เข้ารหัสไว้ — ใส่รหัสผ่านในช่อง "รหัสผ่านไฟล์สำรอง" แล้วกดนำเข้าอีกครั้ง', true); return; }
+      setBackupMsg('กำลังถอดรหัส...');
+      data = await decryptBackup(data, pw);
+    }
+    const settingsText = applySettingsBackup(data);
+    const r = await importBackupCases(data.cases);
+    setBackupMsg('นำเข้าแล้ว: ' + settingsText + (r
+      ? ` · เคส: เพิ่มใหม่ ${r.added}, อัปเดต ${r.updated}` + (r.skipped ? `, ข้าม ${r.skipped} (ในเครื่องใหม่กว่าหรือเหมือนกัน)` : '') +
+        (r.failed ? `, ⚠️ บันทึกไม่ได้ ${r.failed} (พื้นที่อาจเต็ม)` : '')
+      : ''), r && r.failed);
+  } catch (err) { setBackupMsg('นำเข้าไม่สำเร็จ: ' + (err.message || err), true); }
 });
 
 document.getElementById('copyDopaBtn').addEventListener('click', async () => {
