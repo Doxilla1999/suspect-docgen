@@ -238,7 +238,8 @@ add_mixed(doc, [("ปจว. ข้อ", False), ("..................... ", Fals
 add_p(doc, "ประวัติบุคคลที่เกี่ยวข้องกับอาชญากรรม", bold=True, align=WD_ALIGN_PARAGRAPH.CENTER, space_after=0)
 add_p(doc, "ผนวก ซ.", bold=True, align=WD_ALIGN_PARAGRAPH.CENTER, space_after=0)
 add_p(doc, "{station_name} อำเภอ{station_district} จังหวัด{province}", align=WD_ALIGN_PARAGRAPH.CENTER, space_after=0)
-add_p(doc, 'ประเภทบุคคล : "{charge}"', size=Pt(12), align=WD_ALIGN_PARAGRAPH.CENTER)
+# ผู้ใช้ขอให้บรรทัดประเภทบุคคลเป็นขนาด 16 เท่าเนื้อความ (เดิม 12)
+add_p(doc, 'ประเภทบุคคล : "{charge}"', size=Pt(16), align=WD_ALIGN_PARAGRAPH.CENTER)
 add_mixed(doc, [("วัน เดือน ปี ที่จัดทำประวัติ  ", True), ("{record_date}", False), ("      ผู้จัดทำ  ", True), ("{compiler_name}", False)])
 add_p(doc, "ประวัติ", bold=True, align=WD_ALIGN_PARAGRAPH.CENTER, space_after=2)
 
