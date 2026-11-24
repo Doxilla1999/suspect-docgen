@@ -175,14 +175,12 @@
   .poster-edit-canvas { width: 100%; display: block; border-radius: 6px; touch-action: none; cursor: crosshair; }
   .poster-thumbs .pt button { position: absolute; top: 1px; right: 1px; width: 22px; height: 22px; border-radius: 50%; border: none; background: rgba(0,0,0,.7); color: #fff; font-size: 14px; line-height: 1; cursor: pointer; padding: 0; }
   .poster-settings { margin: 8px 0 0; font-size: 15px; }
-  .canva-copy-row { display: flex; gap: 8px; flex-wrap: wrap; }
   .poster-bg-prompt { margin-top: 10px; padding: 10px 12px; border: 1px solid #B68D40; border-radius: 8px; background: #1E1A10; font-size: 14.5px; color: #E8D9B5; display: flex; flex-direction: column; gap: 6px; }
   .poster-bg-prompt .btn { margin-top: 0; }
   .poster-logo-row { display: flex; gap: 10px; margin: 8px 0 4px; }
   .poster-logo-slot { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px; border: 1px solid #2A3A5C; border-radius: 8px; background: #0B1A3A; font-size: 13.5px; color: #C9C5BC; }
   .poster-logo-slot img { width: 72px; height: 72px; object-fit: contain; }
   .poster-logo-slot .btn { margin-top: 0; width: 100%; }
-  .canva-copy-row .btn { width: auto; flex: 1 1 auto; margin-top: 0; }
   .poster-settings summary { cursor: pointer; color: #9B968D; font-size: 14px; margin-bottom: 6px; }
   .poster-canvas { width: 100%; max-width: 420px; display: block; margin: 10px auto 0; border-radius: 6px; box-shadow: 0 4px 18px rgba(0,0,0,.5); }
   /* ---- มือถือ / จอแคบ: คอลัมน์เดียว เมนูเป็นแถบเลื่อนด้านบน รายการเอกสารย้ายมาเหนือฟอร์ม (JS ย้ายให้) ปุ่มสร้างเอกสารติดล่างจอ ---- */
@@ -637,14 +635,6 @@
             <select id="posterNameMode"><option value="nick">ชื่อเล่นอย่างเดียว (เช่น นายแดง) — แนะนำ กัน PDPA</option><option value="short">ชื่อจริง + ย่อนามสกุล (เช่น นายสมชาย ใ.)</option></select>
           </label>
           <p class="note" style="margin-top:4px">🔒 ภาพนี้สำหรับลงสาธารณะ: ระบบตัด <b>เลขบัตรประชาชน วันเกิด บ้านเลขที่/หมู่/ซอย/ถนน และเบอร์โทร</b> ออกจากภาพให้เสมอ (ข้อความรายงาน LINE ด้านบนยังครบเหมือนเดิม)</p>
-          <p class="field-group-label" style="margin-top:12px">ทำใน Canva เอง: คัดลอกไปวางในแม่แบบ</p>
-          <div class="canva-copy-row">
-            <button type="button" class="btn btn-primary btn-sm" id="canvaCopyBodyBtn">📋 ข้อความรายงาน (กล่องฟ้า)</button>
-            <button type="button" class="btn btn-ghost btn-sm" id="canvaCopyDateBtn">📋 วันที่</button>
-            <button type="button" class="btn btn-ghost btn-sm" id="canvaCopyChainBtn">📋 สายบังคับบัญชา (แถบแดง)</button>
-          </div>
-          <p class="note" style="margin-top:4px">ข้อความรายงานที่คัดลอก ตัดข้อมูลส่วนบุคคลแบบเดียวกับภาพ (และย่อชื่อตามที่เลือกด้านบน) — ใน Canva ดับเบิลคลิกกล่องข้อความ เลือกทั้งหมด แล้ววาง</p>
-          <p class="msg" id="canvaCopyMsg"></p>
           <details class="poster-settings">
             <summary>⚙️ โลโก้ / ชื่อหน่วย / ท้ายภาพ — เปลี่ยนเป็นของโรงพักตัวเองได้</summary>
             <div class="grid2">
@@ -669,8 +659,7 @@
             <input type="file" id="posterLogoInput" accept="image/*" style="display:none">
             <p class="field-group-label" style="margin-top:10px">พื้นหลังจากแม่แบบ Canva ของคุณ (หน้าตาเหมือน Canva)</p>
             <div class="qf-file-row">
-              <button type="button" class="btn btn-ghost btn-sm" id="posterBgBtn">🖼️ ใช้ภาพพื้นหลังของฉัน</button>
-              <button type="button" class="btn btn-ghost btn-sm" id="posterBgClear">เลิกใช้ (กลับไปแบบวาดเอง)</button>
+              <button type="button" class="btn btn-ghost btn-sm" id="posterBgBtn">🖼️ ใช้ภาพพื้นหลังของฉัน / เปลี่ยนภาพ</button>
             </div>
             <input type="file" id="posterBgInput" accept="image/png,image/jpeg" style="display:none">
             <p class="note" id="posterBgNote">ใช้ไฟล์ PNG ขนาด 1055×1491 (หรือ 2 เท่า) ที่ลบชื่อในแถบแดงและกรอบรูปออกแล้ว — เก็บในเครื่องนี้เท่านั้น ไม่ขึ้นเว็บ/GitHub ใช้ตามสิทธิ์ Canva ของเจ้าของแม่แบบ</p>
@@ -4655,12 +4644,6 @@ document.getElementById('posterBgInput').addEventListener('change', async e => {
     msg.textContent = 'ตั้งพื้นหลังแล้ว — กด "สร้างภาพรายงาน" เพื่อดูผล';
   } catch (err) { msg.textContent = 'ตั้งพื้นหลังไม่สำเร็จ: ' + (err.message || err); }
 });
-document.getElementById('posterBgClear').addEventListener('click', async () => {
-  try { await window.storage.delete(POSTER_BG_KEY, false); } catch (e) {}
-  posterBgUrl = '';
-  renderPosterBgNote();
-  document.getElementById('posterMsg').textContent = 'กลับไปใช้แบบที่ระบบวาดเองแล้ว';
-});
 // วาดตามแม่แบบของผู้ใช้: พื้นหลังมีหัว/โลโก้/ท้ายภาพอยู่แล้ว เขียนเฉพาะ สายบังคับบัญชา วันที่ รูป และข้อความรายงาน
 function drawPosterOnTemplate(ctx, bg, chain, date, body, photos) {
   const W = POSTER_W, H = POSTER_H;
@@ -4821,11 +4804,10 @@ function posterBodyText() {
   if (e < 0) e = lines.length;
   return lines.slice(s, e).map(l => l.trim()).join('\n').replace(/\n{3,}/g, '\n\n').trim();
 }
+// วันที่ในภาพ = วันที่จริงตามนาฬิกาเครื่อง ณ ตอนกดสร้างภาพ (ไม่ใช้ช่องวันที่ออกหนังสือ ซึ่งอาจเป็นวันเก่าของคดีที่บันทึกไว้)
 function posterDateText() {
-  const p = thaiDateParts('issueDate');
-  if (!p.day) return '';
-  const mi = THAI_MONTHS.indexOf(p.month);
-  return `วันที่ ${p.day} ${mi >= 0 ? THAI_MONTHS_SHORT[mi] : p.month} ${p.year}`;
+  const now = new Date();
+  return `วันที่ ${now.getDate()} ${THAI_MONTHS_SHORT[now.getMonth()]} ${now.getFullYear() + 543}`;
 }
 async function drawPoster() {
   const canvas = document.getElementById('posterCanvas');
@@ -4942,51 +4924,12 @@ document.getElementById('posterGenBtn').addEventListener('click', async () => {
     const file = posterBlob && new File([posterBlob], 'report.jpg', { type: 'image/jpeg' });
     document.getElementById('posterShareBtn').style.display = file && navigator.canShare && navigator.canShare({ files: [file] }) ? '' : 'none';
     const unblurred = posterPhotos.slice(0, 4).map((p, i) => p.rects.some(x => x.on) ? 0 : i + 1).filter(Boolean);
-    const warn = [!r.chain.length && 'ยังไม่ได้กรอกสายการบังคับบัญชา', !r.date && 'ยังไม่ได้ระบุวันที่ (ช่องวันที่ออกหนังสือ)', !r.body && 'ยังไม่มีข้อความรายงาน',
+    const warn = [!r.chain.length && 'ยังไม่ได้กรอกสายการบังคับบัญชา', !r.body && 'ยังไม่มีข้อความรายงาน',
       unblurred.length && `รูปที่ ${unblurred.join(', ')} ยังไม่ได้เบลอหน้า (แตะรูปเพื่อเบลอ)`,
       /[0-9๐-๙](?:[\s-]?[0-9๐-๙]){9,}|เลขบัตร|ประจำตัวประชาชน/.test(r.body) && 'ข้อความในภาพยังมีตัวเลขยาว/คำว่าเลขบัตร ตรวจก่อนส่ง'].filter(Boolean);
     msg.textContent = (warn.length ? '⚠️ ' + warn.join(' · ') + ' — ' : '') + 'สร้างภาพแล้ว ตรวจข้อความในภาพก่อนส่ง';
   } catch (e) { msg.textContent = 'สร้างภาพไม่สำเร็จ: ' + (e.message || e); }
 });
-// ---- คัดลอกไปวางในแม่แบบ Canva ของผู้ใช้เอง (ทางเลือกแทนภาพที่วาดในเว็บ) ----
-// ข้อความรายงานผ่านตัวกรองเดียวกับภาพ (ภาพลงสาธารณะ) — ไม่มีอะไรถูกส่งออกจากเครื่อง ผู้ใช้วางเองใน Canva
-async function copyTextToClipboard(text) {
-  try { await navigator.clipboard.writeText(text); return true; } catch (e) {}
-  const ta = document.createElement('textarea');
-  ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
-  document.body.appendChild(ta); ta.select();
-  let ok = false;
-  try { ok = document.execCommand('copy'); } catch (e) {}
-  ta.remove();
-  return ok;
-}
-function canvaCopy(kind) {
-  const msg = document.getElementById('canvaCopyMsg');
-  if (kind === 'body' && !document.getElementById('reportOutput').value.trim()) buildOperationReport();
-  let text = '', label = '';
-  if (kind === 'body') { text = posterFormalText(posterPublicText(posterBodyText(), v('posterNameMode'))); label = 'ข้อความรายงาน'; }
-  if (kind === 'date') { text = posterDateText(); label = 'วันที่'; }
-  if (kind === 'chain') {
-    const chain = document.getElementById('reportCommandChain').value.split('\n').map(l => l.trim()).filter(Boolean);
-    text = chain.length ? 'ภายใต้การอำนวยการของ  ' + chain.join('\n') : '';
-    label = 'สายบังคับบัญชา';
-  }
-  if (!text) {
-    msg.textContent = kind === 'date' ? 'ยังไม่ได้ระบุวันที่ (ช่องวันที่ออกหนังสือ)' : kind === 'chain' ? 'ยังไม่ได้กรอกสายการบังคับบัญชาด้านบน' : 'ยังไม่มีข้อความรายงาน';
-    msg.style.color = '#E2685D';
-    return;
-  }
-  const leftover = kind === 'body' && /[0-9๐-๙](?:[\s-]?[0-9๐-๙]){9,}|เลขบัตร|ประจำตัวประชาชน/.test(text);
-  copyTextToClipboard(text).then(ok => {
-    msg.style.color = ok && !leftover ? '' : '#E2685D';
-    msg.textContent = ok
-      ? `คัดลอก${label}แล้ว — ไปวางในกล่องข้อความของแม่แบบใน Canva` + (leftover ? ' ⚠️ ยังมีตัวเลขยาว/คำว่าเลขบัตร ตรวจก่อนโพสต์' : '')
-      : 'คัดลอกไม่สำเร็จ — เบราว์เซอร์ไม่อนุญาตให้คัดลอก';
-  });
-}
-document.getElementById('canvaCopyBodyBtn').addEventListener('click', () => canvaCopy('body'));
-document.getElementById('canvaCopyDateBtn').addEventListener('click', () => canvaCopy('date'));
-document.getElementById('canvaCopyChainBtn').addEventListener('click', () => canvaCopy('chain'));
 const posterFileName = () => `รายงาน_${(posterDateText().replace(/^วันที่\s*/, '') || 'ภาพ').replace(/[\s/]+/g, '-')}.jpg`;
 document.getElementById('posterDownloadBtn').addEventListener('click', () => { if (posterBlob) downloadBlob(posterBlob, posterFileName()); });
 document.getElementById('posterShareBtn').addEventListener('click', async () => {
