@@ -168,7 +168,11 @@
   .poster-box { margin-top: 16px; padding: 12px; border: 1px solid #2A3A5C; border-radius: 10px; background: #111A2B; }
   .poster-thumbs { display: flex; gap: 8px; flex-wrap: wrap; margin: 4px 0; }
   .poster-thumbs .pt { position: relative; width: 74px; height: 56px; border-radius: 6px; overflow: hidden; border: 2px solid #E0892B; }
-  .poster-thumbs .pt img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .poster-thumbs .pt img { width: 100%; height: 100%; object-fit: cover; display: block; cursor: pointer; }
+  .poster-thumbs .pt.blurred { border-color: #3FB950; }
+  .poster-thumbs .pt.unblurred::after { content: ''; position: absolute; left: 3px; bottom: 3px; width: 10px; height: 10px; border-radius: 50%; background: #E2685D; box-shadow: 0 0 0 2px #fff; }
+  .poster-editor { margin: 8px 0; padding: 10px; border: 1px dashed #4A5A7C; border-radius: 8px; background: #0B1220; }
+  .poster-edit-canvas { width: 100%; display: block; border-radius: 6px; touch-action: none; cursor: crosshair; }
   .poster-thumbs .pt button { position: absolute; top: 1px; right: 1px; width: 22px; height: 22px; border-radius: 50%; border: none; background: rgba(0,0,0,.7); color: #fff; font-size: 14px; line-height: 1; cursor: pointer; padding: 0; }
   .poster-settings { margin: 8px 0 0; font-size: 15px; }
   .poster-settings summary { cursor: pointer; color: #9B968D; font-size: 14px; margin-bottom: 6px; }
@@ -610,6 +614,21 @@
           </div>
           <input type="file" id="posterPhotoInput" accept="image/*" multiple style="display:none">
           <div id="posterThumbs" class="poster-thumbs"></div>
+          <p class="note" style="margin:2px 0 0">แตะรูปเพื่อเบลอหน้า (จุดแดงที่มุม = ยังไม่ได้เบลอ, ขอบเขียว = เบลอแล้ว)</p>
+          <div id="posterEditor" class="poster-editor" style="display:none">
+            <p class="note" style="margin:0 0 6px">ลากนิ้ว/เมาส์คลุมใบหน้าเพื่อเบลอ · แตะกรอบเพื่อเปิด/ปิดการเบลอ (<b style="color:#E2685D">แดง</b> = เบลอ, <b style="color:#3FB950">เขียว</b> = ไม่เบลอ)</p>
+            <canvas id="posterEditCanvas" class="poster-edit-canvas"></canvas>
+            <div class="olr-duty-actions">
+              <button type="button" class="btn btn-ghost btn-sm" id="posterAutoFaceBtn">🤖 หาหน้าอัตโนมัติ</button>
+              <button type="button" class="btn btn-ghost btn-sm" id="posterClearRectsBtn">ล้างกรอบทั้งหมด</button>
+              <button type="button" class="btn btn-primary btn-sm" id="posterEditDoneBtn">เสร็จ</button>
+            </div>
+            <p class="msg" id="posterEditMsg"></p>
+          </div>
+          <label class="f" style="margin-top:8px"><span>ชื่อผู้ต้องหาในภาพ</span>
+            <select id="posterNameMode"><option value="short">ย่อนามสกุล (เช่น นายสมชาย ใ.)</option><option value="full">ชื่อ-นามสกุลเต็ม</option></select>
+          </label>
+          <p class="note" style="margin-top:4px">🔒 ภาพนี้สำหรับลงสาธารณะ: ระบบตัด <b>เลขบัตรประชาชน วันเกิด บ้านเลขที่/หมู่/ซอย/ถนน และเบอร์โทร</b> ออกจากภาพให้เสมอ (ข้อความรายงาน LINE ด้านบนยังครบเหมือนเดิม)</p>
           <details class="poster-settings">
             <summary>หัว/ท้ายภาพ และโลโก้</summary>
             <div class="grid2">
@@ -4248,11 +4267,12 @@ function loadPosterSettings() {
   let s = {};
   try { s = JSON.parse(localStorage.getItem(POSTER_KEY) || '{}') || {}; } catch (e) {}
   ['posterTitle', 'posterSubtitle', 'posterFooter', 'posterSlogan'].forEach(id => { document.getElementById(id).value = s[id] || ''; });
+  document.getElementById('posterNameMode').value = s.posterNameMode === 'full' ? 'full' : 'short';
   posterLogos = { left: s.logoLeft || '', right: s.logoRight || '' };
 }
 function savePosterSettings() {
   const s = { logoLeft: posterLogos.left, logoRight: posterLogos.right };
-  ['posterTitle', 'posterSubtitle', 'posterFooter', 'posterSlogan'].forEach(id => { s[id] = v(id); });
+  ['posterTitle', 'posterSubtitle', 'posterFooter', 'posterSlogan', 'posterNameMode'].forEach(id => { s[id] = v(id); });
   try { localStorage.setItem(POSTER_KEY, JSON.stringify(s)); return true; } catch (e) { return false; }
 }
 const posterVal = id => v(id) || (id === 'posterTitle' ? (stationShortName() || 'สภ.นายายอาม') : POSTER_DEFAULTS[id] || '');
@@ -4272,18 +4292,188 @@ function imageFileToCanvas(file, max) {
     img.src = url;
   });
 }
+// รูปในภาพรายงาน = { orig: canvas รูปเดิม, rects: [{x,y,w,h,on}] กรอบเบลอในพิกัดรูปเดิม }
+const newPosterPhoto = c => ({ orig: c, rects: [] });
+// pixelate ช่องละ ~1/7 ของกรอบ (อย่างน้อย 10px) — หยาบพอให้จำหน้าไม่ได้ และทำได้ทุกเบราว์เซอร์
+function posterBakedPhoto(p) {
+  const on = p.rects.filter(r => r.on);
+  if (!on.length) return p.orig;
+  const c = document.createElement('canvas');
+  c.width = p.orig.width; c.height = p.orig.height;
+  const g = c.getContext('2d');
+  g.drawImage(p.orig, 0, 0);
+  on.forEach(r => {
+    const x = Math.max(0, r.x), y = Math.max(0, r.y), w = Math.min(c.width - x, r.w), h = Math.min(c.height - y, r.h);
+    pixelateRect(g, x, y, w, h, Math.max(10, Math.round(Math.max(w, h) / 7)));
+  });
+  return c;
+}
 function renderPosterThumbs() {
   const box = document.getElementById('posterThumbs');
-  box.innerHTML = posterPhotos.map((c, i) => `<div class="pt"><img src="${c.toDataURL('image/jpeg', .6)}" alt=""><button type="button" data-rm="${i}" aria-label="ลบรูป">×</button></div>`).join('');
-  box.querySelectorAll('button[data-rm]').forEach(b => b.addEventListener('click', () => { posterPhotos.splice(+b.dataset.rm, 1); renderPosterThumbs(); }));
+  box.innerHTML = posterPhotos.map((p, i) => `<div class="pt ${p.rects.some(r => r.on) ? 'blurred' : 'unblurred'}"><img src="${posterBakedPhoto(p).toDataURL('image/jpeg', .6)}" alt="รูปที่ ${i + 1}" data-edit="${i}"><button type="button" data-rm="${i}" aria-label="ลบรูป">×</button></div>`).join('');
+  box.querySelectorAll('button[data-rm]').forEach(b => b.addEventListener('click', () => {
+    if (posterEdit && posterEdit.idx === +b.dataset.rm) closePosterEditor();
+    posterPhotos.splice(+b.dataset.rm, 1); renderPosterThumbs();
+  }));
+  box.querySelectorAll('img[data-edit]').forEach(im => im.addEventListener('click', () => openPosterEditor(+im.dataset.edit)));
 }
+// ---- เบลอหน้าในภาพรายงาน: ลากเพื่อเพิ่มกรอบ แตะกรอบเพื่อเปิด/ปิด รองรับนิ้ว (pointer events) ----
+let posterEdit = null;   // { idx, scale }
+function openPosterEditor(idx) {
+  const p = posterPhotos[idx];
+  if (!p) return;
+  const canvas = document.getElementById('posterEditCanvas');
+  const scale = Math.min(1, 900 / Math.max(p.orig.width, p.orig.height));
+  canvas.width = Math.round(p.orig.width * scale); canvas.height = Math.round(p.orig.height * scale);
+  posterEdit = { idx, scale };
+  document.getElementById('posterEditor').style.display = '';
+  document.getElementById('posterEditMsg').textContent = `กำลังแก้รูปที่ ${idx + 1}`;
+  drawPosterEditor();
+  canvas.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+function closePosterEditor() {
+  posterEdit = null;
+  document.getElementById('posterEditor').style.display = 'none';
+}
+function drawPosterEditor(dragRect) {
+  if (!posterEdit) return;
+  const p = posterPhotos[posterEdit.idx], k = posterEdit.scale;
+  const canvas = document.getElementById('posterEditCanvas'), g = canvas.getContext('2d');
+  g.drawImage(posterBakedPhoto(p), 0, 0, canvas.width, canvas.height);
+  const lw = Math.max(2, canvas.width / 220);
+  p.rects.forEach(r => {
+    g.setLineDash(r.on ? [] : [lw * 3, lw * 2]); g.lineWidth = lw;
+    g.strokeStyle = r.on ? '#E2685D' : '#3FB950';
+    g.strokeRect(r.x * k, r.y * k, r.w * k, r.h * k);
+  });
+  if (dragRect) { g.setLineDash([lw * 2, lw * 2]); g.strokeStyle = '#FFD24D'; g.strokeRect(dragRect.x, dragRect.y, dragRect.w, dragRect.h); }
+  g.setLineDash([]);
+}
+(function setupPosterEditor() {
+  const canvas = document.getElementById('posterEditCanvas');
+  let start = null;
+  const pt = e => { const r = canvas.getBoundingClientRect(); return [(e.clientX - r.left) * canvas.width / r.width, (e.clientY - r.top) * canvas.height / r.height]; };
+  const norm = (a, b) => ({ x: Math.min(a[0], b[0]), y: Math.min(a[1], b[1]), w: Math.abs(a[0] - b[0]), h: Math.abs(a[1] - b[1]) });
+  canvas.addEventListener('pointerdown', e => { if (!posterEdit) return; start = pt(e); canvas.setPointerCapture(e.pointerId); e.preventDefault(); });
+  canvas.addEventListener('pointermove', e => { if (start) drawPosterEditor(norm(start, pt(e))); });
+  const finish = e => {
+    if (!start || !posterEdit) { start = null; return; }
+    const end = pt(e), rr = norm(start, end), k = posterEdit.scale, p = posterPhotos[posterEdit.idx];
+    start = null;
+    if (rr.w < 12 && rr.h < 12) {
+      // แตะ = เปิด/ปิดกรอบที่แตะ (กรอบเล็กสุดที่ครอบจุดนั้น)
+      const x = end[0] / k, y = end[1] / k;
+      const hit = p.rects.filter(r => x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h).sort((a, b) => a.w * a.h - b.w * b.h)[0];
+      if (hit) hit.on = !hit.on;
+    } else {
+      p.rects.push({ x: rr.x / k, y: rr.y / k, w: rr.w / k, h: rr.h / k, on: true });
+    }
+    drawPosterEditor(); renderPosterThumbs();
+  };
+  canvas.addEventListener('pointerup', finish);
+  canvas.addEventListener('pointercancel', () => { start = null; drawPosterEditor(); });
+})();
+document.getElementById('posterClearRectsBtn').addEventListener('click', () => {
+  if (!posterEdit) return;
+  posterPhotos[posterEdit.idx].rects = []; drawPosterEditor(); renderPosterThumbs();
+});
+document.getElementById('posterEditDoneBtn').addEventListener('click', () => { closePosterEditor(); renderPosterThumbs(); });
+// หาหน้าอัตโนมัติ: ตัวตรวจจับหน้า MediaPipe (ในเครื่อง) ทั้งรูป + ไล่ช่องย่อยขยาย (คนยืนไกล หน้าเล็ก) แล้วรวมกรอบที่ซ้อนกัน
+// ขยายกรอบ 30% ให้คลุมผม/คาง — ได้ทุกหน้า รวมเจ้าหน้าที่ → แตะกรอบที่ไม่ต้องเบลอให้เป็นสีเขียว
+let faceDetectorPromise = null;
+function loadFaceDetector() {
+  if (!faceDetectorPromise) {
+    faceDetectorPromise = (async () => {
+      const mp = await import(`${MP_VISION}/vision_bundle.mjs`);
+      const fileset = await mp.FilesetResolver.forVisionTasks(`${MP_VISION}/wasm`);
+      return mp.FaceDetector.createFromOptions(fileset, {
+        baseOptions: { modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite' },
+        runningMode: 'IMAGE', minDetectionConfidence: 0.55
+      });
+    })().catch(e => { faceDetectorPromise = null; throw e; });
+  }
+  return faceDetectorPromise;
+}
+async function detectFacesIn(img) {
+  const fd = await loadFaceDetector();
+  const W = img.width, H = img.height, boxes = [];
+  const run = (sx, sy, sw, sh) => {
+    const k = 640 / Math.max(sw, sh);
+    const c = document.createElement('canvas');
+    c.width = Math.round(sw * k); c.height = Math.round(sh * k);
+    c.getContext('2d').drawImage(img, sx, sy, sw, sh, 0, 0, c.width, c.height);
+    for (const d of fd.detect(c).detections) {
+      const b = d.boundingBox;
+      boxes.push({ x: sx + b.originX / k, y: sy + b.originY / k, w: b.width / k, h: b.height / k, s: (d.categories[0] || {}).score || 0 });
+    }
+  };
+  run(0, 0, W, H);
+  for (const frac of [0.5, 0.33]) {
+    const s = Math.round(Math.min(W, H) * frac), step = Math.round(s / 2);
+    const xs = [], ys = [];
+    for (let x = 0; x + s < W; x += step) xs.push(x); xs.push(Math.max(0, W - s));
+    for (let y = 0; y + s < H; y += step) ys.push(y); ys.push(Math.max(0, H - s));
+    ys.forEach(y => xs.forEach(x => run(x, y, s, s)));
+  }
+  const overlap = (a, b) => {
+    const ix = Math.max(0, Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x)), iy = Math.max(0, Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y));
+    return ix * iy / Math.min(a.w * a.h, b.w * b.h);
+  };
+  const merged = [];
+  boxes.sort((a, b) => b.s - a.s).forEach(b => { if (!merged.some(m => overlap(m, b) > 0.35)) merged.push(b); });
+  return merged.map(b => ({ x: b.x - b.w * .3, y: b.y - b.h * .4, w: b.w * 1.6, h: b.h * 1.7, on: true }));
+}
+document.getElementById('posterAutoFaceBtn').addEventListener('click', async () => {
+  if (!posterEdit) return;
+  const msg = document.getElementById('posterEditMsg'), btn = document.getElementById('posterAutoFaceBtn');
+  btn.disabled = true;
+  msg.textContent = 'กำลังหาหน้า... (ครั้งแรกต้องโหลดตัวตรวจจับ ต้องต่ออินเทอร์เน็ต)';
+  try {
+    const p = posterPhotos[posterEdit.idx];
+    const found = await detectFacesIn(p.orig);
+    // ไม่ซ้ำกับกรอบที่มีอยู่
+    found.forEach(f => { if (!p.rects.some(r => Math.abs(r.x + r.w / 2 - f.x - f.w / 2) < f.w / 2 && Math.abs(r.y + r.h / 2 - f.y - f.h / 2) < f.h / 2)) p.rects.push(f); });
+    drawPosterEditor(); renderPosterThumbs();
+    msg.textContent = found.length
+      ? `เจอ ${found.length} หน้า เบลอให้แล้วทั้งหมด — แตะกรอบหน้าที่ไม่ต้องเบลอ (เช่นเจ้าหน้าที่) ให้เป็นสีเขียว · หน้าที่ระบบหาไม่เจอ ลากคลุมเองได้`
+      : 'หาหน้าไม่เจอ (หน้าเล็ก/หันข้าง/ก้มหน้า) — ลากคลุมใบหน้าเอง';
+  } catch (e) { msg.textContent = 'หาหน้าอัตโนมัติไม่ได้: ' + (e.message || e) + ' — ลากคลุมใบหน้าเองได้'; }
+  btn.disabled = false;
+});
+// ---- ตัดข้อมูลส่วนบุคคลออกจากข้อความในภาพ (ภาพลงสาธารณะ) — ข้อความรายงาน LINE ไม่ถูกแตะ ----
+const POSTER_TITLE_RE = '(?:นางสาว|นาย|นาง|เด็กชาย|เด็กหญิง|ด\\.ช\\.|ด\\.ญ\\.|น\\.ส\\.)';
+function posterPublicText(text, nameMode) {
+  const D = '[0-9๐-๙]';
+  let t = text
+    // เลขบัตร 13 หลัก (มีป้าย หรือเป็นเลข 13 หลักลอย ๆ เว้นวรรค/ขีดคั่นได้)
+    .replace(new RegExp(`\\s*(?:เลขบัตรประจำตัวประชาชน|หมายเลขประจำตัวประชาชน|เลขประจำตัวประชาชน|เลขบัตรประชาชน|เลขบัตร)\\s*[:：]?\\s*${D}(?:[\\s-]?${D}){12}`, 'g'), '')
+    .replace(new RegExp(`${D}(?:[\\s-]?${D}){12}`, 'g'), '')
+    // วันเกิด
+    .replace(new RegExp(`\\s*(?:วันเดือนปีเกิด|เกิดวันที่|วันเกิด)\\s*${D}{1,2}\\s*[ก-๙.]+\\s*(?:พ\\.ศ\\.\\s*)?${D}{2,4}`, 'g'), '')
+    // เบอร์โทร (ก่อนที่อยู่ — ไม่งั้นถูกตัดตัวเลขเหลือขีด)
+    .replace(new RegExp(`\\s*(?:โทร(?:ศัพท์)?\\.?|เบอร์(?:โทร)?)?\\s*0${D}{1,2}[\\s-]?${D}{3}[\\s-]?${D}{3,4}`, 'g'), '')
+    // ที่อยู่ (ถึงท้ายบรรทัด): เหลือตั้งแต่ ต./ตำบล/แขวง — บ้านเลขที่ หมู่ ซอย ถนน ตัดทิ้ง
+    // ไม่มี ต. → ตัดตัวเลข หมู่ ซอย ถนน ออกจากส่วนที่อยู่เท่านั้น (คำว่า "ถนน" ในข้อหาไม่โดน) เหลือว่าง = ไม่แสดง "ที่อยู่"
+    .replace(/(?:ที่อยู่(?:บ้านเลขที่)?|บ้านเลขที่)\s*([^\n]*)/g, (m, rest) => {
+      const i = rest.search(/ต\.|ตำบล|แขวง/);
+      const r = (i >= 0 ? rest.slice(i) : rest.replace(/(?:ซ\.|ซอย|ถ\.|ถนน)\s*\S+/g, '').replace(/(?:ม\.|หมู่ที่|หมู่)\s*/g, '').replace(/[0-9๐-๙]+(?:\/[0-9๐-๙]+)?/g, '').replace(/[-–\/]+/g, ' ')).trim();
+      return r ? 'ที่อยู่ ' + r : '';
+    });
+  if (nameMode !== 'full') {
+    // "1.นายสมชาย(หรือเล่น) ใจดี" → "1.นายสมชาย(หรือเล่น) ใ." (ทุกที่ที่มีคำนำหน้านาม)
+    // คำนำหน้าต้องอยู่ต้นบรรทัด/หลังช่องว่าง/หลัง "1." — ไม่ใช่ "นาย" ในชื่อสถานที่อย่าง "อ.นายายอาม"
+    t = t.replace(new RegExp(`(?<=^|\\s|[0-9๐-๙]\\.)(${POSTER_TITLE_RE}\\s?[ก-๙]+(?:หรือ[ก-๙]+)?)\\s+([เแโใไ]?[ก-ฮ])[ก-๙]*`, 'gm'), '$1 $2.');
+  }
+  return t.replace(/[ \t]{2,}/g, ' ').replace(/ +\n/g, '\n').trim();
+}
+document.getElementById('posterNameMode').addEventListener('change', savePosterSettings);
 document.getElementById('posterPhotoBtn').addEventListener('click', () => document.getElementById('posterPhotoInput').click());
 document.getElementById('posterPhotoInput').addEventListener('change', async e => {
   const files = [...e.target.files];
   e.target.value = '';
   for (const f of files) {
     if (posterPhotos.length >= 4) { document.getElementById('posterMsg').textContent = 'ใส่รูปได้สูงสุด 4 รูป'; break; }
-    try { posterPhotos.push(await imageFileToCanvas(f, 1400)); } catch (err) { document.getElementById('posterMsg').textContent = err.message; }
+    try { posterPhotos.push(newPosterPhoto(await imageFileToCanvas(f, 1400))); } catch (err) { document.getElementById('posterMsg').textContent = err.message; }
   }
   renderPosterThumbs();
 });
@@ -4295,7 +4485,7 @@ document.getElementById('posterAddBlurBtn').addEventListener('click', () => {
   const c = document.createElement('canvas');
   c.width = src.width; c.height = src.height;
   c.getContext('2d').drawImage(src, 0, 0);
-  posterPhotos.push(c);
+  posterPhotos.push(newPosterPhoto(c));
   renderPosterThumbs();
   msg.textContent = 'เพิ่มรูปที่เบลอแล้ว';
 });
@@ -4486,7 +4676,7 @@ async function drawPoster() {
     ctx.fillText(date, dx + 50 + (dw - 50) / 2, dy + dh / 2 + dsz * .36);
   }
   // รูปด้านซ้าย (1–4 รูป) / ไม่มีรูป = กล่องข้อความเต็มความกว้าง
-  const photos = posterPhotos.slice(0, 4);
+  const photos = posterPhotos.slice(0, 4).map(posterBakedPhoto);
   const areaTop = 352, areaBottom = 1300;
   if (photos.length) {
     const fw = 350, gap = 24;
@@ -4511,7 +4701,7 @@ async function drawPoster() {
   const pg = ctx.createLinearGradient(0, py, 0, py + ph); pg.addColorStop(0, '#f4f8ff'); pg.addColorStop(1, '#cfe0fb');
   ctx.fillStyle = pg; ctx.fill();
   ctx.lineWidth = 6; ctx.strokeStyle = goldGradient(ctx, px, py, px + pw, py + ph); ctx.stroke();
-  const body = posterBodyText();
+  const body = posterPublicText(posterBodyText(), v('posterNameMode'));
   if (body) {
     const fit = posterFit(ctx, body.split('\n'), pw - 56, ph - 56, s => `700 ${s}px Sarabun, Tahoma, sans-serif`, 34, 13, 1.3);
     ctx.font = `700 ${fit.size}px Sarabun, Tahoma, sans-serif`; ctx.fillStyle = '#0a1d4a';
@@ -4542,7 +4732,10 @@ document.getElementById('posterGenBtn').addEventListener('click', async () => {
     document.getElementById('posterActions').style.display = '';
     const file = posterBlob && new File([posterBlob], 'report.jpg', { type: 'image/jpeg' });
     document.getElementById('posterShareBtn').style.display = file && navigator.canShare && navigator.canShare({ files: [file] }) ? '' : 'none';
-    const warn = [!r.chain.length && 'ยังไม่ได้กรอกสายการบังคับบัญชา', !r.date && 'ยังไม่ได้ระบุวันที่ (ช่องวันที่ออกหนังสือ)', !r.body && 'ยังไม่มีข้อความรายงาน'].filter(Boolean);
+    const unblurred = posterPhotos.slice(0, 4).map((p, i) => p.rects.some(x => x.on) ? 0 : i + 1).filter(Boolean);
+    const warn = [!r.chain.length && 'ยังไม่ได้กรอกสายการบังคับบัญชา', !r.date && 'ยังไม่ได้ระบุวันที่ (ช่องวันที่ออกหนังสือ)', !r.body && 'ยังไม่มีข้อความรายงาน',
+      unblurred.length && `รูปที่ ${unblurred.join(', ')} ยังไม่ได้เบลอหน้า (แตะรูปเพื่อเบลอ)`,
+      /[0-9๐-๙](?:[\s-]?[0-9๐-๙]){9,}|เลขบัตร|ประจำตัวประชาชน/.test(r.body) && 'ข้อความในภาพยังมีตัวเลขยาว/คำว่าเลขบัตร ตรวจก่อนส่ง'].filter(Boolean);
     msg.textContent = (warn.length ? '⚠️ ' + warn.join(' · ') + ' — ' : '') + 'สร้างภาพแล้ว ตรวจข้อความในภาพก่อนส่ง';
   } catch (e) { msg.textContent = 'สร้างภาพไม่สำเร็จ: ' + (e.message || e); }
 });
