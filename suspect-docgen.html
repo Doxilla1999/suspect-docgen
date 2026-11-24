@@ -229,7 +229,7 @@
       <p>กรอกครั้งเดียว ออกเอกสารได้หลายฉบับ</p>
     </div>
     <!-- เวลา build ไม่แสดงบนหน้าจอ (ผู้ใช้ขอเอาออก) เก็บไว้ใน meta ให้ตรวจได้ว่าเว็บที่ขึ้นไปเป็นเวอร์ชันล่าสุด -->
-    <meta name="build" content="24/11/2569 19:17">
+    <meta name="build" content="24/11/2569 19:23">
     <div class="credit-top">BY บังโต KN60</div>
     <button type="button" class="header-logout" id="logoutBtn">ออกจากระบบ</button>
   </header>
@@ -653,6 +653,13 @@
               <button type="button" class="btn btn-ghost btn-sm" id="posterLogoClear">ใช้โลโก้เริ่มต้น</button>
             </div>
             <input type="file" id="posterLogoInput" accept="image/*" style="display:none">
+            <p class="field-group-label" style="margin-top:10px">พื้นหลังจากแม่แบบ Canva ของคุณ (หน้าตาเหมือน Canva)</p>
+            <div class="qf-file-row">
+              <button type="button" class="btn btn-ghost btn-sm" id="posterBgBtn">🖼️ ใช้ภาพพื้นหลังของฉัน</button>
+              <button type="button" class="btn btn-ghost btn-sm" id="posterBgClear">เลิกใช้ (กลับไปแบบวาดเอง)</button>
+            </div>
+            <input type="file" id="posterBgInput" accept="image/png,image/jpeg" style="display:none">
+            <p class="note" id="posterBgNote">ใช้ไฟล์ PNG ขนาด 1055×1491 (หรือ 2 เท่า) ที่ลบชื่อในแถบแดงและกรอบรูปออกแล้ว — เก็บในเครื่องนี้เท่านั้น ไม่ขึ้นเว็บ/GitHub ใช้ตามสิทธิ์ Canva ของเจ้าของแม่แบบ</p>
             <p class="note">ค่าพวกนี้และโลโก้จำไว้ในเครื่องนี้ ไม่ต้องตั้งใหม่ทุกครั้ง (โลโก้ใช้ไฟล์ PNG พื้นใสจะสวยที่สุด)</p>
           </details>
           <button type="button" class="btn btn-primary" id="posterGenBtn" style="margin-top:10px">สร้างภาพรายงาน</button>
@@ -4515,6 +4522,89 @@ document.getElementById('posterLogoInput').addEventListener('change', async e =>
 document.getElementById('posterLogoClear').addEventListener('click', () => { posterLogos = { left: '', right: '' }; savePosterSettings(); document.getElementById('posterMsg').textContent = 'กลับไปใช้โลโก้เริ่มต้น (ภ.2 / ภ.จว.จันทบุรี) แล้ว'; });
 ['posterTitle', 'posterSubtitle', 'posterFooter', 'posterSlogan'].forEach(id => document.getElementById(id).addEventListener('input', savePosterSettings));
 loadPosterSettings();
+// ---- พื้นหลังจากแม่แบบ Canva ของผู้ใช้: เก็บใน IndexedDB (window.storage) ของเครื่องนี้เท่านั้น ไม่อยู่ในโค้ด/GitHub ----
+// แม่แบบ 1055×1491: แถบแดง ~ (40,258)-(1018,392) · แถบวันที่ขวานาฬิกา ~ (615,397)-(1045,467)
+// กล่องฟ้า ~ (509,485)-(1043,1354) · ช่องรูปซ้าย (67,462)-(472,1217)
+const POSTER_BG_KEY = 'poster-bg';
+let posterBgUrl = '';
+(async function loadPosterBg() {
+  try { const r = await window.storage.get(POSTER_BG_KEY, false); posterBgUrl = r && r.value ? r.value : ''; } catch (e) {}
+  renderPosterBgNote();
+})();
+function renderPosterBgNote() {
+  const el = document.getElementById('posterBgNote');
+  if (posterBgUrl) { el.textContent = '✓ กำลังใช้พื้นหลังของคุณ (เก็บในเครื่องนี้) — ภาพรายงานจะออกมาตามแม่แบบนี้'; el.style.color = '#3FB950'; }
+  else { el.textContent = 'ใช้ไฟล์ PNG ขนาด 1055×1491 (หรือ 2 เท่า) ที่ลบชื่อในแถบแดงและกรอบรูปออกแล้ว — เก็บในเครื่องนี้เท่านั้น ไม่ขึ้นเว็บ/GitHub ใช้ตามสิทธิ์ Canva ของเจ้าของแม่แบบ'; el.style.color = ''; }
+}
+document.getElementById('posterBgBtn').addEventListener('click', () => document.getElementById('posterBgInput').click());
+document.getElementById('posterBgInput').addEventListener('change', async e => {
+  const f = e.target.files[0];
+  e.target.value = '';
+  if (!f) return;
+  const msg = document.getElementById('posterMsg');
+  try {
+    const c = await imageFileToCanvas(f, 2110 * 1.5);
+    const ratio = c.width / c.height;
+    if (Math.abs(ratio - POSTER_W / POSTER_H) > 0.02) { msg.textContent = `สัดส่วนรูปไม่ตรงแม่แบบ (${c.width}×${c.height}) — ต้องเป็นแนวตั้ง 1055×1491 หรือ 2110×2982`; return; }
+    const url = c.toDataURL('image/png');
+    await window.storage.set(POSTER_BG_KEY, url, false);
+    posterBgUrl = url;
+    renderPosterBgNote();
+    msg.textContent = 'ตั้งพื้นหลังแล้ว — กด "สร้างภาพรายงาน" เพื่อดูผล';
+  } catch (err) { msg.textContent = 'ตั้งพื้นหลังไม่สำเร็จ: ' + (err.message || err); }
+});
+document.getElementById('posterBgClear').addEventListener('click', async () => {
+  try { await window.storage.delete(POSTER_BG_KEY, false); } catch (e) {}
+  posterBgUrl = '';
+  renderPosterBgNote();
+  document.getElementById('posterMsg').textContent = 'กลับไปใช้แบบที่ระบบวาดเองแล้ว';
+});
+// วาดตามแม่แบบของผู้ใช้: พื้นหลังมีหัว/โลโก้/ท้ายภาพอยู่แล้ว เขียนเฉพาะ สายบังคับบัญชา วันที่ รูป และข้อความรายงาน
+function drawPosterOnTemplate(ctx, bg, chain, date, body, photos) {
+  const W = POSTER_W, H = POSTER_H;
+  const KANIT = (w, s) => `${w} ${s}px Kanit, 'Sarabun', Tahoma, sans-serif`;
+  ctx.drawImage(bg, 0, 0, W, H);
+  ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+  if (chain.length) {
+    const box = { x: 60, y: 262, w: 936, h: 126 }, cx = 528;
+    const paras = chain.map((l, i) => (i === 0 ? 'ภายใต้การอำนวยการของ  ' : '') + l);
+    const fit = posterFit(ctx, paras, box.w, box.h, s => KANIT(700, s), 29, 15, 1.32);
+    ctx.font = KANIT(700, fit.size); ctx.fillStyle = '#ffffff';
+    ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.45)'; ctx.shadowBlur = 4; ctx.shadowOffsetY = 1;
+    let y = box.y + (box.h - fit.height) / 2 + fit.size * 1.0;
+    fit.lines.forEach(l => { if (l !== null) ctx.fillText(l, cx, y); y += fit.size * 1.32 * (l === null ? .5 : 1); });
+    ctx.restore();
+  }
+  if (date) {
+    let dsz = 40; ctx.font = KANIT(700, dsz);
+    while (ctx.measureText(date).width > 400 && dsz > 22) ctx.font = KANIT(700, --dsz);
+    ctx.fillStyle = '#f9b61a';
+    ctx.fillText(date, 830, 432 + dsz * .36);
+  }
+  if (photos.length) {
+    const area = { x: 67, y: 462, w: 405, h: 755 }, gap = 16;
+    const fh = Math.min(250, (area.h - gap * (photos.length - 1)) / photos.length);
+    let y = area.y + (area.h - (fh * photos.length + gap * (photos.length - 1))) / 2;
+    photos.forEach(img => {
+      ctx.save();
+      roundRectPath(ctx, area.x, y, area.w, fh, 22); ctx.clip();
+      const k = Math.max(area.w / img.width, fh / img.height);
+      ctx.drawImage(img, area.x + (area.w - img.width * k) / 2, y + (fh - img.height * k) / 2, img.width * k, img.height * k);
+      ctx.restore();
+      const g = ctx.createRadialGradient(area.x + area.w / 2, y + fh / 2, 10, area.x + area.w / 2, y + fh / 2, area.w * .7);
+      g.addColorStop(0, '#ffde59'); g.addColorStop(1, '#ff914d');
+      roundRectPath(ctx, area.x, y, area.w, fh, 22); ctx.lineWidth = 5; ctx.strokeStyle = g; ctx.stroke();
+      y += fh + gap;
+    });
+  }
+  if (body) {
+    const box = { x: 528, y: 505, w: 496, h: 830 };
+    const fit = posterFit(ctx, body.split('\n'), box.w, box.h, s => `700 ${s}px Sarabun, Tahoma, sans-serif`, 32, 13, 1.32);
+    ctx.font = `700 ${fit.size}px Sarabun, Tahoma, sans-serif`; ctx.fillStyle = '#0a1d4a';
+    let y = box.y + Math.max(0, (box.h - fit.height) / 2) + fit.size;
+    fit.lines.forEach(l => { if (l !== null) ctx.fillText(l, box.x + box.w / 2, y); y += fit.size * 1.32 * (l === null ? .5 : 1); });
+  }
+}
 
 // ตัดคำภาษาไทยด้วย Intl.Segmenter (ไทยไม่เว้นวรรคระหว่างคำ) — ไม่มีให้ใช้ ตัดทีละตัวอักษรโดยไม่แยกสระ/วรรณยุกต์ออกจากพยัญชนะ
 const posterSegmenter = typeof Intl !== 'undefined' && Intl.Segmenter ? new Intl.Segmenter('th', { granularity: 'word' }) : null;
@@ -4525,7 +4615,8 @@ function posterWrap(ctx, para, maxW) {
   const toks = [];
   raw.forEach(t => {
     const prev = toks[toks.length - 1];
-    if (prev && (t === '.' || (/(?:^|[^ก-ฮ])[ก-ฮ]{1,2}\.$/.test(prev) && !/^\s/.test(t)))) toks[toks.length - 1] = prev + t;
+    // วงเล็บ/คำพูดเปิด ก็ห้ามค้างท้ายบรรทัด — ติดกับคำถัดไป
+    if (prev && (t === '.' || (/(?:^|[^ก-ฮ])[ก-ฮ]{1,2}\.$/.test(prev) && !/^\s/.test(t)) || (/[(“"]$/.test(prev) && !/^\s/.test(t)))) toks[toks.length - 1] = prev + t;
     else toks.push(t);
   });
   const lines = [];
@@ -4650,6 +4741,14 @@ async function drawPoster() {
   } catch (e) {}
   const KANIT = (w, s) => `${w} ${s}px Kanit, 'Sarabun', Tahoma, sans-serif`;
   const W = POSTER_W;
+  const bgImg = posterBgUrl ? await loadImg(posterBgUrl) : null;
+  if (bgImg) {
+    const chainT = document.getElementById('reportCommandChain').value.split('\n').map(l => l.trim()).filter(Boolean);
+    const dateT = posterDateText();
+    const bodyT = posterPublicText(posterBodyText(), v('posterNameMode'));
+    drawPosterOnTemplate(ctx, bgImg, chainT, dateT, bodyT, posterPhotos.slice(0, 4).map(posterBakedPhoto));
+    return { body: bodyT, chain: chainT, date: dateT };
+  }
   drawPosterBackground(ctx);
   const [logoL, logoR] = await Promise.all([loadImg(posterLogos.left || POSTER_DEFAULT_LOGOS.left), loadImg(posterLogos.right || POSTER_DEFAULT_LOGOS.right)]);
   drawPosterEmblem(ctx, 116, 94, 80, posterLogos.left, logoL);
