@@ -178,6 +178,10 @@
   .canva-copy-row { display: flex; gap: 8px; flex-wrap: wrap; }
   .poster-bg-prompt { margin-top: 10px; padding: 10px 12px; border: 1px solid #B68D40; border-radius: 8px; background: #1E1A10; font-size: 14.5px; color: #E8D9B5; display: flex; flex-direction: column; gap: 6px; }
   .poster-bg-prompt .btn { margin-top: 0; }
+  .poster-logo-row { display: flex; gap: 10px; margin: 8px 0 4px; }
+  .poster-logo-slot { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px; border: 1px solid #2A3A5C; border-radius: 8px; background: #0B1A3A; font-size: 13.5px; color: #C9C5BC; }
+  .poster-logo-slot img { width: 72px; height: 72px; object-fit: contain; }
+  .poster-logo-slot .btn { margin-top: 0; width: 100%; }
   .canva-copy-row .btn { width: auto; flex: 1 1 auto; margin-top: 0; }
   .poster-settings summary { cursor: pointer; color: #9B968D; font-size: 14px; margin-bottom: 6px; }
   .poster-canvas { width: 100%; max-width: 420px; display: block; margin: 10px auto 0; border-radius: 6px; box-shadow: 0 4px 18px rgba(0,0,0,.5); }
@@ -642,18 +646,26 @@
           <p class="note" style="margin-top:4px">ข้อความรายงานที่คัดลอก ตัดข้อมูลส่วนบุคคลแบบเดียวกับภาพ (และย่อชื่อตามที่เลือกด้านบน) — ใน Canva ดับเบิลคลิกกล่องข้อความ เลือกทั้งหมด แล้ววาง</p>
           <p class="msg" id="canvaCopyMsg"></p>
           <details class="poster-settings">
-            <summary>หัว/ท้ายภาพ และโลโก้</summary>
+            <summary>⚙️ โลโก้ / ชื่อหน่วย / ท้ายภาพ — เปลี่ยนเป็นของโรงพักตัวเองได้</summary>
             <div class="grid2">
               <label class="f"><span>ชื่อหน่วย (หัวภาพ)</span><input id="posterTitle" placeholder="สภ.นายายอาม"></label>
               <label class="f"><span>ชื่อภาษาอังกฤษ</span><input id="posterSubtitle" placeholder="NAYAIARM POLICE STATION"></label>
               <label class="f"><span>บรรทัดท้ายภาพ</span><input id="posterFooter" placeholder="ตำรวจภูธรภาค 2"></label>
               <label class="f"><span>คำขวัญ</span><input id="posterSlogan" placeholder="“ จงรักภักดี มั่นคงปลอดภัย รับใช้ประชาชน ”"></label>
             </div>
-            <div class="qf-file-row">
-              <button type="button" class="btn btn-ghost btn-sm" data-poster-logo="left">โลโก้ซ้าย</button>
-              <button type="button" class="btn btn-ghost btn-sm" data-poster-logo="right">โลโก้ขวา</button>
-              <button type="button" class="btn btn-ghost btn-sm" id="posterLogoClear">ใช้โลโก้เริ่มต้น</button>
+            <div class="poster-logo-row">
+              <div class="poster-logo-slot">
+                <img id="posterLogoLeftImg" alt="โลโก้ซ้าย">
+                <span>โลโก้ซ้าย</span>
+                <button type="button" class="btn btn-ghost btn-sm" data-poster-logo="left">เปลี่ยนรูป</button>
+              </div>
+              <div class="poster-logo-slot">
+                <img id="posterLogoRightImg" alt="โลโก้ขวา">
+                <span>โลโก้ขวา</span>
+                <button type="button" class="btn btn-ghost btn-sm" data-poster-logo="right">เปลี่ยนรูป</button>
+              </div>
             </div>
+            <button type="button" class="btn btn-ghost btn-sm" id="posterLogoClear">กลับไปใช้โลโก้เริ่มต้น</button>
             <input type="file" id="posterLogoInput" accept="image/*" style="display:none">
             <p class="field-group-label" style="margin-top:10px">พื้นหลังจากแม่แบบ Canva ของคุณ (หน้าตาเหมือน Canva)</p>
             <div class="qf-file-row">
@@ -662,7 +674,7 @@
             </div>
             <input type="file" id="posterBgInput" accept="image/png,image/jpeg" style="display:none">
             <p class="note" id="posterBgNote">ใช้ไฟล์ PNG ขนาด 1055×1491 (หรือ 2 เท่า) ที่ลบชื่อในแถบแดงและกรอบรูปออกแล้ว — เก็บในเครื่องนี้เท่านั้น ไม่ขึ้นเว็บ/GitHub ใช้ตามสิทธิ์ Canva ของเจ้าของแม่แบบ</p>
-            <p class="note">ค่าพวกนี้และโลโก้จำไว้ในเครื่องนี้ ไม่ต้องตั้งใหม่ทุกครั้ง (โลโก้ใช้ไฟล์ PNG พื้นใสจะสวยที่สุด)</p>
+            <p class="note">ค่าพวกนี้และโลโก้จำไว้ในเครื่องนี้ ไม่ต้องตั้งใหม่ทุกครั้ง (โลโก้ใช้ไฟล์ PNG พื้นใสจะสวยที่สุด) — ถ้าใช้พื้นหลังจาก Canva โลโก้และชื่อหน่วยจะมาจากภาพพื้นหลังนั้นแทน</p>
           </details>
           <div id="posterBgPrompt" class="poster-bg-prompt" style="display:none">
             <span>ภาพยังเป็นแบบที่ระบบวาดเอง — อยากได้หน้าตาเหมือนแม่แบบ Canva ใส่ไฟล์พื้นหลังครั้งเดียวต่อเครื่อง</span>
@@ -4556,11 +4568,21 @@ document.getElementById('posterLogoInput').addEventListener('change', async e =>
   try {
     posterLogos[posterLogoSide] = (await imageFileToCanvas(f, 320)).toDataURL('image/png');
     document.getElementById('posterMsg').textContent = savePosterSettings() ? `บันทึกโลโก้${posterLogoSide === 'left' ? 'ซ้าย' : 'ขวา'}แล้ว` : 'พื้นที่เก็บในเบราว์เซอร์เต็ม บันทึกโลโก้ไม่ได้';
+    renderPosterLogoPreviews();
   } catch (err) { document.getElementById('posterMsg').textContent = err.message; }
 });
-document.getElementById('posterLogoClear').addEventListener('click', () => { posterLogos = { left: '', right: '' }; savePosterSettings(); document.getElementById('posterMsg').textContent = 'กลับไปใช้โลโก้เริ่มต้น (ภ.2 / ภ.จว.จันทบุรี) แล้ว'; });
+document.getElementById('posterLogoClear').addEventListener('click', () => {
+  posterLogos = { left: '', right: '' }; savePosterSettings(); renderPosterLogoPreviews();
+  document.getElementById('posterMsg').textContent = 'กลับไปใช้โลโก้เริ่มต้น (ภ.2 / ภ.จว.จันทบุรี) แล้ว';
+});
+// รูปโลโก้ที่ใช้อยู่ (ของเครื่องนี้ หรือค่าเริ่มต้น) — โรงพักอื่นเห็นแล้วกด "เปลี่ยนรูป" เป็นตราของตัวเอง
+function renderPosterLogoPreviews() {
+  document.getElementById('posterLogoLeftImg').src = posterLogos.left || POSTER_DEFAULT_LOGOS.left;
+  document.getElementById('posterLogoRightImg').src = posterLogos.right || POSTER_DEFAULT_LOGOS.right;
+}
 ['posterTitle', 'posterSubtitle', 'posterFooter', 'posterSlogan'].forEach(id => document.getElementById(id).addEventListener('input', savePosterSettings));
 loadPosterSettings();
+renderPosterLogoPreviews();
 // ---- พื้นหลังจากแม่แบบ Canva ของผู้ใช้: เก็บใน IndexedDB (window.storage) ของเครื่องนี้เท่านั้น ไม่อยู่ในโค้ด/GitHub ----
 // แม่แบบ 1055×1491: แถบแดง ~ (40,258)-(1018,392) · แถบวันที่ขวานาฬิกา ~ (615,397)-(1045,467)
 // กล่องฟ้า ~ (509,485)-(1043,1354) · ช่องรูปซ้าย (67,462)-(472,1217)
