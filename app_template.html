@@ -9,7 +9,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&family=Kanit:wght@500;700&family=Sarabun:wght@600;700&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&family=Sarabun:wght@600;700&display=swap');
   * { box-sizing: border-box; }
   body { margin: 0; background: #0B0D10; font-family: 'TH SarabunIT๙', 'TH Sarabun New', Tahoma, sans-serif; font-size: 20px; color: #E8E6E0; }
   .date3 { display: flex; gap: 6px; }
@@ -634,7 +634,7 @@
             <p class="msg" id="posterEditMsg"></p>
           </div>
           <label class="f" style="margin-top:8px"><span>ชื่อผู้ต้องหาในภาพ</span>
-            <select id="posterNameMode"><option value="nick">ชื่อเล่นอย่างเดียว (เช่น นายแดง) — แนะนำ กัน PDPA</option><option value="short">ชื่อจริง + ย่อนามสกุล (เช่น นายสมชาย ใ.)</option><option value="full">ชื่อ-นามสกุลเต็ม</option></select>
+            <select id="posterNameMode"><option value="nick">ชื่อเล่นอย่างเดียว (เช่น นายแดง) — แนะนำ กัน PDPA</option><option value="short">ชื่อจริง + ย่อนามสกุล (เช่น นายสมชาย ใ.)</option></select>
           </label>
           <p class="note" style="margin-top:4px">🔒 ภาพนี้สำหรับลงสาธารณะ: ระบบตัด <b>เลขบัตรประชาชน วันเกิด บ้านเลขที่/หมู่/ซอย/ถนน และเบอร์โทร</b> ออกจากภาพให้เสมอ (ข้อความรายงาน LINE ด้านบนยังครบเหมือนเดิม)</p>
           <p class="field-group-label" style="margin-top:12px">ทำใน Canva เอง: คัดลอกไปวางในแม่แบบ</p>
@@ -4307,7 +4307,7 @@ function loadPosterSettings() {
   try { s = JSON.parse(localStorage.getItem(POSTER_KEY) || '{}') || {}; } catch (e) {}
   ['posterTitle', 'posterSubtitle', 'posterFooter', 'posterSlogan'].forEach(id => { document.getElementById(id).value = s[id] || ''; });
   // ค่าเริ่มต้น = ชื่อเล่น (ผู้ใช้สั่ง 2569-11-24 กัน PDPA) — ค่าเก่า 'short' ที่บันทึกไว้ก่อนมีตัวเลือกนี้ ก็เปลี่ยนเป็นชื่อเล่น
-  document.getElementById('posterNameMode').value = s.posterNameMode === 'full' ? 'full' : s.posterNameMode === 'short' && s.nameModeV2 ? 'short' : 'nick';
+  document.getElementById('posterNameMode').value = s.posterNameMode === 'short' && s.nameModeV2 ? 'short' : 'nick';
   posterLogos = { left: s.logoLeft || '', right: s.logoRight || '' };
 }
 function savePosterSettings() {
@@ -4347,6 +4347,45 @@ function posterBakedPhoto(p) {
     pixelateRect(g, x, y, w, h, Math.max(10, Math.round(Math.max(w, h) / 7)));
   });
   return c;
+}
+// ---- รูปแบบทางการสำหรับลงสื่อ (Facebook ฯลฯ): ไม่มีอีโมจิ ฟอนต์ Sarabun (ต้นแบบของฟอนต์ราชการ TH Sarabun) ----
+// หัวข้อ (จับกุม / โดยกล่าวหาว่า / พร้อมด้วยของกลาง) ตัวหนาจัดกลาง ส่วนเนื้อความชิดซ้ายแบบหนังสือราชการ
+const POSTER_MAIN_HEAD = /^(?:ร่วมกันจับกุม|จับกุม|ผลการจับกุม)$/;
+const POSTER_SUB_HEAD = /^(?:โดยกล่าวหาว่า|กล่าวหาว่า|พร้อมด้วยของกลาง|ของกลาง)$/;
+function posterFormalText(t) {
+  return t.split('\n')
+    .map(l => l.replace(/[\p{Extended_Pictographic}️‍⃣]/gu, '').replace(/[ \t]{2,}/g, ' ').trim().replace(/^(\d+)\.\s*/, '$1. '))
+    .join('\n').replace(/\n{3,}/g, '\n\n').trim();
+}
+function drawPosterBody(ctx, body, box) {
+  const F = (w, s) => `${w} ${s}px Sarabun, Tahoma, sans-serif`;
+  const kind = p => POSTER_MAIN_HEAD.test(p) ? 'main' : POSTER_SUB_HEAD.test(p) ? 'sub' : 'text';
+  const style = (k, size) => k === 'main' ? { w: 700, s: Math.round(size * 1.18), c: '#8a1015' } : k === 'sub' ? { w: 700, s: size, c: '#0a1d4a' } : { w: 600, s: size, c: '#14213d' };
+  const paras = body.split('\n').map(p => p.trim());
+  let best = null;
+  for (let size = 34; size >= 13; size--) {
+    const lines = [];
+    paras.forEach(p => {
+      if (!p) { lines.push({ gap: true }); return; }
+      const k = kind(p), st = style(k, size);
+      ctx.font = F(st.w, st.s);
+      posterWrap(ctx, p, box.w).forEach(l => lines.push({ text: l, k }));
+    });
+    const lh = size * 1.42;
+    const height = lines.reduce((s, l) => s + (l.gap ? lh * .4 : l.k === 'main' ? lh * 1.15 : lh), 0);
+    best = { size, lines, lh };
+    if (height <= box.h) break;
+  }
+  let y = box.y + best.size;
+  best.lines.forEach(l => {
+    if (l.gap) { y += best.lh * .4; return; }
+    const st = style(l.k, best.size);
+    ctx.font = F(st.w, st.s); ctx.fillStyle = st.c;
+    if (l.k === 'text') { ctx.textAlign = 'left'; ctx.fillText(l.text, box.x, y); }
+    else { ctx.textAlign = 'center'; ctx.fillText(l.text, box.x + box.w / 2, y); }
+    y += l.k === 'main' ? best.lh * 1.15 : best.lh;
+  });
+  ctx.textAlign = 'center';
 }
 // ตัดรูปลงกรอบ (cover) โดยให้จุดสำคัญอยู่กลางกรอบ: กลางกลุ่มกรอบเบลอหน้า (มีหน้าคน) ไม่มี = ค่อนบน 35%
 // รูปคนถ่ายแนวตั้งลงกรอบแนวนอน เดิมตัดตรงกลาง → หัวหลุดกรอบ
@@ -4625,7 +4664,7 @@ document.getElementById('posterBgClear').addEventListener('click', async () => {
 // วาดตามแม่แบบของผู้ใช้: พื้นหลังมีหัว/โลโก้/ท้ายภาพอยู่แล้ว เขียนเฉพาะ สายบังคับบัญชา วันที่ รูป และข้อความรายงาน
 function drawPosterOnTemplate(ctx, bg, chain, date, body, photos) {
   const W = POSTER_W, H = POSTER_H;
-  const KANIT = (w, s) => `${w} ${s}px Kanit, 'Sarabun', Tahoma, sans-serif`;
+  const KANIT = (w, s) => `${w >= 600 ? 700 : 600} ${s}px Sarabun, Tahoma, sans-serif`;  // ทางการ: Sarabun ทั้งภาพ (ชื่อเดิมคงไว้)
   ctx.drawImage(bg, 0, 0, W, H);
   ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
   if (chain.length) {
@@ -4659,14 +4698,8 @@ function drawPosterOnTemplate(ctx, bg, chain, date, body, photos) {
       y += fh + gap;
     });
   }
-  if (body) {
-    const box = { x: 528, y: 505, w: 496, h: 830 };
-    const fit = posterFit(ctx, body.split('\n'), box.w, box.h, s => `700 ${s}px Sarabun, Tahoma, sans-serif`, 32, 13, 1.32);
-    ctx.font = `700 ${fit.size}px Sarabun, Tahoma, sans-serif`; ctx.fillStyle = '#0a1d4a';
-    // ข้อความเริ่มจากด้านบนของกล่อง (เหมือนแม่แบบ Canva) ไม่ลอยกลางกล่อง
-    let y = box.y + 14 + fit.size;
-    fit.lines.forEach(l => { if (l !== null) ctx.fillText(l, box.x + box.w / 2, y); y += fit.size * 1.32 * (l === null ? .5 : 1); });
-  }
+  // ข้อความเริ่มจากด้านบนของกล่อง (เหมือนแม่แบบ Canva) ไม่ลอยกลางกล่อง
+  if (body) drawPosterBody(ctx, body, { x: 530, y: 519, w: 492, h: 816 });
 }
 
 // ตัดคำภาษาไทยด้วย Intl.Segmenter (ไทยไม่เว้นวรรคระหว่างคำ) — ไม่มีให้ใช้ ตัดทีละตัวอักษรโดยไม่แยกสระ/วรรณยุกต์ออกจากพยัญชนะ
@@ -4800,15 +4833,15 @@ async function drawPoster() {
   const ctx = canvas.getContext('2d');
   ctx.setTransform(POSTER_SCALE, 0, 0, POSTER_SCALE, 0, 0);
   try {
-    await Promise.race([Promise.all(['700 40px Kanit', '500 30px Kanit', '700 30px Sarabun'].map(f => document.fonts.load(f))), new Promise(r => setTimeout(r, 4000))]);
+    await Promise.race([Promise.all(['700 30px Sarabun', '600 30px Sarabun'].map(f => document.fonts.load(f))), new Promise(r => setTimeout(r, 4000))]);
   } catch (e) {}
-  const KANIT = (w, s) => `${w} ${s}px Kanit, 'Sarabun', Tahoma, sans-serif`;
+  const KANIT = (w, s) => `${w >= 600 ? 700 : 600} ${s}px Sarabun, Tahoma, sans-serif`;  // ทางการ: Sarabun ทั้งภาพ (ชื่อเดิมคงไว้)
   const W = POSTER_W;
   const bgImg = posterBgUrl ? await loadImg(posterBgUrl) : null;
   if (bgImg) {
     const chainT = document.getElementById('reportCommandChain').value.split('\n').map(l => l.trim()).filter(Boolean);
     const dateT = posterDateText();
-    const bodyT = posterPublicText(posterBodyText(), v('posterNameMode'));
+    const bodyT = posterFormalText(posterPublicText(posterBodyText(), v('posterNameMode')));
     drawPosterOnTemplate(ctx, bgImg, chainT, dateT, bodyT, posterPhotos.slice(0, 4).map(posterPhotoForDraw));
     return { body: bodyT, chain: chainT, date: dateT };
   }
@@ -4882,13 +4915,8 @@ async function drawPoster() {
   const pg = ctx.createLinearGradient(0, py, 0, py + ph); pg.addColorStop(0, '#f4f8ff'); pg.addColorStop(1, '#cfe0fb');
   ctx.fillStyle = pg; ctx.fill();
   ctx.lineWidth = 6; ctx.strokeStyle = goldGradient(ctx, px, py, px + pw, py + ph); ctx.stroke();
-  const body = posterPublicText(posterBodyText(), v('posterNameMode'));
-  if (body) {
-    const fit = posterFit(ctx, body.split('\n'), pw - 56, ph - 56, s => `700 ${s}px Sarabun, Tahoma, sans-serif`, 34, 13, 1.3);
-    ctx.font = `700 ${fit.size}px Sarabun, Tahoma, sans-serif`; ctx.fillStyle = '#0a1d4a';
-    let y = py + 40 + fit.size;
-    fit.lines.forEach(l => { if (l !== null) ctx.fillText(l, px + pw / 2, y); y += fit.size * 1.3 * (l === null ? .5 : 1); });
-  }
+  const body = posterFormalText(posterPublicText(posterBodyText(), v('posterNameMode')));
+  if (body) drawPosterBody(ctx, body, { x: px + 30, y: py + 36, w: pw - 60, h: ph - 56 });
   // ท้ายภาพ
   const fy = 1318;
   const fg = ctx.createLinearGradient(0, fy, 0, POSTER_H); fg.addColorStop(0, 'rgba(2,8,26,.55)'); fg.addColorStop(1, 'rgba(2,8,26,.95)');
@@ -4936,7 +4964,7 @@ function canvaCopy(kind) {
   const msg = document.getElementById('canvaCopyMsg');
   if (kind === 'body' && !document.getElementById('reportOutput').value.trim()) buildOperationReport();
   let text = '', label = '';
-  if (kind === 'body') { text = posterPublicText(posterBodyText(), v('posterNameMode')); label = 'ข้อความรายงาน'; }
+  if (kind === 'body') { text = posterFormalText(posterPublicText(posterBodyText(), v('posterNameMode'))); label = 'ข้อความรายงาน'; }
   if (kind === 'date') { text = posterDateText(); label = 'วันที่'; }
   if (kind === 'chain') {
     const chain = document.getElementById('reportCommandChain').value.split('\n').map(l => l.trim()).filter(Boolean);
