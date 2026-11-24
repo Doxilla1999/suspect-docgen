@@ -9,7 +9,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&family=Kanit:wght@500;700&family=Sarabun:wght@600;700&display=swap');
   * { box-sizing: border-box; }
   body { margin: 0; background: #0B0D10; font-family: 'TH SarabunIT๙', 'TH Sarabun New', Tahoma, sans-serif; font-size: 20px; color: #E8E6E0; }
   .date3 { display: flex; gap: 6px; }
@@ -165,6 +165,14 @@
   .header-logout { margin-left: auto; background: none; border: 1px solid #B68D40; color: #EFE9D8; border-radius: 6px; padding: 6px 12px; font-size: 14px; cursor: pointer; }
   .header-logout:hover { background: rgba(182,141,64,.15); }
   .mobile-gen-bar { display: none; }
+  .poster-box { margin-top: 16px; padding: 12px; border: 1px solid #2A3A5C; border-radius: 10px; background: #111A2B; }
+  .poster-thumbs { display: flex; gap: 8px; flex-wrap: wrap; margin: 4px 0; }
+  .poster-thumbs .pt { position: relative; width: 74px; height: 56px; border-radius: 6px; overflow: hidden; border: 2px solid #E0892B; }
+  .poster-thumbs .pt img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .poster-thumbs .pt button { position: absolute; top: 1px; right: 1px; width: 22px; height: 22px; border-radius: 50%; border: none; background: rgba(0,0,0,.7); color: #fff; font-size: 14px; line-height: 1; cursor: pointer; padding: 0; }
+  .poster-settings { margin: 8px 0 0; font-size: 15px; }
+  .poster-settings summary { cursor: pointer; color: #9B968D; font-size: 14px; margin-bottom: 6px; }
+  .poster-canvas { width: 100%; max-width: 420px; display: block; margin: 10px auto 0; border-radius: 6px; box-shadow: 0 4px 18px rgba(0,0,0,.5); }
   /* ---- มือถือ / จอแคบ: คอลัมน์เดียว เมนูเป็นแถบเลื่อนด้านบน รายการเอกสารย้ายมาเหนือฟอร์ม (JS ย้ายให้) ปุ่มสร้างเอกสารติดล่างจอ ---- */
   @media (max-width: 820px) {
     body { font-size: 17px; }
@@ -215,7 +223,7 @@
       <p>กรอกครั้งเดียว ออกเอกสารได้หลายฉบับ</p>
     </div>
     <!-- เวลา build ไม่แสดงบนหน้าจอ (ผู้ใช้ขอเอาออก) เก็บไว้ใน meta ให้ตรวจได้ว่าเว็บที่ขึ้นไปเป็นเวอร์ชันล่าสุด -->
-    <meta name="build" content="24/11/2569 17:47">
+    <meta name="build" content="24/11/2569 18:23">
     <div class="credit-top">BY บังโต KN60</div>
     <button type="button" class="header-logout" id="logoutBtn">ออกจากระบบ</button>
   </header>
@@ -592,6 +600,40 @@
         </label>
         <button type="button" class="btn btn-ghost" id="copyReportBtn">คัดลอกข้อความ</button>
         <p class="msg" id="reportMsg"></p>
+
+        <div class="poster-box">
+          <p class="field-group-label" style="margin-top:0">ภาพรายงาน (แทน Canva)</p>
+          <p class="note" style="margin-top:0">ใช้ข้อความรายงานด้านบน (แก้ก่อนได้) + สายการบังคับบัญชา + วันที่ วาดเป็นภาพในเครื่อง ไม่ส่งข้อมูลหรือรูปออกไปไหน</p>
+          <div class="qf-file-row" style="margin:0 0 6px">
+            <button type="button" class="btn btn-ghost btn-sm" id="posterPhotoBtn">🖼️ เพิ่มรูป (สูงสุด 4)</button>
+            <button type="button" class="btn btn-ghost btn-sm" id="posterAddBlurBtn">เพิ่มรูปที่เบลอด้านล่าง</button>
+          </div>
+          <input type="file" id="posterPhotoInput" accept="image/*" multiple style="display:none">
+          <div id="posterThumbs" class="poster-thumbs"></div>
+          <details class="poster-settings">
+            <summary>หัว/ท้ายภาพ และโลโก้</summary>
+            <div class="grid2">
+              <label class="f"><span>ชื่อหน่วย (หัวภาพ)</span><input id="posterTitle" placeholder="สภ.นายายอาม"></label>
+              <label class="f"><span>ชื่อภาษาอังกฤษ</span><input id="posterSubtitle" placeholder="NAYAIARM POLICE STATION"></label>
+              <label class="f"><span>บรรทัดท้ายภาพ</span><input id="posterFooter" placeholder="ตำรวจภูธรภาค 2"></label>
+              <label class="f"><span>คำขวัญ</span><input id="posterSlogan" placeholder="“ จงรักภักดี มั่นคงปลอดภัย รับใช้ประชาชน ”"></label>
+            </div>
+            <div class="qf-file-row">
+              <button type="button" class="btn btn-ghost btn-sm" data-poster-logo="left">โลโก้ซ้าย</button>
+              <button type="button" class="btn btn-ghost btn-sm" data-poster-logo="right">โลโก้ขวา</button>
+              <button type="button" class="btn btn-ghost btn-sm" id="posterLogoClear">ลบโลโก้</button>
+            </div>
+            <input type="file" id="posterLogoInput" accept="image/*" style="display:none">
+            <p class="note">ค่าพวกนี้และโลโก้จำไว้ในเครื่องนี้ ไม่ต้องตั้งใหม่ทุกครั้ง (โลโก้ใช้ไฟล์ PNG พื้นใสจะสวยที่สุด)</p>
+          </details>
+          <button type="button" class="btn btn-primary" id="posterGenBtn" style="margin-top:10px">สร้างภาพรายงาน</button>
+          <p class="msg" id="posterMsg"></p>
+          <canvas id="posterCanvas" class="poster-canvas" style="display:none"></canvas>
+          <div class="olr-duty-actions" id="posterActions" style="display:none">
+            <button type="button" class="btn btn-primary btn-sm" id="posterDownloadBtn">ดาวน์โหลดภาพ</button>
+            <button type="button" class="btn btn-ghost btn-sm" id="posterShareBtn" style="display:none">แชร์ (LINE ฯลฯ)</button>
+          </div>
+        </div>
 
         <p class="field-group-label" style="margin-top:16px">รูปหน้าตรงสำหรับแนบรายงาน (เบลอหน้าก่อนแนบ)</p>
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
@@ -4192,6 +4234,324 @@ document.getElementById('addEvidenceRow').addEventListener('click', () => addEvi
 addEvidenceRow();
 document.getElementById('draftChargeFromWarrant').addEventListener('click', draftChargeFromWarrant);
 document.getElementById('genReportBtn').addEventListener('click', buildOperationReport);
+
+// ---- ภาพรายงาน (แทน Canva): วาดบน canvas ในเครื่อง — ลายพื้นหลัง/กรอบวาดเองทั้งหมด (ไม่ใช้ชิ้นส่วนจาก Canva)
+// ข้อความ = ข้อความรายงาน LINE ช่วง "⚠️จับกุม⚠️" ถึงก่อน "นำตัวผู้ถูกจับ…", แถบแดง = สายการบังคับบัญชา, แถบนาฬิกา = วันที่
+// รูปผู้ต้องหาอยู่ในหน่วยความจำเท่านั้น (ไม่เก็บลงเครื่อง) — ค่าหัว/ท้ายภาพและโลโก้จำใน localStorage
+const POSTER_W = 1055, POSTER_H = 1491, POSTER_SCALE = 2;
+const POSTER_KEY = 'poster-settings';
+const POSTER_DEFAULTS = { posterSubtitle: 'NAYAIARM POLICE STATION', posterFooter: 'ตำรวจภูธรภาค 2', posterSlogan: '“ จงรักภักดี มั่นคงปลอดภัย รับใช้ประชาชน ”' };
+let posterPhotos = [];
+let posterLogos = { left: '', right: '' };
+let posterLogoSide = 'left';
+function loadPosterSettings() {
+  let s = {};
+  try { s = JSON.parse(localStorage.getItem(POSTER_KEY) || '{}') || {}; } catch (e) {}
+  ['posterTitle', 'posterSubtitle', 'posterFooter', 'posterSlogan'].forEach(id => { document.getElementById(id).value = s[id] || ''; });
+  posterLogos = { left: s.logoLeft || '', right: s.logoRight || '' };
+}
+function savePosterSettings() {
+  const s = { logoLeft: posterLogos.left, logoRight: posterLogos.right };
+  ['posterTitle', 'posterSubtitle', 'posterFooter', 'posterSlogan'].forEach(id => { s[id] = v(id); });
+  try { localStorage.setItem(POSTER_KEY, JSON.stringify(s)); return true; } catch (e) { return false; }
+}
+const posterVal = id => v(id) || (id === 'posterTitle' ? (stationShortName() || 'สภ.นายายอาม') : POSTER_DEFAULTS[id] || '');
+// อ่านรูปแล้วย่อ (ด้านยาวไม่เกิน max) เป็น canvas — กันหน่วยความจำเต็มบนมือถือ
+function imageFileToCanvas(file, max) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      const k = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
+      const c = document.createElement('canvas');
+      c.width = Math.round(img.naturalWidth * k); c.height = Math.round(img.naturalHeight * k);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(url); resolve(c);
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('เปิดรูปไม่ได้')); };
+    img.src = url;
+  });
+}
+function renderPosterThumbs() {
+  const box = document.getElementById('posterThumbs');
+  box.innerHTML = posterPhotos.map((c, i) => `<div class="pt"><img src="${c.toDataURL('image/jpeg', .6)}" alt=""><button type="button" data-rm="${i}" aria-label="ลบรูป">×</button></div>`).join('');
+  box.querySelectorAll('button[data-rm]').forEach(b => b.addEventListener('click', () => { posterPhotos.splice(+b.dataset.rm, 1); renderPosterThumbs(); }));
+}
+document.getElementById('posterPhotoBtn').addEventListener('click', () => document.getElementById('posterPhotoInput').click());
+document.getElementById('posterPhotoInput').addEventListener('change', async e => {
+  const files = [...e.target.files];
+  e.target.value = '';
+  for (const f of files) {
+    if (posterPhotos.length >= 4) { document.getElementById('posterMsg').textContent = 'ใส่รูปได้สูงสุด 4 รูป'; break; }
+    try { posterPhotos.push(await imageFileToCanvas(f, 1400)); } catch (err) { document.getElementById('posterMsg').textContent = err.message; }
+  }
+  renderPosterThumbs();
+});
+document.getElementById('posterAddBlurBtn').addEventListener('click', () => {
+  const src = document.getElementById('blurCanvas');
+  const msg = document.getElementById('posterMsg');
+  if (!src.width || !src.height) { msg.textContent = 'ยังไม่มีรูปในส่วนเบลอหน้าด้านล่าง — เลือกรูปแล้วเบลอก่อน'; return; }
+  if (posterPhotos.length >= 4) { msg.textContent = 'ใส่รูปได้สูงสุด 4 รูป'; return; }
+  const c = document.createElement('canvas');
+  c.width = src.width; c.height = src.height;
+  c.getContext('2d').drawImage(src, 0, 0);
+  posterPhotos.push(c);
+  renderPosterThumbs();
+  msg.textContent = 'เพิ่มรูปที่เบลอแล้ว';
+});
+document.querySelectorAll('[data-poster-logo]').forEach(b => b.addEventListener('click', () => { posterLogoSide = b.dataset.posterLogo; document.getElementById('posterLogoInput').click(); }));
+document.getElementById('posterLogoInput').addEventListener('change', async e => {
+  const f = e.target.files[0];
+  e.target.value = '';
+  if (!f) return;
+  try {
+    posterLogos[posterLogoSide] = (await imageFileToCanvas(f, 320)).toDataURL('image/png');
+    document.getElementById('posterMsg').textContent = savePosterSettings() ? `บันทึกโลโก้${posterLogoSide === 'left' ? 'ซ้าย' : 'ขวา'}แล้ว` : 'พื้นที่เก็บในเบราว์เซอร์เต็ม บันทึกโลโก้ไม่ได้';
+  } catch (err) { document.getElementById('posterMsg').textContent = err.message; }
+});
+document.getElementById('posterLogoClear').addEventListener('click', () => { posterLogos = { left: '', right: '' }; savePosterSettings(); document.getElementById('posterMsg').textContent = 'ลบโลโก้แล้ว (จะใช้ตราวาดแทน)'; });
+['posterTitle', 'posterSubtitle', 'posterFooter', 'posterSlogan'].forEach(id => document.getElementById(id).addEventListener('input', savePosterSettings));
+loadPosterSettings();
+
+// ตัดคำภาษาไทยด้วย Intl.Segmenter (ไทยไม่เว้นวรรคระหว่างคำ) — ไม่มีให้ใช้ ตัดทีละตัวอักษรโดยไม่แยกสระ/วรรณยุกต์ออกจากพยัญชนะ
+const posterSegmenter = typeof Intl !== 'undefined' && Intl.Segmenter ? new Intl.Segmenter('th', { granularity: 'word' }) : null;
+const posterClusters = s => s.match(/[^ัิ-ฺ็-๎][ัิ-ฺ็-๎]*/g) || [];
+function posterWrap(ctx, para, maxW) {
+  const toks = posterSegmenter ? [...posterSegmenter.segment(para)].map(x => x.segment) : posterClusters(para);
+  const lines = [];
+  let line = '';
+  const push = () => { if (line.trim()) lines.push(line.trim()); line = ''; };
+  for (const tok of toks) {
+    if (ctx.measureText(line + tok).width <= maxW) { line += tok; continue; }
+    if (line.trim()) push();
+    if (ctx.measureText(tok).width <= maxW) { line = tok.trimStart(); continue; }
+    for (const c of posterClusters(tok)) {   // คำเดียวยาวเกินบรรทัด (เช่นเลขยาว) → ตัดตามตัวอักษร
+      if (ctx.measureText(line + c).width > maxW && line) push();
+      line += c;
+    }
+  }
+  push();
+  return lines.length ? lines : [''];
+}
+// หาขนาดตัวอักษรใหญ่สุดที่ข้อความทั้งหมดพอดีกรอบ — บรรทัดว่างนับครึ่งบรรทัด
+function posterFit(ctx, paras, w, h, font, maxSize, minSize, lh) {
+  for (let size = maxSize; size >= minSize; size--) {
+    ctx.font = font(size);
+    const lines = [];
+    paras.forEach(p => { if (!p.trim()) lines.push(null); else posterWrap(ctx, p, w).forEach(l => lines.push(l)); });
+    const height = lines.reduce((s, l) => s + (l === null ? size * lh * 0.5 : size * lh), 0);
+    if (height <= h || size === minSize) return { size, lines, height };
+  }
+}
+function roundRectPath(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+}
+function goldGradient(ctx, x0, y0, x1, y1) {
+  const g = ctx.createLinearGradient(x0, y0, x1, y1);
+  g.addColorStop(0, '#8a5a12'); g.addColorStop(.25, '#f6d77a'); g.addColorStop(.5, '#c9932c'); g.addColorStop(.75, '#ffe9a3'); g.addColorStop(1, '#9a6416');
+  return g;
+}
+function drawPosterBackground(ctx) {
+  const W = POSTER_W, H = POSTER_H;
+  const g = ctx.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, '#04122e'); g.addColorStop(.3, '#0a2c72'); g.addColorStop(.65, '#0c3c94'); g.addColorStop(1, '#030d24');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  const rg = ctx.createRadialGradient(W * .55, H * .45, 40, W * .55, H * .45, W * .85);
+  rg.addColorStop(0, 'rgba(90,160,255,.38)'); rg.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = rg; ctx.fillRect(0, 0, W, H);
+  // แสงเฉียง
+  let seed = 7;
+  const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  ctx.save();
+  for (let i = 0; i < 9; i++) {
+    const y0 = 200 + rnd() * 1100;
+    ctx.strokeStyle = `rgba(${rnd() > .5 ? '255,214,120' : '140,200,255'},${.05 + rnd() * .12})`;
+    ctx.lineWidth = 2 + rnd() * 10;
+    ctx.beginPath(); ctx.moveTo(-50, y0); ctx.lineTo(W + 50, y0 - 420 - rnd() * 200); ctx.stroke();
+  }
+  ctx.restore();
+  // เมืองยามค่ำคืนด้านล่าง (วาดเองแบบสุ่มคงที่)
+  ctx.save();
+  let x = 0;
+  while (x < W) {
+    const bw = 26 + rnd() * 48, bh = 40 + rnd() * 150, top = 1330 - bh;
+    ctx.fillStyle = `rgba(3,12,36,${.75 + rnd() * .2})`;
+    ctx.fillRect(x, top, bw, bh + 10);
+    ctx.fillStyle = 'rgba(255,205,110,.55)';
+    for (let wy = top + 8; wy < 1320; wy += 12) for (let wx = x + 5; wx < x + bw - 5; wx += 9) if (rnd() > .62) ctx.fillRect(wx, wy, 3, 4);
+    x += bw + 2;
+  }
+  ctx.restore();
+  // ธงชาติมุมซ้ายบน (แถบเฉียง แดง ขาว น้ำเงิน ขาว แดง)
+  ctx.save();
+  ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(190, 0); ctx.lineTo(0, 190); ctx.closePath(); ctx.clip();
+  [['#c8102e', 0, 40], ['#ffffff', 40, 70], ['#1a2f8a', 70, 130], ['#ffffff', 130, 160], ['#c8102e', 160, 190]].forEach(([col, a, b]) => {
+    ctx.fillStyle = col; ctx.beginPath(); ctx.moveTo(a, 0); ctx.lineTo(b, 0); ctx.lineTo(0, b); ctx.lineTo(0, a); ctx.closePath(); ctx.fill();
+  });
+  ctx.restore();
+  // เส้นทองโค้งใต้หัวภาพ
+  ctx.save();
+  ctx.lineWidth = 5; ctx.strokeStyle = goldGradient(ctx, 0, 0, W, 0);
+  ctx.beginPath(); ctx.moveTo(0, 168); ctx.bezierCurveTo(W * .3, 150, W * .7, 182, W, 160); ctx.stroke();
+  ctx.restore();
+}
+function drawPosterEmblem(ctx, cx, cy, r, dataUrl, img) {
+  if (img) {
+    const k = Math.min((r * 2) / img.width, (r * 2) / img.height);
+    ctx.drawImage(img, cx - img.width * k / 2, cy - img.height * k / 2, img.width * k, img.height * k);
+    return;
+  }
+  // ไม่มีโลโก้: ตราวาดเอง (วงทอง + ดาว)
+  ctx.save();
+  ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fillStyle = goldGradient(ctx, cx - r, cy - r, cx + r, cy + r); ctx.fill();
+  ctx.beginPath(); ctx.arc(cx, cy, r * .82, 0, Math.PI * 2); ctx.fillStyle = '#0a2463'; ctx.fill();
+  ctx.beginPath();
+  for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? r * .25 : r * .58; ctx.lineTo(cx + rr * Math.cos(a), cy + rr * Math.sin(a)); }
+  ctx.closePath(); ctx.fillStyle = goldGradient(ctx, cx - r, cy - r, cx + r, cy + r); ctx.fill();
+  ctx.restore();
+}
+function loadImg(src) {
+  return new Promise(resolve => { if (!src) return resolve(null); const i = new Image(); i.onload = () => resolve(i); i.onerror = () => resolve(null); i.src = src; });
+}
+function posterBodyText() {
+  const lines = document.getElementById('reportOutput').value.split('\n');
+  let s = lines.findIndex(l => /⚠️/.test(l));
+  if (s < 0) s = lines.findIndex(l => /^\s*1\./.test(l));
+  if (s < 0) s = 0;
+  let e = lines.findIndex((l, i) => i > s && /^\s*นำตัวผู้ถูกจับ/.test(l));
+  if (e < 0) e = lines.length;
+  return lines.slice(s, e).map(l => l.trim()).join('\n').replace(/\n{3,}/g, '\n\n').trim();
+}
+function posterDateText() {
+  const p = thaiDateParts('issueDate');
+  if (!p.day) return '';
+  const mi = THAI_MONTHS.indexOf(p.month);
+  return `วันที่ ${p.day} ${mi >= 0 ? THAI_MONTHS_SHORT[mi] : p.month} ${p.year}`;
+}
+async function drawPoster() {
+  const canvas = document.getElementById('posterCanvas');
+  canvas.width = POSTER_W * POSTER_SCALE; canvas.height = POSTER_H * POSTER_SCALE;
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(POSTER_SCALE, 0, 0, POSTER_SCALE, 0, 0);
+  try {
+    await Promise.race([Promise.all(['700 40px Kanit', '500 30px Kanit', '700 30px Sarabun'].map(f => document.fonts.load(f))), new Promise(r => setTimeout(r, 4000))]);
+  } catch (e) {}
+  const KANIT = (w, s) => `${w} ${s}px Kanit, 'Sarabun', Tahoma, sans-serif`;
+  const W = POSTER_W;
+  drawPosterBackground(ctx);
+  const [logoL, logoR] = await Promise.all([loadImg(posterLogos.left), loadImg(posterLogos.right)]);
+  drawPosterEmblem(ctx, 112, 88, 64, posterLogos.left, logoL);
+  drawPosterEmblem(ctx, W - 112, 88, 64, posterLogos.right, logoR);
+  // หัวภาพ
+  ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+  let ts = 78;
+  ctx.font = KANIT(700, ts);
+  while (ctx.measureText(posterVal('posterTitle')).width > 640 && ts > 40) ctx.font = KANIT(700, --ts);
+  ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.6)'; ctx.shadowBlur = 12; ctx.shadowOffsetY = 4;
+  ctx.fillStyle = '#ffffff'; ctx.fillText(posterVal('posterTitle'), W / 2, 100); ctx.restore();
+  ctx.font = KANIT(500, 24);
+  if ('letterSpacing' in ctx) ctx.letterSpacing = '6px';
+  ctx.fillStyle = '#e8f0ff'; ctx.fillText(posterVal('posterSubtitle'), W / 2, 142);
+  if ('letterSpacing' in ctx) ctx.letterSpacing = '0px';
+  // แถบแดง: สายการบังคับบัญชา
+  const chain = document.getElementById('reportCommandChain').value.split('\n').map(l => l.trim()).filter(Boolean);
+  const bx = 40, by = 186, bw = W - 80, bh = 146;
+  roundRectPath(ctx, bx, by, bw, bh, 28);
+  const rg = ctx.createLinearGradient(0, by, 0, by + bh); rg.addColorStop(0, '#d11a22'); rg.addColorStop(1, '#7a050b');
+  ctx.fillStyle = rg; ctx.fill();
+  ctx.lineWidth = 5; ctx.strokeStyle = goldGradient(ctx, bx, 0, bx + bw, 0); ctx.stroke();
+  if (chain.length) {
+    const paras = chain.map((l, i) => (i === 0 ? 'ภายใต้การอำนวยการของ  ' : '') + l);
+    const fit = posterFit(ctx, paras, bw - 60, bh - 24, s => KANIT(500, s), 30, 15, 1.28);
+    ctx.font = KANIT(500, fit.size); ctx.fillStyle = '#ffffff';
+    let y = by + (bh - fit.height) / 2 + fit.size * 1.0;
+    fit.lines.forEach(l => { if (l !== null) ctx.fillText(l, W / 2, y); y += fit.size * 1.28 * (l === null ? .5 : 1); });
+  }
+  // แถบวันที่ + นาฬิกา
+  const date = posterDateText();
+  const dx = 470, dy = 352, dw = W - 40 - dx, dh = 72;
+  roundRectPath(ctx, dx, dy, dw, dh, 36); ctx.fillStyle = '#071a45'; ctx.fill();
+  ctx.lineWidth = 4; ctx.strokeStyle = goldGradient(ctx, dx, 0, dx + dw, 0); ctx.stroke();
+  const ccx = dx + 4, ccy = dy + dh / 2;
+  ctx.beginPath(); ctx.arc(ccx, ccy, 46, 0, Math.PI * 2); ctx.fillStyle = goldGradient(ctx, ccx - 46, ccy - 46, ccx + 46, ccy + 46); ctx.fill();
+  ctx.beginPath(); ctx.arc(ccx, ccy, 36, 0, Math.PI * 2); ctx.fillStyle = '#0a2463'; ctx.fill();
+  ctx.strokeStyle = '#f6d77a'; ctx.lineWidth = 4; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(ccx, ccy); ctx.lineTo(ccx, ccy - 22); ctx.moveTo(ccx, ccy); ctx.lineTo(ccx + 16, ccy + 6); ctx.stroke();
+  if (date) {
+    let dsz = 40; ctx.font = KANIT(700, dsz);
+    while (ctx.measureText(date).width > dw - 90 && dsz > 22) ctx.font = KANIT(700, --dsz);
+    ctx.fillStyle = goldGradient(ctx, dx + 60, dy, dx + dw, dy + dh);
+    ctx.fillText(date, dx + 50 + (dw - 50) / 2, dy + dh / 2 + dsz * .36);
+  }
+  // รูปด้านซ้าย (1–4 รูป) / ไม่มีรูป = กล่องข้อความเต็มความกว้าง
+  const photos = posterPhotos.slice(0, 4);
+  const areaTop = 352, areaBottom = 1300;
+  if (photos.length) {
+    const fw = 350, gap = 24;
+    const fh = Math.min(262, (areaBottom - areaTop - gap * (photos.length - 1)) / photos.length);
+    let y = areaTop + ((areaBottom - areaTop) - (fh * photos.length + gap * (photos.length - 1))) / 2;
+    photos.forEach(img => {
+      ctx.save();
+      ctx.shadowColor = 'rgba(255,150,40,.55)'; ctx.shadowBlur = 18;
+      roundRectPath(ctx, 40, y, fw, fh, 16); ctx.fillStyle = '#f08a24'; ctx.fill();
+      ctx.restore();
+      ctx.save();
+      roundRectPath(ctx, 46, y + 6, fw - 12, fh - 12, 12); ctx.clip();
+      const k = Math.max((fw - 12) / img.width, (fh - 12) / img.height);
+      ctx.drawImage(img, 46 + (fw - 12 - img.width * k) / 2, y + 6 + (fh - 12 - img.height * k) / 2, img.width * k, img.height * k);
+      ctx.restore();
+      y += fh + gap;
+    });
+  }
+  // กล่องข้อความรายงาน
+  const px = photos.length ? 420 : 40, py = 446, pw = W - 40 - px, ph = 854;
+  roundRectPath(ctx, px, py, pw, ph, 22);
+  const pg = ctx.createLinearGradient(0, py, 0, py + ph); pg.addColorStop(0, '#f4f8ff'); pg.addColorStop(1, '#cfe0fb');
+  ctx.fillStyle = pg; ctx.fill();
+  ctx.lineWidth = 6; ctx.strokeStyle = goldGradient(ctx, px, py, px + pw, py + ph); ctx.stroke();
+  const body = posterBodyText();
+  if (body) {
+    const fit = posterFit(ctx, body.split('\n'), pw - 56, ph - 56, s => `700 ${s}px Sarabun, Tahoma, sans-serif`, 34, 13, 1.3);
+    ctx.font = `700 ${fit.size}px Sarabun, Tahoma, sans-serif`; ctx.fillStyle = '#0a1d4a';
+    let y = py + 28 + Math.max(0, (ph - 56 - fit.height) / 2) + fit.size;
+    fit.lines.forEach(l => { if (l !== null) ctx.fillText(l, px + pw / 2, y); y += fit.size * 1.3 * (l === null ? .5 : 1); });
+  }
+  // ท้ายภาพ
+  const fy = 1318;
+  const fg = ctx.createLinearGradient(0, fy, 0, POSTER_H); fg.addColorStop(0, 'rgba(2,8,26,.55)'); fg.addColorStop(1, 'rgba(2,8,26,.95)');
+  ctx.fillStyle = fg; ctx.fillRect(0, fy, W, POSTER_H - fy);
+  ctx.fillStyle = goldGradient(ctx, 0, 0, W, 0); ctx.fillRect(0, fy, W, 4);
+  ctx.font = KANIT(700, 48); ctx.fillStyle = goldGradient(ctx, W * .3, fy, W * .7, fy + 60);
+  ctx.fillText(posterVal('posterFooter'), W / 2, fy + 74);
+  ctx.font = KANIT(500, 27); ctx.fillStyle = '#ffffff';
+  ctx.fillText(posterVal('posterSlogan'), W / 2, fy + 126);
+  return { body, chain, date };
+}
+let posterBlob = null;
+document.getElementById('posterGenBtn').addEventListener('click', async () => {
+  const msg = document.getElementById('posterMsg');
+  if (!document.getElementById('reportOutput').value.trim()) buildOperationReport();
+  msg.textContent = 'กำลังวาดภาพ...';
+  try {
+    const r = await drawPoster();
+    const canvas = document.getElementById('posterCanvas');
+    canvas.style.display = 'block';
+    posterBlob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', .92));
+    document.getElementById('posterActions').style.display = '';
+    const file = posterBlob && new File([posterBlob], 'report.jpg', { type: 'image/jpeg' });
+    document.getElementById('posterShareBtn').style.display = file && navigator.canShare && navigator.canShare({ files: [file] }) ? '' : 'none';
+    const warn = [!r.chain.length && 'ยังไม่ได้กรอกสายการบังคับบัญชา', !r.date && 'ยังไม่ได้ระบุวันที่ (ช่องวันที่ออกหนังสือ)', !r.body && 'ยังไม่มีข้อความรายงาน'].filter(Boolean);
+    msg.textContent = (warn.length ? '⚠️ ' + warn.join(' · ') + ' — ' : '') + 'สร้างภาพแล้ว ตรวจข้อความในภาพก่อนส่ง';
+  } catch (e) { msg.textContent = 'สร้างภาพไม่สำเร็จ: ' + (e.message || e); }
+});
+const posterFileName = () => `รายงาน_${(posterDateText().replace(/^วันที่\s*/, '') || 'ภาพ').replace(/[\s/]+/g, '-')}.jpg`;
+document.getElementById('posterDownloadBtn').addEventListener('click', () => { if (posterBlob) downloadBlob(posterBlob, posterFileName()); });
+document.getElementById('posterShareBtn').addEventListener('click', async () => {
+  if (!posterBlob) return;
+  try { await navigator.share({ files: [new File([posterBlob], posterFileName(), { type: 'image/jpeg' })] }); } catch (e) {}
+});
 document.getElementById('copyReportBtn').addEventListener('click', async () => {
   const ta = document.getElementById('reportOutput');
   const msg = document.getElementById('reportMsg');
