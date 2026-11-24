@@ -176,6 +176,8 @@
   .poster-thumbs .pt button { position: absolute; top: 1px; right: 1px; width: 22px; height: 22px; border-radius: 50%; border: none; background: rgba(0,0,0,.7); color: #fff; font-size: 14px; line-height: 1; cursor: pointer; padding: 0; }
   .poster-settings { margin: 8px 0 0; font-size: 15px; }
   .canva-copy-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .poster-bg-prompt { margin-top: 10px; padding: 10px 12px; border: 1px solid #B68D40; border-radius: 8px; background: #1E1A10; font-size: 14.5px; color: #E8D9B5; display: flex; flex-direction: column; gap: 6px; }
+  .poster-bg-prompt .btn { margin-top: 0; }
   .canva-copy-row .btn { width: auto; flex: 1 1 auto; margin-top: 0; }
   .poster-settings summary { cursor: pointer; color: #9B968D; font-size: 14px; margin-bottom: 6px; }
   .poster-canvas { width: 100%; max-width: 420px; display: block; margin: 10px auto 0; border-radius: 6px; box-shadow: 0 4px 18px rgba(0,0,0,.5); }
@@ -628,7 +630,7 @@
             <p class="msg" id="posterEditMsg"></p>
           </div>
           <label class="f" style="margin-top:8px"><span>ชื่อผู้ต้องหาในภาพ</span>
-            <select id="posterNameMode"><option value="short">ย่อนามสกุล (เช่น นายสมชาย ใ.)</option><option value="full">ชื่อ-นามสกุลเต็ม</option></select>
+            <select id="posterNameMode"><option value="nick">ชื่อเล่นอย่างเดียว (เช่น นายแดง) — แนะนำ กัน PDPA</option><option value="short">ชื่อจริง + ย่อนามสกุล (เช่น นายสมชาย ใ.)</option><option value="full">ชื่อ-นามสกุลเต็ม</option></select>
           </label>
           <p class="note" style="margin-top:4px">🔒 ภาพนี้สำหรับลงสาธารณะ: ระบบตัด <b>เลขบัตรประชาชน วันเกิด บ้านเลขที่/หมู่/ซอย/ถนน และเบอร์โทร</b> ออกจากภาพให้เสมอ (ข้อความรายงาน LINE ด้านบนยังครบเหมือนเดิม)</p>
           <p class="field-group-label" style="margin-top:12px">ทำใน Canva เอง: คัดลอกไปวางในแม่แบบ</p>
@@ -662,6 +664,10 @@
             <p class="note" id="posterBgNote">ใช้ไฟล์ PNG ขนาด 1055×1491 (หรือ 2 เท่า) ที่ลบชื่อในแถบแดงและกรอบรูปออกแล้ว — เก็บในเครื่องนี้เท่านั้น ไม่ขึ้นเว็บ/GitHub ใช้ตามสิทธิ์ Canva ของเจ้าของแม่แบบ</p>
             <p class="note">ค่าพวกนี้และโลโก้จำไว้ในเครื่องนี้ ไม่ต้องตั้งใหม่ทุกครั้ง (โลโก้ใช้ไฟล์ PNG พื้นใสจะสวยที่สุด)</p>
           </details>
+          <div id="posterBgPrompt" class="poster-bg-prompt" style="display:none">
+            <span>ภาพยังเป็นแบบที่ระบบวาดเอง — อยากได้หน้าตาเหมือนแม่แบบ Canva ใส่ไฟล์พื้นหลังครั้งเดียวต่อเครื่อง</span>
+            <button type="button" class="btn btn-ghost btn-sm" id="posterBgPromptBtn">🖼️ เลือกไฟล์พื้นหลัง Canva</button>
+          </div>
           <button type="button" class="btn btn-primary" id="posterGenBtn" style="margin-top:10px">สร้างภาพรายงาน</button>
           <p class="msg" id="posterMsg"></p>
           <canvas id="posterCanvas" class="poster-canvas" style="display:none"></canvas>
@@ -4288,11 +4294,12 @@ function loadPosterSettings() {
   let s = {};
   try { s = JSON.parse(localStorage.getItem(POSTER_KEY) || '{}') || {}; } catch (e) {}
   ['posterTitle', 'posterSubtitle', 'posterFooter', 'posterSlogan'].forEach(id => { document.getElementById(id).value = s[id] || ''; });
-  document.getElementById('posterNameMode').value = s.posterNameMode === 'full' ? 'full' : 'short';
+  // ค่าเริ่มต้น = ชื่อเล่น (ผู้ใช้สั่ง 2569-11-24 กัน PDPA) — ค่าเก่า 'short' ที่บันทึกไว้ก่อนมีตัวเลือกนี้ ก็เปลี่ยนเป็นชื่อเล่น
+  document.getElementById('posterNameMode').value = s.posterNameMode === 'full' ? 'full' : s.posterNameMode === 'short' && s.nameModeV2 ? 'short' : 'nick';
   posterLogos = { left: s.logoLeft || '', right: s.logoRight || '' };
 }
 function savePosterSettings() {
-  const s = { logoLeft: posterLogos.left, logoRight: posterLogos.right };
+  const s = { logoLeft: posterLogos.left, logoRight: posterLogos.right, nameModeV2: true };
   ['posterTitle', 'posterSubtitle', 'posterFooter', 'posterSlogan', 'posterNameMode'].forEach(id => { s[id] = v(id); });
   try { localStorage.setItem(POSTER_KEY, JSON.stringify(s)); return true; } catch (e) { return false; }
 }
@@ -4328,6 +4335,25 @@ function posterBakedPhoto(p) {
     pixelateRect(g, x, y, w, h, Math.max(10, Math.round(Math.max(w, h) / 7)));
   });
   return c;
+}
+// ตัดรูปลงกรอบ (cover) โดยให้จุดสำคัญอยู่กลางกรอบ: กลางกลุ่มกรอบเบลอหน้า (มีหน้าคน) ไม่มี = ค่อนบน 35%
+// รูปคนถ่ายแนวตั้งลงกรอบแนวนอน เดิมตัดตรงกลาง → หัวหลุดกรอบ
+function posterPhotoForDraw(p) {
+  const on = p.rects.filter(r => r.on);
+  let ax = 0.5, ay = 0.35;
+  if (on.length) {
+    const x0 = Math.min(...on.map(r => r.x)), x1 = Math.max(...on.map(r => r.x + r.w));
+    const y0 = Math.min(...on.map(r => r.y)), y1 = Math.max(...on.map(r => r.y + r.h));
+    ax = (x0 + x1) / 2 / p.orig.width; ay = (y0 + y1) / 2 / p.orig.height;
+  }
+  return { img: posterBakedPhoto(p), ax, ay };
+}
+function drawCover(ctx, img, x, y, w, h, ax, ay) {
+  const k = Math.max(w / img.width, h / img.height);
+  const dw = img.width * k, dh = img.height * k;
+  const dx = Math.min(0, Math.max(w - dw, w / 2 - ax * dw));
+  const dy = Math.min(0, Math.max(h - dh, h / 2 - ay * dh));
+  ctx.drawImage(img, x + dx, y + dy, dw, dh);
 }
 function renderPosterThumbs() {
   const box = document.getElementById('posterThumbs');
@@ -4480,10 +4506,22 @@ function posterPublicText(text, nameMode) {
       const r = (i >= 0 ? rest.slice(i) : rest.replace(/(?:ซ\.|ซอย|ถ\.|ถนน)\s*\S+/g, '').replace(/(?:ม\.|หมู่ที่|หมู่)\s*/g, '').replace(/[0-9๐-๙]+(?:\/[0-9๐-๙]+)?/g, '').replace(/[-–\/]+/g, ' ')).trim();
       return r ? 'ที่อยู่ ' + r : '';
     });
-  if (nameMode !== 'full') {
+  if (nameMode !== 'full' && nameMode !== 'short') {
+    // ค่าเริ่มต้น (ลงสาธารณะ กัน PDPA): เหลือคำนำหน้า + ชื่อเล่น — "นายสมชายหรือแดง ใจดี" → "นายแดง"
+    // ไม่มีชื่อเล่น → อักษรแรกของชื่อ "นาย ส." · เด็ก/เยาวชน → ไม่แสดงชื่อเลย (กฎหมายห้ามเปิดเผยตัวเด็ก)
+    t = t.replace(new RegExp(`(?<=^|\\s|[0-9๐-๙]\\.)(${POSTER_TITLE_RE})\\s?(\\S+?)(?:หรือ\\s?(\\S+))?(?:\\s+(?!อายุ|สัญชาติ|เชื้อชาติ|เลข|ที่อยู่|วันเดือนปีเกิด)\\S+)?(?=\\s|$)`, 'gm'),
+      (m, title, first, nick) => {
+        if (/^(?:เด็กชาย|เด็กหญิง|ด\.ช\.|ด\.ญ\.)$/.test(title)) return `${title} (ขอสงวนชื่อ)`;
+        if (nick) return `${title}${nick}`;
+        const ini = (first.match(/^[เแโใไ]?[ก-ฮA-Za-z]/) || [first.slice(0, 1)])[0];
+        return `${title} ${ini}.`;
+      });
+  } else if (nameMode === 'short') {
     // "1.นายสมชาย(หรือเล่น) ใจดี" → "1.นายสมชาย(หรือเล่น) ใ." (ทุกที่ที่มีคำนำหน้านาม)
     // คำนำหน้าต้องอยู่ต้นบรรทัด/หลังช่องว่าง/หลัง "1." — ไม่ใช่ "นาย" ในชื่อสถานที่อย่าง "อ.นายายอาม"
-    t = t.replace(new RegExp(`(?<=^|\\s|[0-9๐-๙]\\.)(${POSTER_TITLE_RE}\\s?[ก-๙]+(?:หรือ[ก-๙]+)?)\\s+([เแโใไ]?[ก-ฮ])[ก-๙]*`, 'gm'), '$1 $2.');
+    // ชื่อ/ชื่อเล่นเป็นตัวอะไรก็ได้ที่ไม่ใช่ช่องว่าง (ชื่อเล่นภาษาอังกฤษ "หรือtest" เคยทำให้นามสกุลหลุดเต็ม)
+    // "หรือ" แล้วเว้นวรรคก่อนชื่อเล่น ก็นับเป็นส่วนของชื่อ — นามสกุลไทยหรืออังกฤษก็ย่อ
+    t = t.replace(new RegExp(`(?<=^|\\s|[0-9๐-๙]\\.)(${POSTER_TITLE_RE}\\s?\\S+(?:(?<=หรือ)\\s+\\S+)?)\\s+(?!อายุ|สัญชาติ|เชื้อชาติ|เลข|ที่อยู่|วันเดือนปีเกิด)([เแโใไ]?[ก-ฮA-Za-z])\\S*`, 'gm'), '$1 $2.');
   }
   return t.replace(/[ \t]{2,}/g, ' ').replace(/ +\n/g, '\n').trim();
 }
@@ -4533,11 +4571,13 @@ let posterBgUrl = '';
   renderPosterBgNote();
 })();
 function renderPosterBgNote() {
+  document.getElementById('posterBgPrompt').style.display = posterBgUrl ? 'none' : '';
   const el = document.getElementById('posterBgNote');
   if (posterBgUrl) { el.textContent = '✓ กำลังใช้พื้นหลังของคุณ (เก็บในเครื่องนี้) — ภาพรายงานจะออกมาตามแม่แบบนี้'; el.style.color = '#3FB950'; }
   else { el.textContent = 'ใช้ไฟล์ PNG ขนาด 1055×1491 (หรือ 2 เท่า) ที่ลบชื่อในแถบแดงและกรอบรูปออกแล้ว — เก็บในเครื่องนี้เท่านั้น ไม่ขึ้นเว็บ/GitHub ใช้ตามสิทธิ์ Canva ของเจ้าของแม่แบบ'; el.style.color = ''; }
 }
 document.getElementById('posterBgBtn').addEventListener('click', () => document.getElementById('posterBgInput').click());
+document.getElementById('posterBgPromptBtn').addEventListener('click', () => document.getElementById('posterBgInput').click());
 document.getElementById('posterBgInput').addEventListener('change', async e => {
   const f = e.target.files[0];
   e.target.value = '';
@@ -4586,11 +4626,10 @@ function drawPosterOnTemplate(ctx, bg, chain, date, body, photos) {
     const area = { x: 67, y: 462, w: 405, h: 755 }, gap = 16;
     const fh = Math.min(250, (area.h - gap * (photos.length - 1)) / photos.length);
     let y = area.y + (area.h - (fh * photos.length + gap * (photos.length - 1))) / 2;
-    photos.forEach(img => {
+    photos.forEach(ph => {
       ctx.save();
       roundRectPath(ctx, area.x, y, area.w, fh, 22); ctx.clip();
-      const k = Math.max(area.w / img.width, fh / img.height);
-      ctx.drawImage(img, area.x + (area.w - img.width * k) / 2, y + (fh - img.height * k) / 2, img.width * k, img.height * k);
+      drawCover(ctx, ph.img, area.x, y, area.w, fh, ph.ax, ph.ay);
       ctx.restore();
       const g = ctx.createRadialGradient(area.x + area.w / 2, y + fh / 2, 10, area.x + area.w / 2, y + fh / 2, area.w * .7);
       g.addColorStop(0, '#ffde59'); g.addColorStop(1, '#ff914d');
@@ -4748,7 +4787,7 @@ async function drawPoster() {
     const chainT = document.getElementById('reportCommandChain').value.split('\n').map(l => l.trim()).filter(Boolean);
     const dateT = posterDateText();
     const bodyT = posterPublicText(posterBodyText(), v('posterNameMode'));
-    drawPosterOnTemplate(ctx, bgImg, chainT, dateT, bodyT, posterPhotos.slice(0, 4).map(posterBakedPhoto));
+    drawPosterOnTemplate(ctx, bgImg, chainT, dateT, bodyT, posterPhotos.slice(0, 4).map(posterPhotoForDraw));
     return { body: bodyT, chain: chainT, date: dateT };
   }
   drawPosterBackground(ctx);
@@ -4797,21 +4836,20 @@ async function drawPoster() {
     ctx.fillText(date, dx + 50 + (dw - 50) / 2, dy + dh / 2 + dsz * .36);
   }
   // รูปด้านซ้าย (1–4 รูป) / ไม่มีรูป = กล่องข้อความเต็มความกว้าง
-  const photos = posterPhotos.slice(0, 4).map(posterBakedPhoto);
+  const photos = posterPhotos.slice(0, 4).map(posterPhotoForDraw);
   const areaTop = 352, areaBottom = 1300;
   if (photos.length) {
     const fw = 350, gap = 24;
     const fh = Math.min(262, (areaBottom - areaTop - gap * (photos.length - 1)) / photos.length);
     let y = areaTop + ((areaBottom - areaTop) - (fh * photos.length + gap * (photos.length - 1))) / 2;
-    photos.forEach(img => {
+    photos.forEach(ph => {
       ctx.save();
       ctx.shadowColor = 'rgba(255,150,40,.55)'; ctx.shadowBlur = 18;
       roundRectPath(ctx, 40, y, fw, fh, 16); ctx.fillStyle = '#f08a24'; ctx.fill();
       ctx.restore();
       ctx.save();
       roundRectPath(ctx, 46, y + 6, fw - 12, fh - 12, 12); ctx.clip();
-      const k = Math.max((fw - 12) / img.width, (fh - 12) / img.height);
-      ctx.drawImage(img, 46 + (fw - 12 - img.width * k) / 2, y + 6 + (fh - 12 - img.height * k) / 2, img.width * k, img.height * k);
+      drawCover(ctx, ph.img, 46, y + 6, fw - 12, fh - 12, ph.ax, ph.ay);
       ctx.restore();
       y += fh + gap;
     });
