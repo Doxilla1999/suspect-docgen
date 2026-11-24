@@ -82,7 +82,7 @@
   .qf-file-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 8px; }
   .qf-file-row .btn { width: auto; flex: none; margin: 0; padding: 7px 14px; }
   .qf-file-row .note { margin: 0; flex: 1; min-width: 200px; }
-  #quickFillPanel.dragover { outline: 2px dashed #B68D40; outline-offset: -6px; }
+  #quickFillPanel.dragover, #warrantPastePanel.dragover { outline: 2px dashed #B68D40; outline-offset: -6px; }
   .m22-box { margin: 4px 0 8px; padding: 8px 10px; border: 1px dashed #33393F; border-radius: 8px; }
   .m22-box summary { cursor: pointer; font-size: 14px; color: #C9C5BC; }
   .olr-duty-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 6px; }
@@ -688,7 +688,12 @@
         <button type="button" class="modal-close" data-close-modal>&times;</button>
         <h2>รายละเอียดหนังสือส่งตัวผู้ต้องหาตามหมายจับของศาล</h2>
         <p class="modal-person-tag"></p>
-        <div class="panel" style="background:#1E1A10;border-color:#6B5626;margin-bottom:10px">
+        <div class="panel" id="warrantPastePanel" style="background:#1E1A10;border-color:#6B5626;margin-bottom:10px">
+          <div class="qf-file-row" style="margin:0 0 8px">
+            <button type="button" class="btn btn-ghost btn-sm" id="warrantFileBtn">📄 เลือกไฟล์หมายจับ (PDF / รูปถ่าย)</button>
+            <span class="note">หรือลากไฟล์มาวางในกรอบนี้ — PDF ที่สแกนมาหรือรูปถ่าย ระบบสแกนเป็นข้อความให้ (ประมวลผลในเครื่อง)</span>
+          </div>
+          <input type="file" id="warrantFile" accept=".pdf,application/pdf,image/*" style="display:none">
           <textarea id="warrantPasteText" rows="4" placeholder="วางข้อความจากหมายจับทั้งก้อนตรงนี้ (คัดลอกจากไฟล์หมาย/ระบบศาล หรือ OCR) เช่น&#10;คดีหมายเลขดำที่ ยฝ๔๒๓/๒๕๖๙ ... ศาลจังหวัดจันทบุรี ที่ ๒๓๒/๒๕๖๙ วันที่ ๒๓ เดือน มิถุนายน พุทธศักราช ๒๕๖๙ ... ในความเรื่องนี้ต้องหาว่ากระทำความผิดฐาน ครอบครองยาเสพติดให้โทษ..."></textarea>
           <button type="button" class="btn btn-primary btn-sm" id="warrantPasteBtn" style="margin-top:8px">แยกข้อมูลจากหมายจับกรอกให้อัตโนมัติ</button>
           <p class="note" id="warrantPasteMsg" style="margin-top:6px">ระบบจะจับ ศาล / หมายจับเลขที่ / คดีหมายเลขดำ-แดง / ลงวันที่ / ข้อหา จากข้อความแล้วกรอกช่องด้านล่าง (เลขไทยคงไว้ตามหมาย) ตรวจซ้ำก่อนใช้ — ในหนังสือตัวเลขทุกตัวจะออกเป็นเลขไทยเสมอ</p>
@@ -3522,8 +3527,52 @@ async function ocrImageFile(file, onProgress) {
   } finally { await worker.terminate(); }
 }
 async function extractTextFromFile(file, onProgress) {
-  if (/\.(txt|text)$/i.test(file.name) || file.type === 'text/plain') return await file.text();
-  if (/^image\//.test(file.type) || /\.(jpe?g|png|webp|bmp)$/i.test(file.name)) return await ocrImageFile(file, onProgress);
+  return (await extractTextDetailed(file, onProgress)).text;
+}
+// อ่านข้อความจากไฟล์: .txt / รูป (OCR) / PDF — PDF ที่มีข้อความในไฟล์อ่านตรง ๆ ถ้าเป็น PDF สแกน (เป็นรูปล้วน)
+// ข้อความจะว่าง → เรนเดอร์ทีละหน้าเป็นรูปแล้ว OCR ต่อ (ประมวลผลในเครื่อง) คืน { text, method: 'text'|'pdf'|'ocr'|'pdf-ocr' }
+const PDF_OCR_MAX_PAGES = 4;
+// ทำรูปเป็นขาวดำ (แบ่งด้วยค่ากลางแบบ Otsu) — เอกสารที่ถ่ายด้วยมือถือ/สแกนสีหม่น OCR อ่านแม่นขึ้น
+function binarizeCanvas(c) {
+  const g = c.getContext('2d'), d = g.getImageData(0, 0, c.width, c.height), p = d.data;
+  const hist = new Array(256).fill(0), lum = new Uint8Array(c.width * c.height);
+  for (let i = 0; i < lum.length; i++) { lum[i] = (0.299 * p[i * 4] + 0.587 * p[i * 4 + 1] + 0.114 * p[i * 4 + 2]) | 0; hist[lum[i]]++; }
+  let sum = 0; for (let i = 0; i < 256; i++) sum += i * hist[i];
+  let sumB = 0, wB = 0, best = 0, thr = 160;
+  for (let i = 0; i < 256; i++) {
+    wB += hist[i]; if (!wB) continue;
+    const wF = lum.length - wB; if (!wF) break;
+    sumB += i * hist[i];
+    const v = wB * wF * (sumB / wB - (sum - sumB) / wF) ** 2;
+    if (v > best) { best = v; thr = i; }
+  }
+  for (let i = 0; i < lum.length; i++) { const val = lum[i] > thr ? 255 : 0; p[i * 4] = p[i * 4 + 1] = p[i * 4 + 2] = val; }
+  g.putImageData(d, 0, 0);
+  return c;
+}
+// opts (ใช้กับเอกสารราชการเช่นหมายจับ): { lang: 'tha', psm: '6' (อ่านเป็นบล็อกข้อความ), binarize: true }
+async function ocrCanvases(canvases, onProgress, opts = {}) {
+  await loadTesseract();
+  let page = 1;
+  const worker = await Tesseract.createWorker(opts.lang || 'tha+eng', 1, {
+    logger: m => { if (onProgress && m.status === 'recognizing text') onProgress(Math.round(m.progress * 100), page, canvases.length); }
+  });
+  try {
+    if (opts.psm) await worker.setParameters({ tessedit_pageseg_mode: opts.psm, preserve_interword_spaces: '1' });
+    let text = '';
+    for (; page <= canvases.length; page++) {
+      const c = canvases[page - 1];
+      text += (await worker.recognize(opts.binarize ? binarizeCanvas(c) : c)).data.text + '\n';
+    }
+    return text;
+  } finally { await worker.terminate(); }
+}
+async function extractTextDetailed(file, onProgress, opts = {}) {
+  if (/\.(txt|text)$/i.test(file.name) || file.type === 'text/plain') return { text: await file.text(), method: 'text' };
+  if (/^image\//.test(file.type) || /\.(jpe?g|png|webp|bmp)$/i.test(file.name)) {
+    if (!opts.binarize && !opts.psm && !opts.lang) return { text: await ocrImageFile(file, p => onProgress && onProgress(p, 1, 1)), method: 'ocr' };
+    return { text: await ocrCanvases([await imageToUpscaledCanvas(file)], onProgress, opts), method: 'ocr' };
+  }
   if (typeof pdfjsLib === 'undefined') throw new Error('ยังโหลดตัวอ่าน PDF ไม่สำเร็จ (ต้องต่ออินเทอร์เน็ต)');
   pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
   const pdf = await pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
@@ -3532,7 +3581,23 @@ async function extractTextFromFile(file, onProgress) {
     const content = await (await pdf.getPage(i)).getTextContent();
     text += content.items.map(it => it.str).join(' ') + '\n';
   }
-  return text;
+  // มีตัวอักษรจริงพอสมควร = PDF ที่มีข้อความ ใช้ได้เลย
+  if (text.replace(/[\s.\-_]/g, '').length >= 40) return { text, method: 'pdf' };
+  const pages = Math.min(pdf.numPages, PDF_OCR_MAX_PAGES);
+  const canvases = [];
+  for (let i = 1; i <= pages; i++) {
+    const page = await pdf.getPage(i);
+    const base = page.getViewport({ scale: 1 });
+    const viewport = page.getViewport({ scale: Math.min(4, 2400 / Math.max(base.width, base.height)) });
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(viewport.width); canvas.height = Math.round(viewport.height);
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+    // intent 'print' = ไม่รอจังหวะวาดหน้าจอ (requestAnimationFrame) — ถ้าผู้ใช้สลับแท็บระหว่างอ่าน การเรนเดอร์ปกติจะค้าง
+    await page.render({ canvasContext: ctx, viewport, intent: 'print' }).promise;
+    canvases.push(canvas);
+  }
+  return { text: await ocrCanvases(canvases, onProgress, opts), method: 'pdf-ocr', pages, totalPages: pdf.numPages };
 }
 // ป้ายกำกับที่ใช้เป็นจุดตัดค่าของแต่ละช่องในแบบพิมพ์ทะเบียนราษฎร
 // ป้ายกำกับของแบบพิมพ์ทะเบียนราษฎร — รองรับทั้งแบบใบพิมพ์ (ชื่อ-ชื่อสกุล/อายุ) และแบบหน้าจอระบบ
@@ -4049,54 +4114,254 @@ olrAddDestRow();
 
 // ---- แยกข้อมูลจากข้อความหมายจับทั้งก้อน (เฉพาะช่องของใบปะหน้าส่งศาล ไม่ยุ่งกับตัวแยกอื่น) ----
 function thaiDigitsToArabic(s) { return s.replace(/[๐-๙]/g, d => String.fromCharCode(d.charCodeAt(0) - 0x0E50 + 48)); }
-function parseWarrantText(raw) {
+// ข้อหาที่ได้จาก OCR: ข้อความต่อท้ายมักเป็นขยะจากเส้นประ/ขอบกระดาษ/ลายมือ → ตัดทิ้ง
+// ทีละบรรทัด: ลบ "|" (ขอบกระดาษ/ตารางที่อ่านเป็นเส้นตั้ง) และตัวอักษรหลงท้ายบรรทัด
+// บรรทัดที่แทบไม่มีพยัญชนะไทย = ขยะ → จบข้อหา, เอาไม่เกิน 3 บรรทัด
+// แล้วตัดที่ "กรณี/หลักฐาน" (หัวข้อถัดไปที่อ่านเพี้ยน) หรือวรรณยุกต์/สระซ้อนกันผิดปกติ
+const OCR_GARBAGE_RE = /กรณี|หลักฐาน|ได้หรือน่าจะได้|[ัิ-ฺ็-๎]{3,}|(.)\1{3,}|[“”]{2,}/;
+function cleanOcrCharge(s) {
+  const consonants = x => (x.match(/[ก-ฮ]/g) || []).length;
+  const lines = [];
+  for (const raw of s.split('\n')) {
+    let line = raw.replace(/\|/g, ' ').replace(/\s{3,}\S{1,2}\s*$/, '').trim();
+    const g = line.search(OCR_GARBAGE_RE);
+    if (g >= 0) {
+      // เจอขยะกลางบรรทัด: เก็บเฉพาะส่วนหน้าถ้ายาวพอเป็นข้อความจริง แล้วจบข้อหา
+      const head = line.slice(0, g).trim();
+      if (consonants(head) >= 4) lines.push(head);
+      break;
+    }
+    if (consonants(line) < 4) { if (lines.length) break; continue; }
+    lines.push(line);
+    if (lines.length >= 3) break;
+  }
+  s = lines.join('\n');
+  s = s.replace(/^[\s.,:;\-–—_]+/, '').replace(/[\s.,:;\-–—_]+$/, '');
+  // วงเล็บปิดที่ไม่มีวงเล็บเปิดคู่กัน (มักเป็นเส้นขอบที่อ่านเป็น ")")
+  let depth = 0;
+  s = [...s].filter(c => { if (c === '(') depth++; else if (c === ')') { if (!depth) return false; depth--; } return true; }).join('');
+  return s.replace(/[ \t]{2,}/g, ' ');
+}
+// ข้อความจาก OCR หมายที่สแกน: เส้นประใต้บรรทัด/ขอบกระดาษถูกอ่านเป็นตัวอักษรขยะ ("ส่๑๑ ซ ว ซ่ ง ซี. ๑") แทรกทุกบรรทัด
+// และมีตัวอักษรหลงที่ขอบซ้าย ("ก     ซึ่งต้องหาว่า") — ข้อความจริงภาษาไทยไม่เว้นวรรคระหว่างคำ จึงเป็นก้อนยาว
+// "คำ" = ก้อนตัวอักษรไทยล้วน ≥ 4 ตัว (ไม่ปนเลข/ๆ/เครื่องหมาย — ขยะมักปน เช่น "สณฒ๓", "๑ๆสๆ")
+// กลุ่มตัวเลข ("๒๕๖๘", "๙/๑๙") ไม่นับทั้งสองฝั่ง — บรรทัดที่ "คำ" ไม่ถึงครึ่ง = ขยะ ตัดทิ้ง
+// (ใช้ก่อนต่อช่องว่างระหว่างตัวอักษรไทย ไม่งั้นแยกไม่ออก)
+function cleanOcrText(text) {
+  const isWord = w => /^[ก-ฮะ-ฺเ-ๅ็-๎]{4,}$/.test(w);
+  const isNum = w => /^[๐-๙\d]+(?:[/.:][๐-๙\d]+)*$/.test(w);
+  // เครื่องหมายวรรคตอนปกติ (คำพูด วงเล็บ จุลภาค) ไม่นับ — "ในเวลากลางคืน”" ยังเป็นคำ
+  const bare = w => w.replace(/[“”"'()\[\],.:;]/g, '');
+  return text.split('\n').map(l => l.replace(/\|/g, ' ').replace(/^\s*(?:\S{1,2}\s{2,})+/, '').replace(/[ \t]{3,}\S{1,2}[ \t]*$/, '').trimEnd())
+    .filter(l => {
+      // บรรทัดเลขหมาย/วันที่ ("ที่ จ. ๔๒/๒๕๖๘") มีแต่คำสั้น แต่เป็นข้อมูลสำคัญ — เก็บไว้เสมอ
+      if (/[๐-๙\d]{1,6}\s*\/\s*[๐-๙\d]{4}/.test(l) || /วันที่\s*[๐-๙\d]/.test(l)) return true;
+      const toks = l.split(/\s+/).filter(Boolean).filter(w => !isNum(w)).map(bare).filter(Boolean);
+      const total = toks.join('').length;
+      if (!total) return true;
+      return toks.filter(isWord).join('').length / total >= 0.5;
+    }).join('\n').replace(/\n{3,}/g, '\n\n');
+}
+// ชื่อจังหวัดจาก OCR ที่ขาดสระ/วรรณยุกต์ ("จนทบุร") → ชื่อที่ถูกต้องในรายชื่อจังหวัด (ต่างกันไม่เกิน 2 ตัวอักษร)
+function editDistance(a, b) {
+  const dp = Array.from({ length: b.length + 1 }, (_, j) => j);
+  for (let i = 1; i <= a.length; i++) {
+    let prev = dp[0]; dp[0] = i;
+    for (let j = 1; j <= b.length; j++) { const tmp = dp[j]; dp[j] = Math.min(dp[j] + 1, dp[j - 1] + 1, prev + (a[i - 1] === b[j - 1] ? 0 : 1)); prev = tmp; }
+  }
+  return dp[b.length];
+}
+function fuzzyProvince(s) {
+  let best = null, bestD = 3;
+  THAI_PROVINCES.forEach(p => {
+    for (const len of [p.length - 1, p.length, p.length + 1]) {
+      if (len < 2 || len > s.length) continue;
+      const d = editDistance(s.slice(0, len), p);
+      if (d < bestD || (d === bestD && best && p.length > best.length)) { bestD = d; best = p; }
+    }
+  });
+  return bestD <= Math.min(2, Math.floor((best || '').length / 3)) ? best : null;
+}
+// เลขประจำตัวประชาชน 13 หลักต้องผ่านหลักตรวจสอบ — OCR อ่านเลขไทยเพี้ยนบ่อย เลขที่ผ่านจึงเชื่อได้
+function thaiIdChecksumOk(d) {
+  if (!/^\d{13}$/.test(d)) return false;
+  let s = 0;
+  for (let i = 0; i < 12; i++) s += +d[i] * (13 - i);
+  return (11 - s % 11) % 10 === +d[12];
+}
+const stripThaiMarks = s => String(s || '').replace(/[\s.่-๋์ั็ํ]/g, '');
+function parseWarrantText(raw, opts = {}) {
   // จับรูปแบบด้วยเลขอารบิก (regex \d) แต่ค่าที่กรอกลงช่องข้อความคงเป็นเลขไทยตามหมาย ถ้าต้นทางเป็นเลขไทย
   // ตัดเส้นประ "......" ที่มากับฟอร์ม/OCR, ยุบช่องว่างซ้ำ
-  const t = thaiDigitsToArabic(raw).replace(/[.]{3,}/g, ' ').replace(/[ \t]+/g, ' ');
+  // OCR: ตัดบรรทัดขยะ/ขอบกระดาษก่อนยุบช่องว่าง
+  const src = opts.ocr ? cleanOcrText(raw) : raw;
+  let t = thaiDigitsToArabic(src).replace(/[.…]{3,}/g, ' ').replace(/[ \t]+/g, ' ');
+  // OCR มักแยก "ำ" เป็นนิคหิต+สระอา ("ดํา") → รวมกลับ ไม่งั้นหาคำว่า "หมายเลขดำ" / "กระทำ" ไม่เจอ
+  t = t.replace(/ํา/g, 'ำ');
+  const fixOcrWords = s => {
+    // คำในหมายจับที่ OCR อ่านผิดบ่อย (เจอจริงจากการสแกนหมายจับ)
+    [['กรอบุครอง', 'ครอบครอง'], ['กรอบครอง', 'ครอบครอง'], ['โนประเภท', 'ในประเภท'], ['โบประเภท', 'ในประเภท'],
+      ['ยาเสพคิด', 'ยาเสพติด'], ['ยาเสพดิด', 'ยาเสพติด'], ['ความผิดธาน', 'ความผิดฐาน'], ['คระทำ', 'กระทำ'],
+      ['ใหโทษ', 'ให้โทษ'], ['กฏหมาย', 'กฎหมาย']]
+      .forEach(([bad, good]) => { s = s.split(bad).join(good); });
+    return s.replace(/เม[ทหถ]แอมเฟ[ตค]?ตาม[ีื][นณ]/g, 'เมทแอมเฟตามีน');
+  };
+  // ข้อความก่อนต่อช่องว่าง: เก็บเว้นวรรคระหว่างคำ/ชื่อ-สกุลไว้ (ใช้กับข้อหาในเครื่องหมายคำพูด และชื่อในหมาย)
+  const tSpaced = opts.ocr ? fixOcrWords(t) : t;
+  if (opts.ocr) {
+    // ข้อความจาก OCR มักมีเว้นวรรคแทรกระหว่างตัวอักษรไทย ("คดี หมายเลข ดำ ที่") → ต่อกลับ ป้ายกำกับจึงจับได้
+    t = fixOcrWords(t.replace(/([ก-๙])[ \t]+(?=[ก-๙])/g, '$1'));
+    // "ศาลจังหวัด" ที่ OCR อ่านขาดสระ ("ศาลจงหวด")
+    t = t.replace(/ศาลจ[^\sห]{0,3}ห[^\sด]{0,2}ด(?=[ก-ฮเแโใไ])/g, 'ศาลจังหวัด');
+  }
   const thaiSource = /[๐-๙]/.test(raw);
   const keepStyle = s => thaiSource ? toThaiNumeral(s) : s;
+  // ปี พ.ศ. ต้องเป็นไปได้จริง (OCR อ่าน "๒๕๖๙" เพี้ยนเป็น "๒๕๒๐" ได้) — ไม่ผ่านไม่เติม ดีกว่าเติมเลขผิดลงหนังสือราชการ
+  const nowBE = new Date().getFullYear() + 543;
+  const yearOk = y => +y >= nowBE - 30 && +y <= nowBE + 1;
   const out = {};
   const court = t.match(/(ศาล(?:จังหวัด|แขวง|อาญา|เยาวชนและครอบครัว|ทหาร)[ก-๙]*)/);
-  if (court) out.courtName = court[1];
+  if (court) {
+    out.courtName = court[1];
+    // OCR: ชื่อจังหวัดท้ายชื่อศาลมักขาดวรรณยุกต์/การันต์ → เทียบกับรายชื่อจังหวัด ไม่เจอ = ไม่เติม
+    const pm = opts.ocr && court[1].match(/^ศาลจังหวัด(.+)$/);
+    if (pm) { const p = fuzzyProvince(pm[1]); if (p) out.courtName = 'ศาลจังหวัด' + p; else delete out.courtName; }
+  }
   const caseNo = label => {
     // คำนำหน้าเลขคดี เช่น ยฝ, อ., ผบ. (มีจุดได้)
-    const m = t.match(new RegExp(label + '\\s*:?\\s*([ก-๙A-Za-z.]{0,5})\\s*(\\d+)\\s*\\/\\s*(\\d{4})'));
-    return m ? keepStyle(`${m[1]}${m[2]}/${m[3]}`) : '';
+    const m = t.match(new RegExp(label + '\\s*[:,.]*\\s*([ก-๙A-Za-z.]{0,5})\\s*(\\d{1,6})\\s*\\/\\s*(\\d{4})(?!\\d)'));
+    return m && yearOk(m[3]) ? keepStyle(`${m[1].replace(/^\.+/, '')}${m[2]}/${m[3]}`) : '';
   };
   const black = caseNo('คดีหมายเลขดำที่');
   if (black) out.caseBlackNo = black;
   const red = caseNo('คดีหมายเลขแดงที่');
   if (red) out.caseRedNo = red;
-  // หมายจับเลขที่ = "ที่ 232/2569" ที่ไม่ใช่ส่วนของ "คดีหมายเลข…ที่" หรือ "เลขที่"
-  const wno = t.match(/(?<![ก-๙])ที่\s*:?\s*(\d+)\s*\/\s*(\d{4})/);
-  if (wno) out.warrantNo = keepStyle(`${wno[1]}/${wno[2]}`);
+  // หมายจับเลขที่ = "ที่ 232/2569" หรือ "ที่ จ. 42/2568" (มีอักษรนำหน้า) ที่ไม่ใช่ส่วนของ "คดีหมายเลข…ที่" หรือ "เลขที่"
+  const wno = t.match(/(?<![ก-๙])ที่\s*[:,]*\s*(?:([ก-ฮ]{1,2}\.)\s*)?(\d{1,6})\s*\/\s*(\d{4})(?!\d)/);
+  if (wno && yearOk(wno[3])) out.warrantNo = keepStyle(`${wno[1] || ''}${wno[2]}/${wno[3]}`);
   // วันที่: "วันที่ 23 เดือน มิถุนายน พุทธศักราช 2569" (หน้าหมาย) หรือ "ลงวันที่ 23 มิถุนายน 2569" / "ลงวันที่ 23 มิ.ย. 2569" (แบบพิมพ์เอง)
-  const d = t.match(/(?:ลงวันที่|วันที่)\s*(\d{1,2})\s*(?:เดือน)?\s*([ก-๙.]+?)\s*(?:พุทธศักราช|พ\.ศ\.)?\s*(\d{4})/);
+  // ไม่เอา "นับตั้งแต่วันที่" / "ไม่เกินวันที่" ท้ายหมาย (เป็นวันกำหนดอายุความ ไม่ใช่วันออกหมาย)
+  const d = t.match(/(?:ลงวันที่|(?<!ตั้งแต่|ไม่เกิน)วันที่)\s*[:,.-]*\s*(\d{1,2})\s*(?:เดือน)?\s*[:,.-]*\s*([ก-๙.]+?)\s*[:,.-]*\s*(?:พุทธศักราช|พ\.ศ\.)?\s*[:,.-]*\s*(\d{4})(?!\d)/);
   if (d) {
     let mi = THAI_MONTHS.indexOf(d[2]);
     if (mi < 0) mi = THAI_MONTHS_SHORT.indexOf(d[2]);
-    if (mi >= 0) { out.warrantDate_day = d[1]; out.warrantDate_month = String(mi); out.warrantDate_year = d[3]; }
+    if (mi >= 0 && +d[1] >= 1 && +d[1] <= 31 && yearOk(d[3])) {
+      out.warrantDate_day = d[1]; out.warrantDate_month = String(mi); out.warrantDate_year = d[3];
+    }
   }
   // ข้อหา: หลัง "ต้องหาว่ากระทำความผิดฐาน" (หน้าหมาย) หรือ "ในความผิดฐาน" (แบบพิมพ์เอง) ตัดเครื่องหมายคำพูดหัว-ท้ายทิ้ง
-  const ch = t.match(/(?:ต้องหาว่ากระทำความผิดฐาน|ในความผิดฐาน)\s*([\s\S]+?)\s*(?=กรณีมีหลักฐาน|เพราะฉะนั้น|สิ่งที่ส่งมาด้วย|\n\s*\n|$)/);
+  // OCR อ่านคำหน้า ๆ เพี้ยนบ่อย ("คระทำ") → ใช้แค่ "ความผิดฐาน" เป็นจุดเริ่ม
+  const ch = t.match(opts.ocr
+    ? /ความผิดฐาน\s*([\s\S]+?)\s*(?=กรณีมีหลักฐาน|เพราะฉะนั้น|สิ่งที่ส่งมาด้วย|\n\s*\n|$)/
+    : /(?:ต้องหาว่ากระทำความผิดฐาน|ในความผิดฐาน)\s*([\s\S]+?)\s*(?=กรณีมีหลักฐาน|เพราะฉะนั้น|สิ่งที่ส่งมาด้วย|\n\s*\n|$)/);
   // ข้อความในหมายตัดบรรทัดกลางคำได้ (ไทยไม่เว้นวรรคระหว่างคำ) → ตัวอักษรไทยชนตัวอักษรไทยข้ามบรรทัดให้ต่อกันเลย ที่เหลือแทนด้วยช่องว่าง
-  if (ch) {
-    const charge = ch[1].replace(/([ก-๙])\s*\n\s*([ก-๙])/g, '$1$2').replace(/\s*\n\s*/g, ' ').replace(/\s{2,}/g, ' ')
+  // ข้อหาในเครื่องหมายคำพูด (หมายแบบพิมพ์ทั้งใบ ข้อหายาวหลายบรรทัด): เอาจนถึงคำพูดปิด ไม่จำกัด 3 บรรทัด
+  // และใช้ข้อความที่ยังมีเว้นวรรคระหว่างคำ (OCR ของหมายพิมพ์ชัดเว้นวรรคตรงตามจริง) — ใช้ทั้งข้อความพิมพ์/วางและ OCR
+  const quoted = tSpaced.match(/ความผิดฐาน\s*[“"]([\s\S]{5,3000}?)[”"]/);
+  if (quoted) {
+    const charge = quoted[1].replace(/([ก-๙])[ \t]*\n[ \t]*([ก-๙])/g, '$1$2').replace(/\s*\n\s*/g, ' ').replace(/\s{2,}/g, ' ').trim();
+    if (charge) out.charge = keepStyle(charge);
+  } else if (ch) {
+    let body = ch[1];
+    if (opts.ocr) body = cleanOcrCharge(body);
+    const charge = body.replace(/([ก-๙])\s*\n\s*([ก-๙])/g, '$1$2').replace(/\s*\n\s*/g, ' ').replace(/\s{2,}/g, ' ')
       .replace(/^[“"'\s]+|[”"'\s]+$/g, '').trim();
     if (charge) out.charge = keepStyle(charge);
   }
   return out;
 }
-document.getElementById('warrantPasteBtn').addEventListener('click', () => {
+// ชื่อ + เลขบัตรของผู้ถูกออกหมาย — ใช้ตรวจว่าหมายตรงกับผู้ต้องหาในฟอร์ม (ไม่กรอกทับช่องใด)
+// ชื่อ: หมายพิมพ์ชื่อซ้ำ 2–3 ที่ ("ด้วย…", "สมควรว่า *…", "ให้จับตัว *…") ตามด้วย "อายุ" → เลือกแบบที่อ่านได้ซ้ำมากที่สุด
+// เลขบัตร: เชื่อเฉพาะเลขที่ผ่านหลักตรวจสอบ (OCR อ่านเลขไทยเพี้ยนบ่อย)
+function parseWarrantPerson(raw, opts = {}) {
+  let t = thaiDigitsToArabic(opts.ocr ? cleanOcrText(raw) : raw).replace(/ํา/g, 'ำ').replace(/[ \t]+/g, ' ');
+  const votes = {};
+  const re = /(?:ด้วย|จับตัว|สมควรว่า|หมายจับ)\s*\*?\s*((?:นางสาว|นาย|นาง|น\.ส\.|เด็กชาย|เด็กหญิง|ด\.ช\.|ด\.ญ\.)\s?[ก-๙]{2,}\s+[ก-๙]{2,})\s*อายุ/g;
+  let m;
+  while ((m = re.exec(t))) { const n = m[1].replace(/\s+/g, ' ').trim(); votes[n] = (votes[n] || 0) + 1; }
+  const name = Object.entries(votes).sort((a, b) => b[1] - a[1] || b[0].length - a[0].length).map(([n]) => n)[0] || '';
+  const idm = t.match(/ประชาชน\s*([\d ]{13,24})/);
+  const id = idm ? idm[1].replace(/\D/g, '') : '';
+  return { name, id: thaiIdChecksumOk(id) ? id : '', idUnreadable: !!idm && !thaiIdChecksumOk(id) };
+}
+// เทียบกับผู้ต้องหาในฟอร์ม: ตัดวรรณยุกต์/การันต์ออกก่อน (OCR มักอ่านขาด) แล้วดูว่าชื่อ-สกุลตรงกันไหม
+function warrantPersonCheck(p) {
+  const out = [];
+  const formName = `${v('firstName')}${v('lastName')}`;
+  if (p.name) {
+    const bare = stripThaiMarks(p.name.replace(/^(?:นางสาว|นาย|นาง|น\.ส\.|เด็กชาย|เด็กหญิง|ด\.ช\.|ด\.ญ\.)\s?/, ''));
+    if (!formName.trim()) out.push(`ชื่อในหมาย: ${p.name}`);
+    else if (stripThaiMarks(formName) === bare) out.push(`ชื่อในหมายตรงกับผู้ต้องหาในฟอร์ม ✓`);
+    else out.push(`⚠️ ชื่อในหมาย (${p.name}) ไม่ตรงกับผู้ต้องหาในฟอร์ม (${v('firstName')} ${v('lastName')}) — ตรวจว่าใช้หมายถูกใบ`);
+  }
+  const formId = thaiDigitsToArabic(v('idNumber')).replace(/\D/g, '');
+  if (p.id) {
+    if (!formId) out.push(`เลขบัตรในหมาย: ${p.id}`);
+    else if (formId === p.id) out.push('เลขบัตรในหมายตรงกับฟอร์ม ✓');
+    else out.push(`⚠️ เลขบัตรในหมายไม่ตรงกับฟอร์ม — ตรวจว่าใช้หมายถูกใบ`);
+  }
+  return out;
+}
+// ข้อความในกล่องมาจาก OCR หรือเปล่า (ตั้งตอนอ่านไฟล์ ล้างเมื่อผู้ใช้วาง/พิมพ์เอง)
+let warrantTextFromOcr = false;
+function applyWarrantText(prefix) {
   const msg = document.getElementById('warrantPasteMsg');
-  const found = parseWarrantText(document.getElementById('warrantPasteText').value);
+  const text = document.getElementById('warrantPasteText').value;
+  const found = parseWarrantText(text, { ocr: warrantTextFromOcr });
+  const personNotes = warrantPersonCheck(parseWarrantPerson(text, { ocr: warrantTextFromOcr }));
+  const personText = personNotes.length ? ' · ' + personNotes.join(' · ') : '';
   const keys = Object.keys(found);
-  if (!keys.length) { msg.textContent = 'ไม่พบข้อมูลที่จดจำได้ — ต้องมีคำว่า ศาล…, ที่ …/…, คดีหมายเลขดำที่, ลงวันที่ … (วัน เดือน ปี), ในความผิดฐาน/ต้องหาว่ากระทำความผิดฐาน'; return; }
+  if (!keys.length) { msg.textContent = (prefix || '') + 'ไม่พบข้อมูลที่จดจำได้ — ต้องมีคำว่า ศาล…, ที่ …/…, คดีหมายเลขดำที่, ลงวันที่ … (วัน เดือน ปี), ในความผิดฐาน/ต้องหาว่ากระทำความผิดฐาน' + personText; return; }
   keys.forEach(k => { const el = document.getElementById(k); if (el) el.value = found[k]; });
   if (found.charge) syncChargeMirror();
   const labels = { courtName: 'ศาล', warrantNo: 'หมายจับเลขที่', caseBlackNo: 'เลขดำ', caseRedNo: 'เลขแดง', warrantDate_day: 'ลงวันที่', charge: 'ข้อหา' };
-  msg.textContent = 'กรอกให้แล้ว: ' + keys.filter(k => labels[k]).map(k => labels[k]).join(', ') + ' — ตรวจสอบก่อนใช้';
+  const missing = Object.entries(labels).filter(([k]) => k !== 'caseRedNo' && !found[k]).map(([, l]) => l);
+  msg.textContent = (prefix || '') + 'กรอกให้แล้ว: ' + keys.filter(k => labels[k]).map(k => labels[k]).join(', ') +
+    (missing.length ? ` — อ่านไม่ได้: ${missing.join(', ')} (กรอกเอง)` : '') +
+    (warrantTextFromOcr ? ' — ข้อความมาจากการสแกน ตรวจทุกช่องเทียบกับหมายจริงก่อนใช้' : ' — ตรวจสอบก่อนใช้') + personText;
+}
+document.getElementById('warrantPasteBtn').addEventListener('click', () => applyWarrantText());
+document.getElementById('warrantPasteText').addEventListener('input', () => { warrantTextFromOcr = false; });
+async function readWarrantFile(file) {
+  const msg = document.getElementById('warrantPasteMsg');
+  const btn = document.getElementById('warrantFileBtn');
+  btn.disabled = true;
+  try {
+    msg.textContent = 'กำลังอ่านไฟล์...';
+    // หมายจับ: อ่านภาษาไทยอย่างเดียว เป็นบล็อกข้อความ และทำรูปเป็นขาวดำก่อน (ทดสอบกับหมายจริงแล้วแม่นที่สุด)
+    const r = await extractTextDetailed(file, (pct, page, pages) => {
+      msg.textContent = `กำลังสแกนเป็นข้อความ${pages > 1 ? ` หน้า ${page}/${pages}` : ''} ${pct}% (ครั้งแรกต้องโหลดตัวอ่านภาษาไทยก่อน อาจใช้เวลาสักครู่)`;
+    }, { lang: 'tha', psm: '6', binarize: true });
+    if (!r.text.trim()) { msg.textContent = 'อ่านข้อความจากไฟล์ไม่ได้ — ลองถ่ายรูปให้ชัด ตรง ไม่เอียง หรือพิมพ์/วางข้อความเอง'; return; }
+    warrantTextFromOcr = r.method === 'ocr' || r.method === 'pdf-ocr';
+    // OCR: แสดงข้อความที่ตัดบรรทัดขยะจากเส้นประ/ขอบกระดาษแล้ว อ่านเทียบกับหมายง่ายขึ้น
+    document.getElementById('warrantPasteText').value = (warrantTextFromOcr ? cleanOcrText(r.text) : r.text).trim();
+    const how = r.method === 'pdf' ? 'อ่านข้อความจาก PDF แล้ว — ' :
+      r.method === 'pdf-ocr' ? `สแกน PDF เป็นข้อความแล้ว (${r.pages}${r.totalPages > r.pages ? `/${r.totalPages}` : ''} หน้า) — ` :
+      r.method === 'ocr' ? 'สแกนรูปเป็นข้อความแล้ว — ' : '';
+    applyWarrantText(how);
+  } catch (e) {
+    msg.textContent = 'อ่านไฟล์ไม่สำเร็จ: ' + (e.message || e);
+  } finally { btn.disabled = false; }
+}
+document.getElementById('warrantFileBtn').addEventListener('click', () => document.getElementById('warrantFile').click());
+document.getElementById('warrantFile').addEventListener('change', e => {
+  const f = e.target.files[0];
+  e.target.value = '';
+  if (f) readWarrantFile(f);
 });
+(function warrantDropZone() {
+  const panel = document.getElementById('warrantPastePanel');
+  const hasFiles = e => [...(e.dataTransfer && e.dataTransfer.types || [])].includes('Files');
+  panel.addEventListener('dragover', e => { if (!hasFiles(e)) return; e.preventDefault(); panel.classList.add('dragover'); });
+  panel.addEventListener('dragleave', e => { if (!panel.contains(e.relatedTarget)) panel.classList.remove('dragover'); });
+  panel.addEventListener('drop', e => {
+    if (!hasFiles(e)) return;
+    e.preventDefault();
+    panel.classList.remove('dragover');
+    if (e.dataTransfer.files[0]) readWarrantFile(e.dataTransfer.files[0]);
+  });
+})();
 
 // e-Saraban สำหรับใบปะหน้าส่งศาล: ถึง = ชื่อศาล, เรื่อง = ส่งตัวผู้ต้องหาตามหมายจับของ<ศาล>, ตั้งค่าอื่นเหมือนปัสสาวะ
 // ใช้ source เดียวกับปัสสาวะ เพราะสคริปต์ Tampermonkey ที่ติดตั้งอยู่แยกตาม source นี้ (ขั้นตอนกรอกเหมือนกันทุกประการ)
