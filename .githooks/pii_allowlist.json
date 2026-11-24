@@ -17,6 +17,8 @@
     "generate_templates.py",
     "build/*_template.docx",
     "assets/logo.png",
+    "assets/poster_logo_left.png",
+    "assets/poster_logo_right.png",
     "garuda.png",
     "placeholders/front.jpg",
     "placeholders/back.jpg",
@@ -42,7 +44,9 @@
     "7aec6c828e6dcc2e78f18d031f86cb57446f8e368d682c99b09275d390440298": "placeholders/front.jpg — กรอบเปล่า FRONT",
     "d4c734664804e2400cb9ae89638c51278f476e0c78343d1a45230b2eee555596": "placeholders/back.jpg — กรอบเปล่า BACK",
     "440158840cd3e06a2669df601edede4b8d9a52d501ba8b62e73f8a5f1448007a": "placeholders/left.jpg — กรอบเปล่า LEFT",
-    "916c2a4bf60c0f25eeb676c66d675068823514f1908b54172c7aa244d82c2d32": "placeholders/right.jpg — กรอบเปล่า RIGHT"
+    "916c2a4bf60c0f25eeb676c66d675068823514f1908b54172c7aa244d82c2d32": "placeholders/right.jpg — กรอบเปล่า RIGHT",
+    "14d76af02170b6f9b1dc29547735783786bcd2aebcdcb51ea8b8ceb6de7ab7cf": "ตราตำรวจภูธรภาค 2 (พื้นใส) — โลโก้ซ้ายในภาพรายงาน (ตรวจแล้ว 2569-11-24)",
+    "e7d9ef879ab09d07af9c9f38d1cbe512b739c06f97ebb442bded356eafdc477e": "ตรา ภ.จว.จันทบุรี / สภ.นายายอาม (พื้นใส) — โลโก้ขวาในภาพรายงาน (ตรวจแล้ว 2569-11-24)"
   },
   "allowed_meta": [],
   "allowed_text": []

@@ -80,6 +80,12 @@ def main():
     for token, filename in TEMPLATE_FILES.items():
         html = html.replace(token, b64_of(filename))
 
+    # โลโก้ค่าเริ่มต้นของภาพรายงาน (ตราหน่วย พื้นใส อยู่ใน assets/ และใน media_sha256 ของ pii_guard)
+    for token, rel in {"__B64_POSTER_LOGO_LEFT__": "assets/poster_logo_left.png",
+                       "__B64_POSTER_LOGO_RIGHT__": "assets/poster_logo_right.png"}.items():
+        with open(os.path.join(SCRIPT_DIR, rel), "rb") as f:
+            html = html.replace(token, base64.b64encode(f.read()).decode("ascii"))
+
     # ตราเวลา build (พ.ศ.) โชว์ที่หัวหน้าเว็บ ไว้เช็คว่าเบราว์เซอร์โหลดเวอร์ชันล่าสุดแล้วหรือยัง
     now = datetime.now()
     html = html.replace("__BUILD_STAMP__", f"{now.day:02d}/{now.month:02d}/{now.year + 543} {now:%H:%M}")

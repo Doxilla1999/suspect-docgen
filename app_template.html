@@ -640,7 +640,7 @@
             <div class="qf-file-row">
               <button type="button" class="btn btn-ghost btn-sm" data-poster-logo="left">โลโก้ซ้าย</button>
               <button type="button" class="btn btn-ghost btn-sm" data-poster-logo="right">โลโก้ขวา</button>
-              <button type="button" class="btn btn-ghost btn-sm" id="posterLogoClear">ลบโลโก้</button>
+              <button type="button" class="btn btn-ghost btn-sm" id="posterLogoClear">ใช้โลโก้เริ่มต้น</button>
             </div>
             <input type="file" id="posterLogoInput" accept="image/*" style="display:none">
             <p class="note">ค่าพวกนี้และโลโก้จำไว้ในเครื่องนี้ ไม่ต้องตั้งใหม่ทุกครั้ง (โลโก้ใช้ไฟล์ PNG พื้นใสจะสวยที่สุด)</p>
@@ -4262,6 +4262,9 @@ const POSTER_KEY = 'poster-settings';
 const POSTER_DEFAULTS = { posterSubtitle: 'NAYAIARM POLICE STATION', posterFooter: 'ตำรวจภูธรภาค 2', posterSlogan: '“ จงรักภักดี มั่นคงปลอดภัย รับใช้ประชาชน ”' };
 let posterPhotos = [];
 let posterLogos = { left: '', right: '' };
+// โลโก้ค่าเริ่มต้น (ตำรวจภูธรภาค 2 / ภ.จว.จันทบุรี พื้นใส) — assemble.py ฝังจาก assets/poster_logo_*.png
+// ผู้ใช้ตั้งโลโก้ของตัวเองได้ (จำในเครื่อง) กด "ลบโลโก้" = กลับมาใช้ชุดนี้
+const POSTER_DEFAULT_LOGOS = { left: 'data:image/png;base64,__B64_POSTER_LOGO_LEFT__', right: 'data:image/png;base64,__B64_POSTER_LOGO_RIGHT__' };
 let posterLogoSide = 'left';
 function loadPosterSettings() {
   let s = {};
@@ -4499,7 +4502,7 @@ document.getElementById('posterLogoInput').addEventListener('change', async e =>
     document.getElementById('posterMsg').textContent = savePosterSettings() ? `บันทึกโลโก้${posterLogoSide === 'left' ? 'ซ้าย' : 'ขวา'}แล้ว` : 'พื้นที่เก็บในเบราว์เซอร์เต็ม บันทึกโลโก้ไม่ได้';
   } catch (err) { document.getElementById('posterMsg').textContent = err.message; }
 });
-document.getElementById('posterLogoClear').addEventListener('click', () => { posterLogos = { left: '', right: '' }; savePosterSettings(); document.getElementById('posterMsg').textContent = 'ลบโลโก้แล้ว (จะใช้ตราวาดแทน)'; });
+document.getElementById('posterLogoClear').addEventListener('click', () => { posterLogos = { left: '', right: '' }; savePosterSettings(); document.getElementById('posterMsg').textContent = 'กลับไปใช้โลโก้เริ่มต้น (ภ.2 / ภ.จว.จันทบุรี) แล้ว'; });
 ['posterTitle', 'posterSubtitle', 'posterFooter', 'posterSlogan'].forEach(id => document.getElementById(id).addEventListener('input', savePosterSettings));
 loadPosterSettings();
 
@@ -4507,7 +4510,14 @@ loadPosterSettings();
 const posterSegmenter = typeof Intl !== 'undefined' && Intl.Segmenter ? new Intl.Segmenter('th', { granularity: 'word' }) : null;
 const posterClusters = s => s.match(/[^ัิ-ฺ็-๎][ัิ-ฺ็-๎]*/g) || [];
 function posterWrap(ctx, para, maxW) {
-  const toks = posterSegmenter ? [...posterSegmenter.segment(para)].map(x => x.segment) : posterClusters(para);
+  const raw = posterSegmenter ? [...posterSegmenter.segment(para)].map(x => x.segment) : posterClusters(para);
+  // คำย่อ "ต." "อ." "จ." "ม." ห้ามแยกบรรทัดจากคำถัดไป (ไม่งั้นได้ "ต." ท้ายบรรทัด ชื่อตำบลขึ้นบรรทัดใหม่)
+  const toks = [];
+  raw.forEach(t => {
+    const prev = toks[toks.length - 1];
+    if (prev && (t === '.' || (/(?:^|[^ก-ฮ])[ก-ฮ]{1,2}\.$/.test(prev) && !/^\s/.test(t)))) toks[toks.length - 1] = prev + t;
+    else toks.push(t);
+  });
   const lines = [];
   let line = '';
   const push = () => { if (line.trim()) lines.push(line.trim()); line = ''; };
@@ -4631,9 +4641,9 @@ async function drawPoster() {
   const KANIT = (w, s) => `${w} ${s}px Kanit, 'Sarabun', Tahoma, sans-serif`;
   const W = POSTER_W;
   drawPosterBackground(ctx);
-  const [logoL, logoR] = await Promise.all([loadImg(posterLogos.left), loadImg(posterLogos.right)]);
-  drawPosterEmblem(ctx, 112, 88, 64, posterLogos.left, logoL);
-  drawPosterEmblem(ctx, W - 112, 88, 64, posterLogos.right, logoR);
+  const [logoL, logoR] = await Promise.all([loadImg(posterLogos.left || POSTER_DEFAULT_LOGOS.left), loadImg(posterLogos.right || POSTER_DEFAULT_LOGOS.right)]);
+  drawPosterEmblem(ctx, 116, 94, 80, posterLogos.left, logoL);
+  drawPosterEmblem(ctx, W - 116, 94, 80, posterLogos.right, logoR);
   // หัวภาพ
   ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
   let ts = 78;
